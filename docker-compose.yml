@@ -1,0 +1,22 @@
+services: 
+  mongodb: 
+    container_name: mongodb-aluguel
+    image: mongo:latest
+    volumes:
+      - vol-mongodb-aluguel:/data/db
+    ports:
+      - 27017:27017
+
+  api: 
+    container_name: api-aluguel
+    build: ./
+    environment:
+      - DB_URL=mongodb://mongodb-aluguel:27017/exemplo
+    ports:
+      - 3000:3000
+
+
+volumes:
+  vol-mongodb-aluguel:
+
+# docker compose up -d

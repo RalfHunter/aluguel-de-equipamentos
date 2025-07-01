@@ -1,4 +1,5 @@
 import { z } from "zod";
+import objectIdSchema from "./ObjectIdSchema.js";
 
 const categoriasValidas = [
   "Furadeira",
@@ -25,8 +26,14 @@ export const equipamentoSchema = z.object({
   equiCategoria: z.enum(categoriasValidas, {
     errorMap: () => ({ message: 'Categoria inválida' }),
   }),
-  equiFoto: z.array(
-    z.string().url({ message: "Cada item deve ser uma URL válida" })
+  equiUsuario: objectIdSchema,
+  equiFotos: z.array(
+    z.object({
+      url: z.string().url({ message: "Deve ser uma URL válida" }),
+      largura: z.number().positive(),
+      altura: z.number().positive(),
+      tamanhoMb: z.number().positive(),
+    })
   ).min(1, "Pelo menos uma foto é obrigatória"),
 });
 
@@ -37,11 +44,4 @@ export const equipamentoUpdateSchema = z.object({
   equiQuantidadeDisponivel: z.number({
     invalid_type_error: "Quantidade disponível deve ser um número",
   }).int({ message: "Quantidade disponível deve ser um número inteiro" }).nonnegative({ message: "Quantidade disponível deve ser maior ou igual a 0" }).optional(),
-  equiStatus: z.enum(['ativo', 'inativo'], {
-    invalid_type_error: "Status deve ser 'ativo' ou 'inativo'",
-  }).optional(),
 }).strict({ message: "Campos não permitidos no objeto" });
-
-export const motivoReprovacaoSchema = z.object({
-  motivoReprovacao: z.string({ required_error: 'Motivo de reprovação é obrigatório' }).min(5, 'Motivo deve ter pelo menos 5 caracteres'),
-});

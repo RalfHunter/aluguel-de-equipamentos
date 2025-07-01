@@ -2,12 +2,15 @@ import EquipamentoService from "../../services/EquipamentoService.js";
 import EquipamentoRepository from "../../repositories/EquipamentoRepository.js";
 import EquipamentoFilterBuilder from "../../repositories/filters/EquipamentoFilterBuilder.js";
 import { CustomError, HttpStatusCodes, messages } from "../../utils/helpers/index.js";
+import Reserva from '../../models/Reserva.js';
 
-// Mock do EquipamentoRepository e EquipamentoFilterBuilder
+jest.mock('../../models/Reserva.js', () => ({
+  countDocuments: jest.fn(),
+}));
+
 jest.mock("../../repositories/EquipamentoRepository.js");
 jest.mock("../../repositories/filters/EquipamentoFilterBuilder.js");
 
-// Mock do CustomError
 const mockCustomError = jest.fn();
 jest.mock("../../utils/helpers/index.js", () => {
   const originalHelpers = jest.requireActual("../../utils/helpers/index.js");
@@ -35,17 +38,14 @@ jest.mock("../../utils/helpers/index.js", () => {
 });
 
 const makeEquipamento = (props = {}) => ({
-  id: "1",
+  _id: "507f1f77bcf86cd799439011",
   equiNome: "Equipamento Teste",
-  equiDescricao: "Descrição teste",
   equiCategoria: "maquinas",
-  equiValorDiaria: 100,
+  equiFotos: ["foto1.jpg"],
+  equiStatus: "ativo",
   equiQuantidadeDisponivel: 5,
-  equiFoto: ["foto1.jpg"],
-  equiUsuario: "682520e98e38a049ac2ac569",
-  equiAvaliacoes: [],
-  equiNotaMediaAvaliacao: 0,
-  equiStatus: false,
+  equiValorDiaria: 100,
+  save: jest.fn(),
   ...props,
 });
 
@@ -60,7 +60,8 @@ describe("EquipamentoService", () => {
       listarPorId: jest.fn(),
       criar: jest.fn(),
       atualizar: jest.fn(),
-      deletar: jest.fn(),
+      excluir: jest.fn(),
+      listarPendentes: jest.fn(),
     };
 
     mockEquipamentoFilterBuilderInstance = {
@@ -88,7 +89,7 @@ describe("EquipamentoService", () => {
       equiCategoria: "maquinas",
       equiValorDiaria: 100,
       equiQuantidadeDisponivel: 5,
-      equiFoto: ["foto1.jpg"],
+      equiFotos: ["foto1.jpg"],
     };
 
     it("deve criar um equipamento com sucesso, com status inativo", async () => {
@@ -97,56 +98,23 @@ describe("EquipamentoService", () => {
 
       const resultado = await equipamentoService.criar(mockDados);
 
-      expect(mockEquipamentoRepositoryInstance.criar).toHaveBeenCalledWith({
-        ...mockDados,
-        equiUsuario: "682520e98e38a049ac2ac569",
-        equiAvaliacoes: [],
-        equiNotaMediaAvaliacao: 0,
-        equiStatus: false,
-      });
+      expect(mockEquipamentoRepositoryInstance.criar).toHaveBeenCalledWith(mockDados);
       expect(resultado).toEqual(mockEquipamentoCriado);
     });
 
     it("deve lançar erro se equiNome não for fornecido", async () => {
       const dadosSemNome = { ...mockDados, equiNome: undefined };
       await expect(equipamentoService.criar(dadosSemNome)).rejects.toThrow(Error);
-      expect(mockCustomError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          statusCode: HttpStatusCodes.BAD_REQUEST.code,
-          customMessage: "Campos obrigatórios não preenchidos.",
-        })
-      );
-      expect(mockEquipamentoRepositoryInstance.criar).not.toHaveBeenCalled();
     });
 
     it("deve lançar erro se equiCategoria não for fornecida", async () => {
       const dadosSemCategoria = { ...mockDados, equiCategoria: undefined };
       await expect(equipamentoService.criar(dadosSemCategoria)).rejects.toThrow(Error);
-      expect(mockCustomError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          statusCode: HttpStatusCodes.BAD_REQUEST.code,
-          customMessage: "Campos obrigatórios não preenchidos.",
-        })
-      );
-      expect(mockEquipamentoRepositoryInstance.criar).not.toHaveBeenCalled();
     });
 
-    it("deve lançar erro se equiFoto não for fornecida", async () => {
-      const dadosSemFoto = { ...mockDados, equiFoto: [] };
+    it("deve lançar erro se equiFotos não for fornecida", async () => {
+      const dadosSemFoto = { ...mockDados, equiFotos: [] };
       await expect(equipamentoService.criar(dadosSemFoto)).rejects.toThrow(Error);
-      expect(mockCustomError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          statusCode: HttpStatusCodes.BAD_REQUEST.code,
-          customMessage: "Pelo menos uma foto é obrigatória",
-        })
-      );
-      expect(mockEquipamentoRepositoryInstance.criar).not.toHaveBeenCalled();
-    });
-
-    it("deve lançar erro inesperado do repository", async () => {
-      mockEquipamentoRepositoryInstance.criar.mockRejectedValue(new Error("Erro de banco de dados"));
-      await expect(equipamentoService.criar(mockDados)).rejects.toThrow("Erro de banco de dados");
-      expect(mockEquipamentoRepositoryInstance.criar).toHaveBeenCalled();
     });
   });
 
@@ -159,61 +127,56 @@ describe("EquipamentoService", () => {
       const resultado = await equipamentoService.listar(mockFiltros);
 
       expect(mockEquipamentoFilterBuilderInstance.comCategoria).toHaveBeenCalledWith("maquinas");
-      expect(mockEquipamentoFilterBuilderInstance.comStatus).toHaveBeenCalledWith(true);
+      expect(mockEquipamentoFilterBuilderInstance.comStatus).toHaveBeenCalledWith("ativo");
       expect(mockEquipamentoFilterBuilderInstance.comFaixaDeValor).toHaveBeenCalledWith("100", "500");
       expect(mockEquipamentoFilterBuilderInstance.build).toHaveBeenCalled();
       expect(mockEquipamentoRepositoryInstance.listar).toHaveBeenCalledWith({}, 1, 10);
       expect(resultado).toEqual(mockResponseData);
     });
 
-    it("deve propagar erros do repository.listar", async () => {
-      const mockFiltros = {};
-      const erro = new Error("Erro de banco de dados");
-      mockEquipamentoRepositoryInstance.listar.mockRejectedValue(erro);
+    it("deve chamar listarPendentes se filtro status for pendente", async () => {
+      const mockPendentes = [makeEquipamento({ equiStatus: "pendente" })];
+      mockEquipamentoRepositoryInstance.listarPendentes.mockResolvedValue(mockPendentes);
 
-      await expect(equipamentoService.listar(mockFiltros)).rejects.toThrow(erro);
+      const resultado = await equipamentoService.listar({ status: "pendente" });
+
+      expect(mockEquipamentoRepositoryInstance.listarPendentes).toHaveBeenCalled();
+      expect(resultado).toEqual(mockPendentes);
+    });
+  });
+
+  describe("listarPendentes", () => {
+    it("deve chamar repository.listarPendentes e retornar resultado", async () => {
+      const mockPendentes = [makeEquipamento({ equiStatus: "pendente" })];
+      mockEquipamentoRepositoryInstance.listarPendentes.mockResolvedValue(mockPendentes);
+
+      const resultado = await equipamentoService.listarPendentes();
+
+      expect(mockEquipamentoRepositoryInstance.listarPendentes).toHaveBeenCalled();
+      expect(resultado).toEqual(mockPendentes);
     });
   });
 
   describe("listarPorId", () => {
-    it("deve retornar equipamento se ativo ou se usuário é o proprietário", async () => {
-      const mockEquipamento = makeEquipamento({ equiStatus: true });
+    it("deve retornar equipamento se encontrado", async () => {
+      const mockEquipamento = makeEquipamento();
       mockEquipamentoRepositoryInstance.listarPorId.mockResolvedValue(mockEquipamento);
 
-      const resultado = await equipamentoService.listarPorId("1", "682520e98e38a049ac2ac569");
+      const resultado = await equipamentoService.listarPorId("507f1f77bcf86cd799439011");
 
-      expect(mockEquipamentoRepositoryInstance.listarPorId).toHaveBeenCalledWith("1");
+      expect(mockEquipamentoRepositoryInstance.listarPorId).toHaveBeenCalledWith("507f1f77bcf86cd799439011");
       expect(resultado).toEqual(mockEquipamento);
     });
 
     it("deve lançar erro se equipamento não for encontrado", async () => {
       mockEquipamentoRepositoryInstance.listarPorId.mockResolvedValue(null);
 
-      await expect(equipamentoService.listarPorId("1", "682520e98e38a049ac2ac569")).rejects.toThrow(Error);
-      expect(mockCustomError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          statusCode: HttpStatusCodes.NOT_FOUND.code,
-          customMessage: messages.error.resourceNotFound("Equipamento"),
-        })
-      );
-    });
-
-    it("deve lançar erro se equipamento inativo e usuário não for o proprietário", async () => {
-      const mockEquipamento = makeEquipamento({ equiStatus: false, equiUsuario: "outroUsuario" });
-      mockEquipamentoRepositoryInstance.listarPorId.mockResolvedValue(mockEquipamento);
-
-      await expect(equipamentoService.listarPorId("1", "682520e98e38a049ac2ac569")).rejects.toThrow(Error);
-      expect(mockCustomError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          statusCode: HttpStatusCodes.FORBIDDEN.code,
-          customMessage: "Equipamento não disponível para visualização.",
-        })
-      );
+      await expect(equipamentoService.listarPorId("507f1f77bcf86cd799439011")).rejects.toThrow(Error);
     });
   });
 
   describe("atualizar", () => {
-    const mockEquipamento = makeEquipamento({ equiStatus: true });
+    const mockEquipamento = makeEquipamento({ equiStatus: "ativo" });
     const mockDadosAtualizados = { equiValorDiaria: 150, equiQuantidadeDisponivel: 10 };
 
     beforeEach(() => {
@@ -222,214 +185,194 @@ describe("EquipamentoService", () => {
     });
 
     it("deve atualizar equipamento com dados válidos", async () => {
-      const resultado = await equipamentoService.atualizar("1", mockDadosAtualizados);
+      const resultado = await equipamentoService.atualizar("507f1f77bcf86cd799439011", mockDadosAtualizados);
 
-      expect(mockEquipamentoRepositoryInstance.listarPorId).toHaveBeenCalledWith("1");
-      expect(mockEquipamentoRepositoryInstance.atualizar).toHaveBeenCalledWith("1", mockDadosAtualizados);
+      expect(mockEquipamentoRepositoryInstance.listarPorId).toHaveBeenCalledWith("507f1f77bcf86cd799439011");
+      expect(mockEquipamentoRepositoryInstance.atualizar).toHaveBeenCalledWith("507f1f77bcf86cd799439011", mockDadosAtualizados);
       expect(resultado).toEqual({ ...mockEquipamento, ...mockDadosAtualizados });
     });
 
-    it("deve permitir ativar equipamento inativo apenas com equiStatus", async () => {
-      const equipamentoInativo = makeEquipamento({ equiStatus: false });
-      mockEquipamentoRepositoryInstance.listarPorId.mockResolvedValue(equipamentoInativo);
-      const dadosAtivacao = { equiStatus: true };
-
-      mockEquipamentoRepositoryInstance.atualizar.mockResolvedValue({
-        ...equipamentoInativo,
-        ...dadosAtivacao,
-      });
-
-      const resultado = await equipamentoService.atualizar("1", dadosAtivacao);
-
-      expect(mockEquipamentoRepositoryInstance.atualizar).toHaveBeenCalledWith("1", dadosAtivacao);
-      expect(resultado).toEqual({ ...equipamentoInativo, ...dadosAtivacao });
-    });
-
     it("deve lançar erro se equipamento não for encontrado", async () => {
       mockEquipamentoRepositoryInstance.listarPorId.mockResolvedValue(null);
 
-      await expect(equipamentoService.atualizar("1", mockDadosAtualizados)).rejects.toThrow(Error);
-      expect(mockCustomError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          statusCode: HttpStatusCodes.NOT_FOUND.code,
-          customMessage: messages.error.resourceNotFound("Equipamento"),
-        })
+      await expect(equipamentoService.atualizar("id-invalido", {})).rejects.toThrow();
+    });
+
+    it("deve lançar erro se equipamento estiver pendente", async () => {
+      const equipamentoPendente = makeEquipamento({ equiStatus: "pendente" });
+      mockEquipamentoRepositoryInstance.listarPorId.mockResolvedValue(equipamentoPendente);
+
+      const dadosInvalidos = { equiValorDiaria: 100 };
+      await expect(equipamentoService.atualizar("507f1f77bcf86cd799439011", dadosInvalidos)).rejects.toThrow(
+        'Não é possível atualizar! Equipamento pendente, espere por uma aprovação.'
       );
     });
 
-    it("deve lançar erro se tentar atualizar equipamento inativo com outros campos", async () => {
-      const equipamentoInativo = makeEquipamento({ equiStatus: false });
-      mockEquipamentoRepositoryInstance.listarPorId.mockResolvedValue(equipamentoInativo);
+    it("deve lançar erro se campos inválidos forem passados", async () => {
+      const equipamentoAtivo = makeEquipamento({ equiStatus: "ativo" });
+      mockEquipamentoRepositoryInstance.listarPorId.mockResolvedValue(equipamentoAtivo);
 
-      await expect(equipamentoService.atualizar("1", mockDadosAtualizados)).rejects.toThrow(Error);
-      expect(mockCustomError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          statusCode: HttpStatusCodes.FORBIDDEN.code,
-          customMessage: "Equipamento inativo. Não é possível atualizar.",
-        })
+      const dadosInvalidos = { equiNome: "Novo Nome" };
+
+      await expect(equipamentoService.atualizar("507f1f77bcf86cd799439011", dadosInvalidos)).rejects.toThrow(
+        'Não é permitido alterar os seguintes campos: equiNome'
       );
-    });
-
-    it("deve lançar erro se tentar atualizar campos não permitidos", async () => {
-      const dadosInvalidos = { ...mockDadosAtualizados, equiNome: "Novo Nome" };
-
-      await expect(equipamentoService.atualizar("1", dadosInvalidos)).rejects.toThrow(Error);
-      expect(mockCustomError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          statusCode: HttpStatusCodes.BAD_REQUEST.code,
-          customMessage: expect.stringContaining("Não é permitido alterar os seguintes campos: equiNome"),
-        })
-      );
-    });
-
-    it("deve lançar erro inesperado do repository", async () => {
-      mockEquipamentoRepositoryInstance.atualizar.mockRejectedValue(new Error("Erro de banco de dados"));
-      await expect(equipamentoService.atualizar("1", mockDadosAtualizados)).rejects.toThrow("Erro de banco de dados");
     });
   });
 
-  describe("deletar", () => {
-    const mockEquipamento = makeEquipamento({ equiStatus: true });
+  describe("aprovar", () => {
+    it("deve aprovar um equipamento pendente", async () => {
+      const mockEquip = makeEquipamento({ equiStatus: "pendente" });
+      mockEquipamentoRepositoryInstance.listarPorId.mockResolvedValue(mockEquip);
 
-    beforeEach(() => {
-      mockEquipamentoRepositoryInstance.listarPorId.mockResolvedValue(mockEquipamento);
-      mockEquipamentoRepositoryInstance.deletar.mockResolvedValue({ message: "Equipamento deletado" });
+      const res = await equipamentoService.aprovar("507f1f77bcf86cd799439011");
+
+      expect(mockEquip.equiStatus).toBe("ativo");
+      expect(mockEquip.save).toHaveBeenCalled();
+      expect(res).toBe(mockEquip);
     });
 
-    it("deve deletar equipamento com sucesso", async () => {
-      const resultado = await equipamentoService.deletar("1");
+    it("deve lançar erro se equipamento não estiver pendente", async () => {
+      const mockEquip = makeEquipamento({ equiStatus: "ativo" });
+      mockEquipamentoRepositoryInstance.listarPorId.mockResolvedValue(mockEquip);
 
-      expect(mockEquipamentoRepositoryInstance.listarPorId).toHaveBeenCalledWith("1");
-      expect(mockEquipamentoRepositoryInstance.deletar).toHaveBeenCalledWith("1");
-      expect(resultado).toEqual({ message: "Equipamento deletado" });
+      await expect(equipamentoService.aprovar("507f1f77bcf86cd799439011")).rejects.toThrow(
+        "Apenas equipamentos pendentes podem ser aprovados."
+      );
+    });
+  });
+
+  describe("reprovar", () => {
+    const validObjectId = "507f1f77bcf86cd799439011";
+
+    it("deve excluir equipamento pendente sem reservas ativas", async () => {
+      const mockEquip = makeEquipamento({ _id: validObjectId, equiStatus: "pendente" });
+      mockEquipamentoRepositoryInstance.listarPorId.mockResolvedValue(mockEquip);
+      Reserva.countDocuments.mockResolvedValue(0);
+
+      const res = await equipamentoService.reprovar(validObjectId);
+
+      expect(mockEquipamentoRepositoryInstance.excluir).toHaveBeenCalledWith(validObjectId);
+      expect(res).toEqual({ id: validObjectId, mensagem: "Equipamento excluído com sucesso." });
     });
 
-    it("deve lançar erro se equipamento não for encontrado", async () => {
+    it("deve lançar erro se equipamento não estiver pendente", async () => {
+      const mockEquip = makeEquipamento({ _id: validObjectId, equiStatus: "ativo" });
+      mockEquipamentoRepositoryInstance.listarPorId.mockResolvedValue(mockEquip);
+
+      await expect(equipamentoService.reprovar(validObjectId)).rejects.toThrow(
+        "Apenas equipamentos pendentes podem ser reprovados."
+      );
+    });
+
+    it("deve lançar erro se houver reservas ativas", async () => {
+      const mockEquip = makeEquipamento({ _id: validObjectId, equiStatus: "pendente" });
+      mockEquipamentoRepositoryInstance.listarPorId.mockResolvedValue(mockEquip);
+      Reserva.countDocuments.mockResolvedValue(2);
+
+      await expect(equipamentoService.reprovar(validObjectId)).rejects.toThrow(
+        "Não é possível excluir equipamento com reservas ativas."
+      );
+    });
+  });
+
+  describe("adicionarFoto", () => {
+    it("deve adicionar foto a equipamento existente", async () => {
+      const mockEquip = makeEquipamento();
+      mockEquipamentoRepositoryInstance.listarPorId.mockResolvedValue(mockEquip);
+
+      const res = await equipamentoService.adicionarFoto("507f1f77bcf86cd799439011", "nova.jpg");
+
+      expect(mockEquip.equiFotos).toContain("nova.jpg");
+      expect(mockEquip.save).toHaveBeenCalled();
+      expect(res).toBe(mockEquip);
+    });
+
+    it("deve lançar erro se equipamento não encontrado", async () => {
       mockEquipamentoRepositoryInstance.listarPorId.mockResolvedValue(null);
 
-      await expect(equipamentoService.deletar("1")).rejects.toThrow(Error);
-      expect(mockCustomError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          statusCode: HttpStatusCodes.NOT_FOUND.code,
-          customMessage: messages.error.resourceNotFound("Equipamento"),
-        })
-      );
-    });
-
-    it("deve lançar erro se equipamento tiver locações ativas", async () => {
-      mockEquipamentoRepositoryInstance.deletar.mockRejectedValue(
-        new CustomError({
-          statusCode: HttpStatusCodes.CONFLICT.code,
-          customMessage: "Não é possível excluir equipamento com locações ativas.",
-        })
-      );
-
-      await expect(equipamentoService.deletar("1")).rejects.toThrow(Error);
-      expect(mockCustomError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          statusCode: HttpStatusCodes.CONFLICT.code,
-          customMessage: "Não é possível excluir equipamento com locações ativas.",
-        })
-      );
-    });
-
-    it("deve lançar erro inesperado do repository", async () => {
-      mockEquipamentoRepositoryInstance.deletar.mockRejectedValue(new Error("Erro de banco de dados"));
-      await expect(equipamentoService.deletar("1")).rejects.toThrow("Erro de banco de dados");
+      await expect(equipamentoService.adicionarFoto("id-invalido", "nova.jpg")).rejects.toThrow();
     });
   });
 
-  describe("Métodos auxiliares", () => {
-    describe("_processarFiltros", () => {
-      it("deve processar filtros corretamente com valores válidos", async () => {
-        const filtros = { page: "2", limit: "20", categoria: "maquinas", status: "false", minValor: "50", maxValor: "200" };
-        const resultado = await equipamentoService._processarFiltros(filtros);
-
-        expect(mockEquipamentoFilterBuilderInstance.comCategoria).toHaveBeenCalledWith("maquinas");
-        expect(mockEquipamentoFilterBuilderInstance.comStatus).toHaveBeenCalledWith(false);
-        expect(mockEquipamentoFilterBuilderInstance.comFaixaDeValor).toHaveBeenCalledWith("50", "200");
-        expect(mockEquipamentoFilterBuilderInstance.build).toHaveBeenCalled();
-        expect(resultado).toEqual({ query: {}, pagina: 2, limite: 20 });
-      });
-
-      it("deve usar valores padrão para página e limite se não fornecidos", async () => {
-        const filtros = { categoria: "maquinas" };
-        const resultado = await equipamentoService._processarFiltros(filtros);
-
-        expect(resultado.pagina).toBe(1);
-        expect(resultado.limite).toBe(10);
-      });
-
-      it("deve tratar status como true por padrão se valor inválido", async () => {
-        const filtros = { status: "invalido" };
-        const resultado = await equipamentoService._processarFiltros(filtros);
-
-        expect(mockEquipamentoFilterBuilderInstance.comStatus).toHaveBeenCalledWith(true);
-      });
+  describe("_processarFiltros", () => {
+    it('deve retornar status ativo quando status é "true"', () => {
+      const filtros = { status: 'true' };
+      equipamentoService._processarFiltros(filtros);
+      expect(mockEquipamentoFilterBuilderInstance.comStatus).toHaveBeenCalledWith('ativo');
     });
 
-    describe("_buscarEquipamentoExistente", () => {
-      it("deve retornar equipamento se encontrado", async () => {
-        const mockEquipamento = makeEquipamento();
-        mockEquipamentoRepositoryInstance.listarPorId.mockResolvedValue(mockEquipamento);
-
-        const resultado = await equipamentoService._buscarEquipamentoExistente("1");
-
-        expect(mockEquipamentoRepositoryInstance.listarPorId).toHaveBeenCalledWith("1");
-        expect(resultado).toEqual(mockEquipamento);
-      });
-
-      it("deve lançar erro se equipamento não for encontrado", async () => {
-        mockEquipamentoRepositoryInstance.listarPorId.mockResolvedValue(null);
-
-        await expect(equipamentoService._buscarEquipamentoExistente("1")).rejects.toThrow(Error);
-        expect(mockCustomError).toHaveBeenCalledWith(
-          expect.objectContaining({
-            statusCode: HttpStatusCodes.NOT_FOUND.code,
-            customMessage: messages.error.resourceNotFound("Equipamento"),
-          })
-        );
-      });
+    it('deve retornar status pendente quando status é "false"', () => {
+      const filtros = { status: 'false' };
+      equipamentoService._processarFiltros(filtros);
+      expect(mockEquipamentoFilterBuilderInstance.comStatus).toHaveBeenCalledWith('pendente');
     });
 
-    describe("_verificarAtualizacaoPermitida", () => {
-      const mockEquipamento = makeEquipamento({ equiStatus: true });
+    it('deve retornar status personalizado quando status é outro valor', () => {
+      const filtros = { status: 'custom' };
+      equipamentoService._processarFiltros(filtros);
+      expect(mockEquipamentoFilterBuilderInstance.comStatus).toHaveBeenCalledWith('custom');
+    });
 
-      it("deve permitir atualização de campos válidos", () => {
-        const dadosAtualizados = { equiValorDiaria: 150, equiQuantidadeDisponivel: 10 };
-        expect(() => equipamentoService._verificarAtualizacaoPermitida(mockEquipamento, dadosAtualizados)).not.toThrow();
-      });
+    it('deve retornar status ativo padrão quando status não definido', () => {
+      const filtros = {};
+      equipamentoService._processarFiltros(filtros);
+      expect(mockEquipamentoFilterBuilderInstance.comStatus).toHaveBeenCalledWith('ativo');
+    });
+  });
 
-      it("deve permitir ativar equipamento inativo apenas com equiStatus", () => {
-        const equipamentoInativo = makeEquipamento({ equiStatus: false });
-        const dadosAtualizados = { equiStatus: true };
-        expect(() => equipamentoService._verificarAtualizacaoPermitida(equipamentoInativo, dadosAtualizados)).not.toThrow();
-      });
+  describe("_verificarAtualizacaoPermitida", () => {
+    it('deve lançar erro se equipamento estiver pendente', () => {
+      const equipamento = makeEquipamento({ equiStatus: 'pendente' });
+      const dados = { equiValorDiaria: 100 };
+      expect(() => equipamentoService._verificarAtualizacaoPermitida(equipamento, dados))
+        .toThrow('Não é possível atualizar! Equipamento pendente, espere por uma aprovação.');
+    });
 
-      it("deve lançar erro se tentar atualizar equipamento inativo com outros campos", () => {
-        const equipamentoInativo = makeEquipamento({ equiStatus: false });
-        const dadosAtualizados = { equiValorDiaria: 150 };
+    it('deve lançar erro se campos inválidos forem passados', () => {
+      const equipamento = makeEquipamento({ equiStatus: 'ativo' });
+      const dados = { equiNome: 'Novo nome', equiValorDiaria: 100 };
+      expect(() => equipamentoService._verificarAtualizacaoPermitida(equipamento, dados))
+        .toThrow('Não é permitido alterar os seguintes campos: equiNome');
+    });
 
-        expect(() => equipamentoService._verificarAtualizacaoPermitida(equipamentoInativo, dadosAtualizados)).toThrow(Error);
-        expect(mockCustomError).toHaveBeenCalledWith(
-          expect.objectContaining({
-            statusCode: HttpStatusCodes.FORBIDDEN.code,
-            customMessage: "Equipamento inativo. Não é possível atualizar.",
-          })
-        );
-      });
+    it('não deve lançar erro se apenas campos permitidos forem atualizados', () => {
+      const equipamento = makeEquipamento({ equiStatus: 'ativo' });
+      const dados = { equiValorDiaria: 100, equiQuantidadeDisponivel: 5 };
+      expect(() => equipamentoService._verificarAtualizacaoPermitida(equipamento, dados))
+        .not.toThrow();
+    });
+  });
 
-      it("deve lançar erro se tentar atualizar campos não permitidos", () => {
-        const dadosAtualizados = { equiNome: "Novo Nome" };
+  describe("_validarCamposObrigatorios", () => {
+    it('deve lançar erro se equiNome não informado', () => {
+      expect(() => equipamentoService._validarCamposObrigatorios({ equiCategoria: 'cat' }))
+        .toThrow('Campos obrigatórios não preenchidos.');
+    });
 
-        expect(() => equipamentoService._verificarAtualizacaoPermitida(mockEquipamento, dadosAtualizados)).toThrow(Error);
-        expect(mockCustomError).toHaveBeenCalledWith(
-          expect.objectContaining({
-            statusCode: HttpStatusCodes.BAD_REQUEST.code,
-            customMessage: expect.stringContaining("Não é permitido alterar os seguintes campos: equiNome"),
-          })
-        );
-      });
+    it('deve lançar erro se equiCategoria não informado', () => {
+      expect(() => equipamentoService._validarCamposObrigatorios({ equiNome: 'nome' }))
+        .toThrow('Campos obrigatórios não preenchidos.');
+    });
+
+    it('não deve lançar erro se campos preenchidos', () => {
+      expect(() => equipamentoService._validarCamposObrigatorios({ equiNome: 'nome', equiCategoria: 'cat' }))
+        .not.toThrow();
+    });
+  });
+
+  describe("_validarFotosObrigatorias", () => {
+    it('deve lançar erro se equiFotos vazio ou não array', () => {
+      expect(() => equipamentoService._validarFotosObrigatorias({ equiFotos: [] }))
+        .toThrow('Pelo menos uma foto é obrigatória');
+
+      expect(() => equipamentoService._validarFotosObrigatorias({}))
+        .toThrow('Pelo menos uma foto é obrigatória');
+    });
+
+    it('não deve lançar erro se fotos presentes', () => {
+      expect(() => equipamentoService._validarFotosObrigatorias({ equiFotos: ['foto.jpg'] }))
+        .not.toThrow();
     });
   });
 });

@@ -7,17 +7,17 @@ import DbConnect from './config/DbConnect.js';
 import errorHandler from './utils/helpers/errorHandler.js';
 import logger from './utils/logger.js';
 import CommonResponse from './utils/helpers/CommonResponse.js';
-import fileUpload from 'express-fileupload';
+// import fileUpload from 'express-fileupload';
 
 const app = express();
 
 // Configura o middleware express-fileupload
-app.use(fileUpload({
-    createParentPath: true, // Cria diretórios automaticamente se não existirem
-    limits: { fileSize: 5 * 1024 * 1024 }, // Limita o tamanho do arquivo a 5MB (ajuste conforme necessário)
-    abortOnLimit: true, // Aborta a requisição se o limite for excedido
-    responseOnLimit: 'Tamanho do arquivo excede o limite permitido.' // Mensagem de resposta quando o limite é excedido
-}));
+// app.use(fileUpload({
+//     createParentPath: true, // Cria diretórios automaticamente se não existirem
+//     limits: { fileSize: 5 * 1024 * 1024 }, // Limita o tamanho do arquivo a 5MB (ajuste conforme necessário)
+//     abortOnLimit: true, // Aborta a requisição se o limite for excedido
+//     responseOnLimit: 'Tamanho do arquivo excede o limite permitido.' // Mensagem de resposta quando o limite é excedido
+// }));
 
 
 // Conectando ao banco de dados

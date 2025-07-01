@@ -41,3 +41,11 @@ Thumbs.db      # Windows
 
 # Coverage de testes
 /coverage/
+
+.DS_Store
+
+.vs/
+
+logs/
+
+uploads/

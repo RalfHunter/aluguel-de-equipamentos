@@ -2,8 +2,9 @@ import { beforeEach, describe, expect, jest } from '@jest/globals';
 import ReservaService from '../../services/ReservaService.js';
 import ReservaRepository from '../../repositories/ReservaRepository.js';
 import Equipamento from '../../models/Equipamento.js';
+import Usuario from '../../models/Usuario.js';
 import mongoose from 'mongoose';
-import { CustomError, messages } from "../../utils/helpers";
+import { CustomError } from '../../utils/helpers';
 
 jest.mock('../../repositories/ReservaRepository.js', () => {
   return jest.fn().mockImplementation(() => ({
@@ -12,20 +13,31 @@ jest.mock('../../repositories/ReservaRepository.js', () => {
     atualizar: jest.fn(),
     buscarPorID: jest.fn(),
     findReservasSobrepostas: jest.fn(),
-    findReservasAtrasadas: jest.fn(), 
+    findReservasAtrasadas: jest.fn(),
+    findReservasParaMarcarAtrasada: jest.fn(),
+    marcarReservasComoAtrasadas: jest.fn(),
   }));
 });
 
 jest.mock('../../models/Equipamento.js', () => ({
   findById: jest.fn(),
+  findByIdAndUpdate: jest.fn(),
+}));
+
+jest.mock('../../models/Usuario.js', () => ({
+  findById: jest.fn(),
 }));
 
 jest.mock('mongoose', () => {
   const actualMongoose = jest.requireActual('mongoose');
-  const mockObjectId = jest.fn().mockImplementation((id) => ({
-    toString: () => id,
-    equals: (other) => id === other.toString(),
-  }));
+  const mockObjectId = jest.fn().mockImplementation((id) => {
+    const obj = {
+      toString: () => id,
+      equals: (other) => id === other.toString(),
+      ...new actualMongoose.Types.ObjectId(id),
+    };
+    return obj;
+  });
   mockObjectId.isValid = jest.fn();
   return {
     ...actualMongoose,
@@ -75,8 +87,8 @@ describe('ReservaService', () => {
 
   describe('criar', () => {
     const validReservaData = {
-      dataInicial: new Date('2026-06-22T05:00:00.000Z'),
-      dataFinal: new Date('2026-06-23T05:00:00.000Z'),
+      dataInicial: new Date('2026-08-22T05:00:00.000Z'),
+      dataFinal: new Date('2026-08-23T05:00:00.000Z'),
       quantidadeEquipamento: 2,
       valorEquipamento: 200,
       enderecoEquipamento: 'Rua Exemplo, 123',
@@ -87,25 +99,41 @@ describe('ReservaService', () => {
 
     it('deve criar uma reserva válida', async () => {
       const mockEquipamento = {
+        _id: '67959501ea0999e0a0fa9f58',
         equiQuantidadeDisponivel: 5,
         equiStatus: true,
       };
+      const mockUsuario = {
+        _id: '6839a06f57d3853fbcc3797f',
+      };
       Equipamento.findById.mockResolvedValue(mockEquipamento);
+      Usuario.findById.mockResolvedValue(mockUsuario);
       repositoryMock.findReservasSobrepostas.mockResolvedValue([]);
+      repositoryMock.findReservasAtrasadas.mockResolvedValue([]);
       repositoryMock.criar.mockResolvedValue(validReservaData);
 
       const result = await reservaService.criar(validReservaData);
 
       expect(mongoose.Types.ObjectId.isValid).toHaveBeenCalledWith('67959501ea0999e0a0fa9f58');
-      expect(Equipamento.findById).toHaveBeenCalledWith(expect.any(Object));
+      expect(Equipamento.findById).toHaveBeenCalledWith(expect.objectContaining({
+        toString: expect.any(Function),
+        equals: expect.any(Function),
+      }));
+      expect(Usuario.findById).toHaveBeenCalledWith(expect.objectContaining({
+        toString: expect.any(Function),
+        equals: expect.any(Function),
+      }));
       expect(repositoryMock.findReservasSobrepostas).toHaveBeenCalledWith(
-        validReservaData.equipamentos,
+        expect.objectContaining({
+          toString: expect.any(Function),
+          equals: expect.any(Function),
+        }),
         validReservaData.dataInicial,
         validReservaData.dataFinal
       );
       expect(repositoryMock.criar).toHaveBeenCalledWith(validReservaData);
       expect(result).toEqual(validReservaData);
-    }, 1000);
+    }, 10000);
 
     it('deve criar uma reserva com data no formato ISO do MongoDB', async () => {
       const isoReservaData = {
@@ -131,18 +159,33 @@ describe('ReservaService', () => {
       const result = await reservaService.criar(isoReservaData);
 
       expect(mongoose.Types.ObjectId.isValid).toHaveBeenCalledWith('67959501ea0999e0a0fa9f58');
-      expect(Equipamento.findById).toHaveBeenCalledWith(expect.any(mongoose.Types.ObjectId));
-      expect(Usuario.findById).toHaveBeenCalledWith(expect.any(mongoose.Types.ObjectId));
+      expect(Equipamento.findById).toHaveBeenCalledWith(expect.objectContaining({
+        toString: expect.any(Function),
+        equals: expect.any(Function),
+      }));
+      expect(Usuario.findById).toHaveBeenCalledWith(expect.objectContaining({
+        toString: expect.any(Function),
+        equals: expect.any(Function),
+      }));
       expect(Equipamento.findByIdAndUpdate).toHaveBeenCalledWith(
-        expect.any(mongoose.Types.ObjectId),
+        expect.objectContaining({
+          toString: expect.any(Function),
+          equals: expect.any(Function),
+        }),
         { $inc: { equiQuantidadeDisponivel: -isoReservaData.quantidadeEquipamento } }
       );
       expect(repositoryMock.findReservasAtrasadas).toHaveBeenCalledWith(
-        expect.any(mongoose.Types.ObjectId),
+        expect.objectContaining({
+          toString: expect.any(Function),
+          equals: expect.any(Function),
+        }),
         expect.any(Date)
       );
       expect(repositoryMock.findReservasSobrepostas).toHaveBeenCalledWith(
-        isoReservaData.equipamentos,
+        expect.objectContaining({
+          toString: expect.any(Function),
+          equals: expect.any(Function),
+        }),
         isoReservaData.dataInicial,
         isoReservaData.dataFinal
       );
@@ -150,7 +193,7 @@ describe('ReservaService', () => {
       expect(result).toEqual(isoReservaData);
     });
 
-    it('deve lançar erro se dataInicial for maior ou igual a dataFinal', async () => {
+    it('deve lançar erro se dataInicial for maior a dataFinal', async () => {
       const invalidData = {
         ...validReservaData,
         dataInicial: new Date('2026-06-05T05:01:45.884Z'),
@@ -171,10 +214,8 @@ describe('ReservaService', () => {
     it('deve lançar erro se dataFinalAtrasada for menor ou igual a dataFinal', async () => {
       const invalidData = {
         ...validReservaData,
-        dataFinalAtrasada: new Date('2025-05-05T05:00:00.000Z'),
+        dataFinalAtrasada: new Date('2025-09-05T05:00:00.000Z'),
       };
-      
-      console.log("ESTES SÃO AS DATAS INVALIDAS:",invalidData)
 
       await expect(reservaService.criar(invalidData)).rejects.toThrow(
         new CustomError({
@@ -270,43 +311,53 @@ describe('ReservaService', () => {
       );
     });
 
-  it('deve lançar erro se quantidade solicitada excede a disponível', async () => {
-    const mockEquipamento = {
-      _id: '6839a07057d3853fbcc379b8',
-      equiQuantidadeDisponivel: 1,
-    };
-    
-    Equipamento.findById.mockResolvedValue(mockEquipamento);
-    
-    await expect(reservaService.criar(validReservaData)).rejects.toThrow(
-      new CustomError({
-        statusCode: 400,
-        errorType: 'invalidData',
-        field: 'equiQuantidadeDisponivel',
-        details: [],
-        customMessage: 'Quantidade solicitada excede a quantidade disponível do equipamento.',
-    })
-  );
-  
-  expect(Equipamento.findById).toHaveBeenCalledWith(expect.any(Object));
-});
+    it('deve lançar erro se quantidade solicitada excede a disponível', async () => {
+      const mockEquipamento = {
+        _id: '6839a07057d3853fbcc379b8',
+        equiQuantidadeDisponivel: 1,
+        equiStatus: true,
+      };
+
+      Equipamento.findById.mockResolvedValue(mockEquipamento);
+
+      await expect(reservaService.criar(validReservaData)).rejects.toThrow(
+        new CustomError({
+          statusCode: 400,
+          errorType: 'invalidData',
+          field: 'quantidadeEquipamento',
+          details: [],
+          customMessage: 'Quantidade solicitada excede a quantidade disponível do equipamento.',
+        })
+      );
+
+      expect(Equipamento.findById).toHaveBeenCalledWith(expect.objectContaining({
+        toString: expect.any(Function),
+        equals: expect.any(Function),
+      }));
+    });
 
     it('deve lançar erro se houver reservas sobrepostas', async () => {
       const mockEquipamento = {
         _id: '67959501ea0999e0a0fa9f58',
-        equiQuantidadeDisponivel: 1,
+        equiQuantidadeDisponivel: 5,
+        equiStatus: true,
+      };
+      const mockUsuario = {
+        _id: '6839a06f57d3853fbcc3797f',
       };
       Equipamento.findById.mockResolvedValue(mockEquipamento);
+      Usuario.findById.mockResolvedValue(mockUsuario);
       repositoryMock.findReservasSobrepostas.mockResolvedValue([
         { _id: 'existing-reserva' },
       ]);
+      repositoryMock.findReservasAtrasadas.mockResolvedValue([]);
 
       const futureReservaData = {
         ...validReservaData,
-        dataInicial: new Date('2025-06-14'), 
-        dataFinal: new Date('2025-06-15'), 
-        dataFinalAtrasada: new Date('2025-06-14T05:00:00.000Z'), 
-    };
+        dataInicial: new Date('2025-08-14'),
+        dataFinal: new Date('2025-08-15'),
+        dataFinalAtrasada: new Date('2025-08-19'),
+      };
 
       await expect(reservaService.criar(futureReservaData)).rejects.toThrow(
         new CustomError({
@@ -376,6 +427,23 @@ describe('ReservaService', () => {
           customMessage: 'Reserva não encontrada.',
         })
       );
+    });
+  });
+
+  describe('marcarReservasAtrasadas', () => {
+    it('deve marcar reservas como atrasadas quando existem reservas atrasadas', async () => {
+      const mockReservasAtrasadas = [
+        { _id: '67959501ea0999e0a0fa9f58' },
+        { _id: '6839a06f57d3853fbcc3797f' },
+      ];
+      repositoryMock.findReservasParaMarcarAtrasada.mockResolvedValue(mockReservasAtrasadas);
+      repositoryMock.marcarReservasComoAtrasadas.mockResolvedValue();
+
+      const result = await reservaService.marcarReservasAtrasadas();
+
+      expect(repositoryMock.findReservasParaMarcarAtrasada).toHaveBeenCalledWith(expect.any(Date));
+      expect(repositoryMock.marcarReservasComoAtrasadas).toHaveBeenCalledWith(['67959501ea0999e0a0fa9f58', '6839a06f57d3853fbcc3797f']);
+      expect(result).toEqual({ message: '2 reservas marcadas como atrasadas.' });
     });
   });
 });

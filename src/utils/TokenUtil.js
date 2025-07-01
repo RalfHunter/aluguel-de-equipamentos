@@ -13,6 +13,23 @@ class TokenUtil {
       expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRATION
     });
   }
+   generatePasswordRecoveryToken(id) {
+    return new Promise((resolve, reject) => {
+      jwt.sign(
+        { id },
+        process.env.JWT_SECRET_PASSWORD_RECOVERY,
+        { expiresIn: process.env.JWT_PASSWORD_RECOVERY_EXPIRATION || '30m' },
+        (err, token) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve(token);
+        }
+      );
+    });
+  }
+
+
 }
 
 export default new TokenUtil();

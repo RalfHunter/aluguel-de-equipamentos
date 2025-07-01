@@ -64,6 +64,19 @@ async function SeedUsuario(){
         fotoUsuario:'https://pt.quizur.com/_image?href=https://img.quizur.com/f/img63365b54eee492.52029189.png?lastEdited=1664506795&w=600&h=600&f=webp'
         
     }
+    const dev2 = {
+        nome: "Dev2",
+        email: "dev2@gmail.com",
+        telefone: "69 98191-0000",
+        senha:  await bcrypt.hash('Dev@1234', 8),
+        dataNascimento: fake.dataNascimento(),
+        CPF: "12345612347", // Geração de CPF fictício
+        notaMedia: 0,
+        status: "ativo",
+        tipoUsuario: "admin",
+        fotoUsuario:'https://pt.quizur.com/_image?href=https://img.quizur.com/f/img63365b54eee492.52029189.png?lastEdited=1664506795&w=600&h=600&f=webp'
+        
+    }
     const user = {
         nome: "Usuario Padrão",
         email: "usuario@gmail.com",
@@ -79,6 +92,7 @@ async function SeedUsuario(){
     }
     usuarios.push({...dev})
     usuarios.push({...user})
+    usuarios.push({...dev2})
     // Inserir no banco
     await Usuario.collection.insertMany(usuarios);
     // console.log(`${usuarios.length} usuários inseridos com sucesso!`);

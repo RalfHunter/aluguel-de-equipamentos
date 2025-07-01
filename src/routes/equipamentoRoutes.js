@@ -1,30 +1,29 @@
 import express from "express";
 import { asyncWrapper } from '../utils/helpers/index.js';
 import EquipamentoController from "../controllers/EquipamentoController.js";
-
+import AuthMiddleware from "../middlewares/AuthMiddleware.js";
+import upload from "../config/multerConfig.js";
 
 const router = express.Router();
 const equipamentoController = new EquipamentoController();
 
 router
     //lista todos os equipamentos cadastrados
-    .get("/equipamentos", asyncWrapper(equipamentoController.listar.bind(equipamentoController)))
+    .get("/equipamentos", AuthMiddleware, asyncWrapper(equipamentoController.listar.bind(equipamentoController)))
 
     //lista um equipamento especifico
-    .get("/equipamentos/:id", asyncWrapper(equipamentoController.listarPorId.bind(equipamentoController)))
+    .get("/equipamentos/:id", AuthMiddleware, asyncWrapper(equipamentoController.listarPorId.bind(equipamentoController)))
 
     //cadastrar um equipamento
-    .post("/equipamentos", asyncWrapper(equipamentoController.criar.bind(equipamentoController)))
+    .post("/equipamentos", AuthMiddleware, upload.array('file'), asyncWrapper(equipamentoController.criar.bind(equipamentoController)))
 
     //atualizar dados do equipamento (que esteja ativo)
-    .patch("/equipamentos/:id", asyncWrapper(equipamentoController.atualizar.bind(equipamentoController)))
+    .patch("/equipamentos/:id", AuthMiddleware, asyncWrapper(equipamentoController.atualizar.bind(equipamentoController)))
 
     // rota adm aprovar um equipamento
-    .patch("/equipamentos/:id/aprovar", asyncWrapper(equipamentoController.aprovar.bind(equipamentoController)))
+    .patch("/equipamentos/:id/aprovar", AuthMiddleware, asyncWrapper(equipamentoController.aprovar.bind(equipamentoController)))
 
     //rota adm reprovar um equipamento
-    .patch("/equipamentos/:id/reprovar", asyncWrapper(equipamentoController.reprovar.bind(equipamentoController)));
-
-    
+    .patch("/equipamentos/:id/reprovar", AuthMiddleware, asyncWrapper(equipamentoController.reprovar.bind(equipamentoController)));
 
 export default router;

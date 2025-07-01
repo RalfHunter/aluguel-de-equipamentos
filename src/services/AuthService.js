@@ -39,15 +39,6 @@ class AuthService {
         // Buscar o usuário pelo email
         const userEncontrado = await this.usuarioRepository.buscarPorEmailCadastrado(body.email);
         if (!userEncontrado) {
-
-            /**
-             * Se o usuário não for encontrado, lança um erro personalizado
-             * É importante para bibliotecas de requisições como DIO, Retrofit, Axios, etc. que o 
-             * statusCode seja 401, pois elas tratam esse código como não autorizado
-             * Isso é importante para que o usuário saiba que o email ou senha estão incorretos
-             * Se o statusCode for 404, a biblioteca não irá tratar como não autorizado
-             * Portanto, é importante que o statusCode seja 401
-            */
             throw new CustomError({
                 statusCode: 401,
                 errorType: 'notFound',
@@ -68,12 +59,12 @@ class AuthService {
                 customMessage: messages.error.unauthorized('Senha ou Email')
             });
         }
-        if(!userEncontrado.status == "ativo"){
+        if(userEncontrado.status !== "ativo"){
 
             throw new CustomError({
                 statusCode: 403,
                 errorType:'unauthorized',
-                field:'Aprovado',
+                field:'Status',
                 details:[],
                 customMessage: "Está conta foi desativada por um administrador por violação de contrato."
             })
@@ -92,7 +83,7 @@ class AuthService {
                 jwt.verify(refreshToken, process.env.JWT_SECRET_REFRESH_TOKEN);
             } catch (error) {
                 if (error.name === 'TokenExpiredError' || error.name === 'JsonWebTokenError') {
-                    refreshtoken = await this.TokenUtil.generateRefreshToken(userEncontrado._id);
+                    refreshToken = await this.TokenUtil.generateRefreshToken(userEncontrado._id);
                 } else {
                     throw new CustomError({
                         statusCode: 500,
@@ -124,24 +115,36 @@ class AuthService {
 
 
     // RecuperaSenhaService.js
-    async recuperaSenha(req, body) {
+    async recuperaSenha(body) {
         console.log('Estou em RecuperaSenhaService');
 
         // ───────────────────────────────────────────────
         // Passo 1 – Buscar usuário pelo e-mail informado
         // ───────────────────────────────────────────────
-        const userEncontrado = await this.usuarioRepository.buscarPorEmail(body.email);
+        const userEncontrado = await this.usuarioRepository.buscarPorEmailCadastrado(body.email);
 
         // Se não encontrar, lança erro 404
         if (!userEncontrado) {
             throw new CustomError({
                 statusCode: HttpStatusCodes.NOT_FOUND.code,
+                errorType:'notFound',
                 field: 'Email',
                 details: [],
                 customMessage: HttpStatusCodes.NOT_FOUND.message
             });
         }
 
+         if(userEncontrado.status !== "ativo"){
+
+            throw new CustomError({
+                statusCode: 403,
+                errorType:'unauthorized',
+                field:'Aprovado',
+                details:[],
+                customMessage: "Se sua conta foi desativada, ela não pode mais ser acessada. Para dúvidas, entre em contato com o suporte."
+            })
+
+        }
         // ───────────────────────────────────────────────
         // Passo 2 – Gerar código de verificação (4 carac.)
         // ───────────────────────────────────────────────
@@ -157,14 +160,14 @@ class AuthService {
         // Passo 3 – Garantir unicidade do código gerado 
         // ───────────────────────────────────────────────
         let codigoExistente =
-            await this.usuarioRepository.buscarPorPorCodigoRecuperacao(codigoRecuperaSenha);
+            await this.usuarioRepository.buscarPorCodigoRecuperacao(codigoRecuperaSenha);
         console.log('Código existente:', codigoExistente);
 
         while (codigoExistente) {
             console.log('Código já existe, gerando um novo código');
             codigoRecuperaSenha = generateCode();
             codigoExistente =
-                await this.usuarioRepository.buscarPorPorCodigoRecuperacao(codigoRecuperaSenha);
+                await this.usuarioRepository.buscarPorCodigoRecuperacao(codigoRecuperaSenha);
         }
         console.log('Código gerado:', codigoRecuperaSenha);
 
@@ -198,40 +201,40 @@ class AuthService {
         // Passo 6 – Enviar e-mail com código + link
         // ───────────────────────────────────────────────
 
-        const baseUrl = `${req.protocol}://${req.get('host')}`;   // endereço do momento da requisição
-        const resetLink = `${baseUrl}/${tokenUnico}`;
+        // const baseUrl = `${req.protocol}://${req.get('host')}`;   // endereço do momento da requisição
+        // const resetLink = `${baseUrl}/${tokenUnico}`;
 
 
-        SendMail.enviaEmail({
-            to: body.email,
-            subject: 'Recuperação de Senha',
-            text: `
-            Olá, ${userEncontrado.nome}!
-            Você solicitou a recuperação de senha.
-            Seu código de verificação é: ${codigoRecuperaSenha}
+        // SendMail.enviaEmail({
+        //     to: body.email,
+        //     subject: 'Recuperação de Senha',
+        //     text: `
+        //     Olá, ${userEncontrado.nome}!
+        //     Você solicitou a recuperação de senha.
+        //     Seu código de verificação é: ${codigoRecuperaSenha}
 
-            Clique no link abaixo para redefinir sua senha:
-            ${resetLink}
+        //     Clique no link abaixo para redefinir sua senha:
+        //     ${resetLink}
 
-            Atenciosamente,
-            Equipe de Suporte
-        `,
-            html: `
-            <p>Olá, <strong>${userEncontrado.nome}</strong>!</p>
-            <p>Você solicitou a recuperação de senha.</p>
-            <p><strong>Seu código de verificação é:</strong>
-               <span style="font-size:1.2em;">${codigoRecuperaSenha}</span></p>
-            <p>Clique no link abaixo para redefinir sua senha:</p>
-            <p><a href="${resetLink}" style="color: #007bff; text-decoration: none; font-weight: bold;">Clique aqui para
-               Redefinir Senha</a></p>
-            <p>Atenciosamente,</p>
-            <p><em>Equipe de Suporte</em></p>
-        `
-        });
+        //     Atenciosamente,
+        //     Equipe de Suporte
+        // `,
+        //     html: `
+        //     <p>Olá, <strong>${userEncontrado.nome}</strong>!</p>
+        //     <p>Você solicitou a recuperação de senha.</p>
+        //     <p><strong>Seu código de verificação é:</strong>
+        //        <span style="font-size:1.2em;">${codigoRecuperaSenha}</span></p>
+        //     <p>Clique no link abaixo para redefinir sua senha:</p>
+        //     <p><a href="${resetLink}" style="color: #007bff; text-decoration: none; font-weight: bold;">Clique aqui para
+        //        Redefinir Senha</a></p>
+        //     <p>Atenciosamente,</p>
+        //     <p><em>Equipe de Suporte</em></p>
+        // `
+        // });
 
-        // ───────────────────────────────────────────────
-        // Passo 8 – Retornar resposta ao cliente
-        // ───────────────────────────────────────────────
+        // // ───────────────────────────────────────────────
+        // // Passo 8 – Retornar resposta ao cliente
+        // // ───────────────────────────────────────────────
         return {
             message:
                 'Solicitação de recuperação de senha recebida. Um e-mail foi enviado com instruções.'
@@ -240,7 +243,7 @@ class AuthService {
 
     async refresh(id, token) {
         const userEncontrado = await this.usuarioRepository.buscarPorId(id, { includeTokens: true });
-
+        console.log("USER", userEncontrado)
         if (!userEncontrado) {
             throw new CustomError({
                 statusCode: HttpStatusCodes.NOT_FOUND.code,
@@ -249,8 +252,9 @@ class AuthService {
                 customMessage: HttpStatusCodes.NOT_FOUND.message
             });
         }
-
-        if (userEncontrado.refreshtoken !== token) {
+        console.log(userEncontrado.refreshToken)
+        console.log("TOKEN", token)
+        if (userEncontrado.refreshToken !== token) {
             console.log('Token inválido');
             throw new CustomError({
                 statusCode: HttpStatusCodes.UNAUTHORIZED.code,

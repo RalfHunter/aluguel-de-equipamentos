@@ -1,6 +1,6 @@
-import Avaliacao from "../models/Avaliacao";
-import Equipamento from "../models/Equipamento";
-import Usuario from "../models/Usuario";
+import Avaliacao from "../models/Avaliacao.js";
+import Equipamento from "../models/Equipamento.js";
+import Usuario from "../models/Usuario.js";
 import mongoose from 'mongoose';
 import { CustomError } from '../utils/helpers/index.js';
 import AvaliacaoFilterBuilder from "./filters/AvaliacaoFilterBuilder.js";
@@ -122,7 +122,8 @@ class AvaliacaoRepository {
 
     async atualizar(avaliacaoId, usuarioId, { nota, descricao }) {
         try {
-            if (!mongoose.Types.ObjectId.isValid(avaliacaoId) || !mongoose.Types.ObjectId.isValid(usuarioId)) {
+            if (!mongoose.Types.ObjectId.isValid(avaliacaoId)) {
+                console.log(`ID de avaliação inválido: ${avaliacaoId}`);
                 throw new CustomError({
                     statusCode: 400,
                     errorType: 'invalidData',
@@ -168,53 +169,25 @@ class AvaliacaoRepository {
         }
     }
     async remover(avaliacaoId, usuarioId) {
-        try {
-            if (!mongoose.Types.ObjectId.isValid(avaliacaoId) || !mongoose.Types.ObjectId.isValid(usuarioId)) {
-                throw new CustomError({
-                    statusCode: 400,
-                    errorType: 'invalidData',
-                    field: 'IDs',
-                    customMessage: 'ID inválido.',
-                });
-            }
-
-            const usuario = await this.usuarioModel.findById(usuarioId);
-            if (!usuario || usuario.tipoUsuario !== 'admin') {
-                throw new CustomError({
-                    statusCode: 403,
-                    errorType: 'unauthorized',
-                    field: 'Usuario',
-                    customMessage: 'Apenas administradores podem remover avaliações.',
-                });
-            }
-
-            const avaliacao = await this.avaliacaoModel.findById(avaliacaoId);
-            if (!avaliacao) {
-                throw new CustomError({
-                    statusCode: 404,
-                    errorType: 'resourceNotFound',
-                    field: 'Avaliacao',
-                    customMessage: 'Avaliação não encontrada.',
-                });
-            }
-
-            await this.equipamentoModel.findByIdAndUpdate(avaliacao.equipamentos, {
-                $pull: { equiAvaliacoes: avaliacao._id },
-            });
-
-            await this.avaliacaoModel.findByIdAndDelete(avaliacaoId);
-            await this.recalcularMedia(avaliacao.equipamentos);
-
-            return { success: true, message: 'Avaliação removida com sucesso.' };
-        } catch (error) {
-            throw error.statusCode ? error : new CustomError({
-                statusCode: 500,
-                errorType: 'databaseError',
+        const avaliacao = await this.avaliacaoModel.findById(avaliacaoId);
+        if (!avaliacao) {
+            throw new CustomError({
+                statusCode: 404,
+                errorType: 'resourceNotFound',
                 field: 'Avaliacao',
-                details: [error.message],
-                customMessage: 'Erro ao remover avaliação.'
+                customMessage: 'Avaliação não encontrada.',
             });
         }
+
+        await this.equipamentoModel.findByIdAndUpdate(avaliacao.equipamentos, {
+            $pull: { equiAvaliacoes: avaliacao._id },
+        });
+
+        await this.avaliacaoModel.findByIdAndDelete(avaliacaoId);
+        await this.recalcularMedia(avaliacao.equipamentos);
+
+        return { success: true, message: 'Avaliação removida com sucesso.' };
+
     }
 }
 

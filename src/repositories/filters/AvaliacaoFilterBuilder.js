@@ -37,6 +37,7 @@ class AvaliacaoFilterBuilder {
         return this;
     }
 
+
     build() {
         return {
             filtros: this.filtros,

@@ -1,6 +1,4 @@
-import EquipamentoModel from '../../models/Equipamento.js';
 import mongoose from 'mongoose';
-
 const { Types } = mongoose;
 
 class EquipamentoFilterBuilder {
@@ -9,14 +7,15 @@ class EquipamentoFilterBuilder {
   }
 
   comCategoria(categoria) {
-    if (categoria) {
+    if (categoria && typeof categoria === 'string' && categoria.trim() !== '') {
       this.filtros.equiCategoria = categoria;
     }
     return this;
   }
 
   comStatus(status) {
-    if (status) {
+    const statusValidos = ['ativo', 'inativo', 'pendente'];
+    if (typeof status === 'string' && statusValidos.includes(status)) {
       this.filtros.equiStatus = status;
     }
     return this;
@@ -26,10 +25,19 @@ class EquipamentoFilterBuilder {
     if (minValor !== undefined || maxValor !== undefined) {
       this.filtros.equiValorDiaria = {};
       if (minValor !== undefined) {
-        this.filtros.equiValorDiaria.$gte = Number(minValor);
+        const minNum = Number(minValor);
+        if (!isNaN(minNum)) {
+          this.filtros.equiValorDiaria.$gte = minNum;
+        }
       }
       if (maxValor !== undefined) {
-        this.filtros.equiValorDiaria.$lte = Number(maxValor);
+        const maxNum = Number(maxValor);
+        if (!isNaN(maxNum)) {
+          this.filtros.equiValorDiaria.$lte = maxNum;
+        }
+      }
+      if (Object.keys(this.filtros.equiValorDiaria).length === 0) {
+        delete this.filtros.equiValorDiaria;
       }
     }
     return this;

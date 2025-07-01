@@ -29,7 +29,7 @@ async function SeedEquipamentos(usuarios, enderecos) {
       equiCategoria: categoriasValidas[Math.floor(Math.random() * categoriasValidas.length)],
       equiStatus: status,
       equiUsuario: usuarios[i]._id,
-      equiFoto: fake.equiFoto(),
+      equiFotos: fake.equiFotos(),
       equiNotaMediaAvaliacao: 0,
       equiAvaliacoes: [],
     });

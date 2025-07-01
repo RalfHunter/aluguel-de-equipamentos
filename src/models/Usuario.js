@@ -14,8 +14,11 @@ class Usuario {
             status: {type: String, required: true},
             tipoUsuario:{type:String, required: true},
             fotoUsuario:{type:String},
+            tokenUnico:{type: String, select:false},
             accessToken:{type:String, required: false, select:false},
-            refreshToken:{type:String, required: false, select:false}
+            refreshToken:{type:String, required: false, select:false},
+            codigo_recupera_senha:{type:String, select:false},
+            exp_codigo_recupera_senha:{type:String, select:false}
         })
         usuarioSchema.plugin(mongoosePaginate);
         this.model = mongoose.model('usuarios', usuarioSchema);

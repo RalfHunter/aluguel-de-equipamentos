@@ -8,14 +8,22 @@ class Equipamento {
       equiDescricao: { type: String, required: true },
       equiValorDiaria: { type: Number, required: true },
       equiCategoria: { type: String, required: true },
-      equiFoto: {
-        type: [String],
+
+      equiFotos: {
+        type: [{
+          _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+          url: { type: String, required: true },
+          largura: { type: Number, required: true },
+          altura: { type: Number, required: true },
+          tamanhoMb: { type: Number, required: true },
+        }],
         required: true,
         validate: {
           validator: (arr) => Array.isArray(arr) && arr.length > 0,
           message: 'O equipamento deve ter pelo menos uma foto',
         },
       },
+
       equiQuantidadeDisponivel: { type: Number, required: true },
       equiStatus: { 
         type: String, 

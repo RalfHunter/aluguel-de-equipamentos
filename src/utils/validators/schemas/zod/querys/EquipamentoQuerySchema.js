@@ -16,21 +16,21 @@ export const EquipamentoQuerySchema = z.object({
   status: z
     .string()
     .optional()
-    .refine((val) => !val || ['ativo', 'inativo'].includes(val), {
-      message: "Status deve ser 'ativo' ou 'iantivo'",
+    .refine((val) => !val || ['ativo', 'inativo', 'pendente'].includes(val), {
+      message: "Status deve ser 'ativo', 'inativo' ou 'pendente'",
     }),
   minValor: z
     .string()
     .optional()
-    .transform((val) => (val ? parseInt(val, 10) : undefined))
-    .refine((val) => val === undefined || (Number.isInteger(val) && val > 0), {
-      message: 'minValor deve ser um número inteiro maior que 0',
+    .transform((val) => (val ? parseFloat(val) : undefined))
+    .refine((val) => val === undefined || (!isNaN(val) && val > 0), {
+      message: 'minValor deve ser um número maior que 0',
     }),
   maxValor: z
     .string()
     .optional()
     .transform((val) => (val ? parseFloat(val) : undefined))
-    .refine((val) => val === undefined || !isNaN(val) && val >= 0, {
+    .refine((val) => val === undefined || (!isNaN(val) && val >= 0), {
       message: 'maxValor deve ser um número maior ou igual a 0',
     }),
   page: z

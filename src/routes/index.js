@@ -7,6 +7,7 @@ import dotenv from "dotenv"
 // import reserva from "./reservaRouter.js"
 import usuario from "./usuarioRouter.js"
 import reserva from "./reservaRoutes.js"
+import avaliacoes from "./avaliacaoRoutes.js"
 import equipamentoRoutes from "./equipamentoRoutes.js";
 import '../models/Avaliacao.js';
 import login from "./authRoutes.js";
@@ -36,6 +37,7 @@ const routes = (app) => {
     app.use(express.json(),
         usuario,
         reserva,
+        avaliacoes,
         equipamentoRoutes,
         login
     );
