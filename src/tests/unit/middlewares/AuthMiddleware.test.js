@@ -1,9 +1,9 @@
 import jwt from 'jsonwebtoken';
-import AuthService from '../../services/AuthService.js';
-import AuthMiddleware from '../../middlewares/AuthMiddleware.js';
-import TokenExpiredError from '../../utils/errors/TokenExpiredError.js';
-import AuthenticationError from '../../utils/errors/AuthenticationError.js';
-import { CustomError } from '../../utils/helpers/index.js';
+import AuthService from '../../../services/AuthService.js';
+import AuthMiddleware from '../../../middlewares/AuthMiddleware.js';
+import TokenExpiredError from '../../../utils/errors/TokenExpiredError.js';
+import AuthenticationError from '../../../utils/errors/AuthenticationError.js';
+import { CustomError } from '../../../utils/helpers/index.js';
 
 jest.mock('jsonwebtoken');
 jest.mock('../../services/AuthService.js');

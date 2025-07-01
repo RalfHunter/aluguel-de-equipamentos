@@ -252,7 +252,6 @@ class AuthService {
                 customMessage: HttpStatusCodes.NOT_FOUND.message
             });
         }
-        console.log(id)
         console.log(userEncontrado.refreshToken)
         console.log("TOKEN", token)
         if (userEncontrado.refreshToken !== token) {
