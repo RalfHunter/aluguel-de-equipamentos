@@ -1,16 +1,16 @@
 import { afterEach, beforeEach, describe, expect, jest, it } from '@jest/globals';
-import EquipamentoController from '../../controllers/EquipamentoController.js';
-import EquipamentoService from '../../services/EquipamentoService.js';
-import { CommonResponse, HttpStatusCodes } from '../../utils/helpers/index.js';
-import { equipamentoSchema, equipamentoUpdateSchema } from '../../utils/validators/schemas/zod/EquipamentoSchema.js';
-import { EquipamentoQuerySchema, EquipamentoIdSchema } from '../../utils/validators/schemas/zod/querys/EquipamentoQuerySchema.js';
-import Usuario from '../../models/Usuario.js';
+import EquipamentoController from '../../../controllers/EquipamentoController.js';
+import EquipamentoService from '../../../services/EquipamentoService.js';
+import { CommonResponse, HttpStatusCodes } from '../../../utils/helpers/index.js';
+import { equipamentoSchema, equipamentoUpdateSchema } from '../../../utils/validators/schemas/zod/EquipamentoSchema.js';
+import { EquipamentoQuerySchema, EquipamentoIdSchema } from '../../../utils/validators/schemas/zod/querys/EquipamentoQuerySchema.js';
+import Usuario from '../../../models/Usuario.js';
 import fs from 'fs';
 import sizeOf from 'image-size';
 
 // Mock dependencies
-jest.mock('../../services/EquipamentoService.js');
-jest.mock('../../utils/helpers/index.js', () => ({
+jest.mock('../../../services/EquipamentoService.js');
+jest.mock('../../../utils/helpers/index.js', () => ({
   CommonResponse: {
     success: jest.fn(),
     created: jest.fn(),
@@ -21,15 +21,15 @@ jest.mock('../../utils/helpers/index.js', () => ({
     BAD_REQUEST: { code: 400 },
   },
 }));
-jest.mock('../../utils/validators/schemas/zod/EquipamentoSchema.js', () => ({
+jest.mock('../../../utils/validators/schemas/zod/EquipamentoSchema.js', () => ({
   equipamentoSchema: { parse: jest.fn() },
   equipamentoUpdateSchema: { parse: jest.fn() },
 }));
-jest.mock('../../utils/validators/schemas/zod/querys/EquipamentoQuerySchema.js', () => ({
+jest.mock('../../../utils/validators/schemas/zod/querys/EquipamentoQuerySchema.js', () => ({
   EquipamentoQuerySchema: { parseAsync: jest.fn() },
   EquipamentoIdSchema: { parse: jest.fn() },
 }));
-jest.mock('../../models/Usuario.js');
+jest.mock('../../../models/Usuario.js');
 jest.mock('fs');
 jest.mock('image-size');
 
