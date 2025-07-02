@@ -60,7 +60,6 @@ class AuthService {
             });
         }
         if(!userEncontrado.ativo){
-
             throw new CustomError({
                 statusCode: 403,
                 errorType:'unauthorized',

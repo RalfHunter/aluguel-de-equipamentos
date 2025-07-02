@@ -24,13 +24,13 @@ async function SeedUsuario(){
 
     await Usuario.deleteMany();
     const usuarios = [];
-    const grupos = []
+    const gruposNome = []
     const fake = await getGlobalFakeMapping()
     const comum = await Grupo.findOne({nome:"usuario"})
     const moderador = await Grupo.findOne({nome:"moderador"})
     const admin = await Grupo.findOne({nome:"admin"})
-    grupos.push(comum)
-    grupos.push(moderador)
+    gruposNome.push(comum)
+    gruposNome.push(moderador)
 
     for (let i = 0; i < 25; i++) {
         const nome = fake.nome();
@@ -41,8 +41,8 @@ async function SeedUsuario(){
         const CPF = fake.CPF(); // Geração de CPF fictício
         const notaMedia = fake.notaMediaAvaliacao();
         const ativo = fake.ativo();
-        const fotoUsuario = fake.fotoUsuario()
-        const grupo = grupos[Math.floor(Math.random() * grupos.length)]._id
+        const fotoUsuario = fake.fotoUsuario();
+        const grupos = [gruposNome[Math.floor(Math.random() * gruposNome.length)]._id];
 
         usuarios.push({
             nome,
@@ -54,7 +54,7 @@ async function SeedUsuario(){
             notaMedia,
             ativo,
             fotoUsuario,
-            grupo
+            grupos
         });
     }
     const dev = {
@@ -67,7 +67,7 @@ async function SeedUsuario(){
         notaMedia: 0,
         ativo: true,
         fotoUsuario:'https://pt.quizur.com/_image?href=https://img.quizur.com/f/img63365b54eee492.52029189.png?lastEdited=1664506795&w=600&h=600&f=webp',
-        grupos: moderador._id
+        grupos: [moderador._id]
         
     }
     const dev2 = {
@@ -80,7 +80,7 @@ async function SeedUsuario(){
         notaMedia: 0,
         ativo: true,
         fotoUsuario:'https://pt.quizur.com/_image?href=https://img.quizur.com/f/img63365b54eee492.52029189.png?lastEdited=1664506795&w=600&h=600&f=webp',
-        grupos: moderador._id
+        grupos: [moderador._id]
     }
     const user = {
         nome: "Usuario Padrão",
@@ -92,7 +92,7 @@ async function SeedUsuario(){
         notaMedia: 0,
         ativo: true,
         fotoUsuario:'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmtv-wGPAGVnAMkWDSteg4qGIRHhtLCYgoDQ&s',
-        grupos: comum._id
+        grupos: [comum._id]
         
     }
     const Dono = {
@@ -105,11 +105,12 @@ async function SeedUsuario(){
         notaMedia: 0,
         ativo: true,
         fotoUsuario:'https://pt.quizur.com/_image?href=https://img.quizur.com/f/img63365b54eee492.52029189.png?lastEdited=1664506795&w=600&h=600&f=webp',
-        grupos: admin._id
+        grupos: [admin._id]
     }
     usuarios.push({...dev})
     usuarios.push({...user})
     usuarios.push({...dev2})
+    usuarios.push({...Dono})
     // Inserir no banco
     await Usuario.collection.insertMany(usuarios);
     // console.log(`${usuarios.length} usuários inseridos com sucesso!`);

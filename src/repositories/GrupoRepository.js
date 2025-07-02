@@ -1,17 +1,14 @@
 import Grupo from '../models/Grupo.js';
 import Usuario from '../models/Usuario.js';
-import Rota from '../models/Rotas.js';
 import { CustomError, messages } from '../utils/helpers/index.js';
 
 class GrupoRepository {
     constructor({
         grupoModel = Grupo,
         usuarioModel = Usuario,
-        rotaModel = Rota,
     } = {}) {
         this.model = grupoModel;
         this.usuarioModel = usuarioModel;
-        this.rotaModel = rotaModel;
     }
 
     /**

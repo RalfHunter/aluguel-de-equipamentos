@@ -23,6 +23,7 @@ class AuthPermission {
      // 1. Extrair o token do cabeçalho Authorization
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log("TOKENNNNNNNNNNNNN")
       throw new CustomError({
         statusCode: 401,
         errorType: 'authenticationError',
@@ -51,6 +52,7 @@ class AuthPermission {
 
     // 3. Buscar o usuário no banco de dados
     const usuario = await this.usuario.buscarPorId(req.user_id)
+    console.log("USUARIO", usuario)
     if (!usuario) {
       throw new CustomError({
         statusCode: 404,
@@ -63,7 +65,8 @@ class AuthPermission {
   
 
     // 4. Extrair a rota e o método da requisição
-    const rotaReq = req.url.split('/').filter(Boolean)[0].toLowerCase();
+    const rotaCompleta = req.route?.path || req.url.split('?')[0]; // Remove query params
+    const rotaReq = rotaCompleta.split('/').filter(Boolean)[0].toLowerCase();
     const metodoReq = req.method;
 
     // 5. Verificar se algum grupo do usuário tem permissão para acessar a rota
@@ -92,14 +95,14 @@ class AuthPermission {
       const permissao = grupo.permissoes.find(
         (p) => p.rota === rotaReq && p[metodoPermissao] === true
       );
-      grupo.permissoes.find((p) => console.log(`${p.rota} === ${rotaReq} && ${p[metodoPermissao]} === true`))
+      // grupo.permissoes.find((p) => console.log(`${p.rota} === ${rotaReq} && ${p[metodoPermissao]} === true`))
       if (permissao) {
         hasPermission = true;
         break;
       }
     }
-
       if (!hasPermission) {
+        console.log(hasPermission)
         throw new CustomError({
           statusCode: 403,
           errorType: 'forbidden',

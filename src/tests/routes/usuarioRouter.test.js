@@ -18,7 +18,7 @@ describe('usuarioRoute', () => {
     // Admin alvo para testes
     let idAdmin2
     describe('get /usuarios', () => {
-        it('obtendo token e id do admin através do login', async () => {
+       it('obtendo token e id do admin através do login', async () => {
             const body = {
                 email: "dev@gmail.com",
                 senha: "Dev@1234"
@@ -31,7 +31,7 @@ describe('usuarioRoute', () => {
             idAdmin = res.body?.data?.user?._id
             nomeAdmin = res.body?.data?.user?.nome
         });
-        it('obtendo token e id do usuario comum através do login', async ()=>{
+       it('obtendo token e id do usuario comum através do login', async ()=>{
             const body = {
                 email: "usuario@gmail.com",
                 senha: "Usuario@1234"
@@ -42,7 +42,7 @@ describe('usuarioRoute', () => {
 
             tokenUsuario = res.body?.data?.user?.accessToken
         })
-        it('deve listar todos os usuários sem parametros com sucesso', async () => {
+       it('deve listar todos os usuários sem parametros com sucesso', async () => {
             const res = await request(app)
                 .get('/usuarios')
                 .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -59,16 +59,16 @@ describe('usuarioRoute', () => {
             expect(res.body?.data?.docs[0]).toHaveProperty("dataNascimento")
             expect(res.body?.data?.docs[0]).toHaveProperty("CPF")
             expect(res.body?.data?.docs[0]).toHaveProperty("notaMedia")
-            expect(res.body?.data?.docs[0]).toHaveProperty("status")
-            expect(res.body?.data?.docs[0]).toHaveProperty("tipoUsuario")
+            expect(res.body?.data?.docs[0]).toHaveProperty("ativo")
             expect(res.body?.data?.docs[0]).toHaveProperty("fotoUsuario")
             expect(mongoose.Types.ObjectId.isValid(res.body?.data?.docs[0]?._id)).toBe(true)
             user = await pegarUsuario(res.body?.data?.docs)
             idAdmin2 = await pegarAdmin(res.body?.data.docs, idAdmin)
             id = user?._id
-            statusUser = user?.status == "ativo" ? "inativo":"ativo"
+            statusUser = user?.ativo == true ? false:true
         })
-        it('deve listar todos os usuários pelo nome passado como query e ter sucesso', async () => {
+       it('deve listar todos os usuários pelo nome passado como query e ter sucesso', async () => {
+        console.log(tokenAdmin)
             const res = await request(app)
                 .get('/usuarios')
                 .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -86,14 +86,13 @@ describe('usuarioRoute', () => {
             expect(res.body?.data?.docs[0]).toHaveProperty("dataNascimento")
             expect(res.body?.data?.docs[0]).toHaveProperty("CPF")
             expect(res.body?.data?.docs[0]).toHaveProperty("notaMedia")
-            expect(res.body?.data?.docs[0]).toHaveProperty("status")
-            expect(res.body?.data?.docs[0]).toHaveProperty("tipoUsuario")
+            expect(res.body?.data?.docs[0]).toHaveProperty("ativo")
             expect(res.body?.data?.docs[0]).toHaveProperty("fotoUsuario")
             expect(mongoose.Types.ObjectId.isValid(res.body?.data?.docs[0]?._id)).toBe(true)
             expect((res.body?.data?.docs[0]?.nome.split(' ')).includes("Usuario")).toBe(true)
             
         });
-        it('deve listar todos os usuários pelo email passado como query e ter sucesso', async () => {
+       it('deve listar todos os usuários pelo email passado como query e ter sucesso', async () => {
             const res = await request(app)
                 .get('/usuarios')
                 .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -111,17 +110,16 @@ describe('usuarioRoute', () => {
             expect(res.body?.data?.docs[0]).toHaveProperty("dataNascimento")
             expect(res.body?.data?.docs[0]).toHaveProperty("CPF")
             expect(res.body?.data?.docs[0]).toHaveProperty("notaMedia")
-            expect(res.body?.data?.docs[0]).toHaveProperty("status")
-            expect(res.body?.data?.docs[0]).toHaveProperty("tipoUsuario")
+            expect(res.body?.data?.docs[0]).toHaveProperty("ativo")
             expect(res.body?.data?.docs[0]).toHaveProperty("fotoUsuario")
             expect(mongoose.Types.ObjectId.isValid(res.body?.data?.docs[0]?._id)).toBe(true)
             expect(res.body?.data?.docs[0]?.email).toEqual("usuario@gmail.com")
         });
-        it('deve listar todos os usuários pelo status passado como query e ter sucesso', async () => {
+       it('deve listar todos os usuários pelo status passado como query e ter sucesso', async () => {
             const res = await request(app)
                 .get('/usuarios')
                 .set('Authorization', `Bearer ${tokenAdmin}`)
-                .query({ status: "ativo" })
+                .query({ ativo: true})
                 .expect(200)
             expect(res.status).toEqual(200)
             expect(Array.isArray(res.body?.data?.docs)).toBe(true)
@@ -135,17 +133,16 @@ describe('usuarioRoute', () => {
             expect(res.body?.data?.docs[0]).toHaveProperty("dataNascimento")
             expect(res.body?.data?.docs[0]).toHaveProperty("CPF")
             expect(res.body?.data?.docs[0]).toHaveProperty("notaMedia")
-            expect(res.body?.data?.docs[0]).toHaveProperty("status")
-            expect(res.body?.data?.docs[0]).toHaveProperty("tipoUsuario")
+            expect(res.body?.data?.docs[0]).toHaveProperty("ativo")
             expect(res.body?.data?.docs[0]).toHaveProperty("fotoUsuario")
             expect(mongoose.Types.ObjectId.isValid(res.body?.data?.docs[0]?._id)).toBe(true)
-            expect(res.body?.data?.docs[0]?.status).toEqual("ativo")
+            expect(res.body?.data?.docs[0]?.ativo).toEqual(true)
         });
-        it('deve listar todos os usuários pelo tipoUsuario passado como query e ter sucesso', async () => {
+       it('deve listar todos os usuários pelo tipoUsuario passado como query e ter sucesso', async () => {
             const res = await request(app)
                 .get('/usuarios')
                 .set('Authorization', `Bearer ${tokenAdmin}`)
-                .query({ tipoUsuario: "usuario" })
+                .query({ grupo: "usuario" })
                 .expect(200)
             expect(res.status).toEqual(200)
             expect(Array.isArray(res.body?.data?.docs)).toBe(true)
@@ -159,13 +156,12 @@ describe('usuarioRoute', () => {
             expect(res.body?.data?.docs[0]).toHaveProperty("dataNascimento")
             expect(res.body?.data?.docs[0]).toHaveProperty("CPF")
             expect(res.body?.data?.docs[0]).toHaveProperty("notaMedia")
-            expect(res.body?.data?.docs[0]).toHaveProperty("status")
-            expect(res.body?.data?.docs[0]).toHaveProperty("tipoUsuario")
+            expect(res.body?.data?.docs[0]).toHaveProperty("ativo")
             expect(res.body?.data?.docs[0]).toHaveProperty("fotoUsuario")
             expect(mongoose.Types.ObjectId.isValid(res.body?.data?.docs[0]?._id)).toBe(true)
-            expect(res.body?.data?.docs[0]?.tipoUsuario).toEqual("usuario")
+            expect(res.body?.data?.docs[0]?.grupos[0]?.nome).toEqual("usuario")
         });
-        it('deve retornar vazio ao nenhum usuário com nome correspondete ser encontrado', async () => {
+       it('deve retornar vazio ao nenhum usuário com nome correspondete ser encontrado', async () => {
             const res = await request(app)
                 .get('/usuarios')
                 .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -179,7 +175,7 @@ describe('usuarioRoute', () => {
             expect(res.body?.data?.docs).toHaveLength(0)
 
         });
-        it('deve fornecer a retornar o numero da pagina certa de acordo com a query', async () => {
+       it('deve fornecer a retornar o numero da pagina certa de acordo com a query', async () => {
             const res = await request(app)
                 .get('/usuarios')
                 .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -193,7 +189,7 @@ describe('usuarioRoute', () => {
             expect(res.body?.data.page).toEqual(10)
 
         });
-        it('deve fornecer a retornar o limite certa de acordo com a query', async () => {
+       it('deve fornecer a retornar o limite certa de acordo com a query', async () => {
             const res = await request(app)
                 .get('/usuarios')
                 .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -207,7 +203,7 @@ describe('usuarioRoute', () => {
             expect(res.body?.data.limit).toEqual(12)
 
         });
-        it('deve retorna um limit de no máximo 100 mesmo que um valor maior seja passado', async () => {
+       it('deve retorna um limit de no máximo 100 mesmo que um valor maior seja passado', async () => {
             const res = await request(app)
                 .get('/usuarios')
                 .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -215,7 +211,7 @@ describe('usuarioRoute', () => {
             expect(res.status).toEqual(200)
             expect(res.body?.data?.limit).toEqual(100)
         });
-        it('deve retorna um limit de no page de no minimo 1 mesmo que um valor menor igual a zero seja passado', async () => {
+       it('deve retorna um limit de no page de no minimo 1 mesmo que um valor menor igual a zero seja passado', async () => {
             const res = await request(app)
                 .get('/usuarios')
                 .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -223,7 +219,7 @@ describe('usuarioRoute', () => {
             expect(res.status).toEqual(200)
             expect(res.body?.data?.page).toEqual(1)
         });
-        it('deve retorna um page de no minimo 1 mesmo que um valor diferente de um numero seja passado', async () => {
+       it('deve retorna um page de no minimo 1 mesmo que um valor diferente de um numero seja passado', async () => {
             const res = await request(app)
                 .get('/usuarios')
                 .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -231,7 +227,7 @@ describe('usuarioRoute', () => {
             expect(res.status).toEqual(200)
             expect(res.body?.data?.page).toEqual(1)
         });
-        it('deve retorna um limit de no minimo 10 mesmo que um valor diferente de numero seja passado', async () => {
+       it('deve retorna um limit de no minimo 10 mesmo que um valor diferente de numero seja passado', async () => {
             const res = await request(app)
                 .get('/usuarios')
                 .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -239,7 +235,7 @@ describe('usuarioRoute', () => {
             expect(res.status).toEqual(200)
             expect(res.body?.data?.limit).toEqual(10)
         });
-        it('deve retornar rota inválida', async () => {
+       it('deve retornar rota inválida', async () => {
             const res = await request(app)
                 .get('/invalida')
                 .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -249,7 +245,7 @@ describe('usuarioRoute', () => {
         });
     });
     describe('/usuarios/:id', () => {
-        it('deve retornar o usuário com sucesso', async () => {
+       it('deve retornar o usuário com sucesso', async () => {
             const res = await request(app)
                 .get(`/usuarios/${id}`)
                 .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -262,13 +258,12 @@ describe('usuarioRoute', () => {
             expect(res.body?.data).toHaveProperty("dataNascimento")
             expect(res.body?.data).toHaveProperty("CPF")
             expect(res.body?.data).toHaveProperty("notaMedia")
-            expect(res.body?.data).toHaveProperty("status")
-            expect(res.body?.data).toHaveProperty("tipoUsuario")
+            expect(res.body?.data).toHaveProperty("ativo")
             expect(res.body?.data).toHaveProperty("fotoUsuario")
             expect(res.body?.errors).toHaveLength(0)
             expect(res.body?.message).toEqual("Requisição bem-sucedida")
         });
-        it('deve retornar data igual null se nenhum usuário for encontrado', async () => {
+       it('deve retornar data igual null se nenhum usuário for encontrado', async () => {
             const res = await request(app)
                 .get(`/usuarios/ffffffffffffffffffffffff`)
                 .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -279,7 +274,7 @@ describe('usuarioRoute', () => {
         });
     });
     describe('patch /usuarios/', () =>{
-        it('deve alterar todos dados (nome, email, telefone) com sucesso', async()=>{
+       it('deve alterar todos dados (nome, email, telefone) com sucesso', async()=>{
             const res = await request(app)
                 .patch(`/usuarios/`)
                 .set('Authorization', `Bearer ${tokenUsuario}`)
@@ -287,7 +282,7 @@ describe('usuarioRoute', () => {
                 .expect(200)
             
         });
-        it('deve retornar erro ter campos unicos duplicados no banco, neste caso, email', async()=>{
+       it('deve retornar erro ter campos unicos duplicados no banco, neste caso, email', async()=>{
             const res = await request(app)
                 .patch(`/usuarios/`)
                 .set('Authorization', `Bearer ${tokenUsuario}`)
@@ -297,7 +292,7 @@ describe('usuarioRoute', () => {
                 expect(res.body?.data).toEqual(null)
                 expect(res.body?.errors).toHaveLength(0)
         });
-        it('deve retornar erro ter campos unicos duplicados no banco, neste caso, Telefone', async()=>{
+       it('deve retornar erro ter campos unicos duplicados no banco, neste caso, Telefone', async()=>{
             const res = await request(app)
                 .patch(`/usuarios/`)
                 .set('Authorization', `Bearer ${tokenUsuario}`)
@@ -309,31 +304,33 @@ describe('usuarioRoute', () => {
         });
     });
     describe('patch /usuarios/id', () =>{
-        it('deve retornar sucesso ao mudar o status de usuário', async () =>{
+       it('deve retornar sucesso ao mudar o status de usuário', async () =>{
+        
             const res = await request(app)
             .patch(`/usuarios/${id}`)
-            .set('Authorization', `Berear ${tokenAdmin}`)
-            .send({status: statusUser})
+            .set('Authorization', `Bearer ${tokenAdmin}`)
+            .send({ativo: statusUser})
             .expect(200)
+            console.log(res.body)
             expect(res.body?.message).toEqual(`Status alterado com sucesso para ${statusUser}`)
             expect(res.body?.errors).toHaveLength(0)
             expect(res.body?.data).not.toEqual(null)
 
         });
-        it('deve retornar falha ao tentar mudar status de si mesmo', async () =>{
+       it('deve retornar falha ao tentar mudar status de si mesmo', async () =>{
             const res = await request(app)
             .patch(`/usuarios/${idAdmin}`)
-            .set('Authorization', `Berear ${tokenAdmin}`)
-            .send({status: statusUser})
+            .set('Authorization', `Bearer ${tokenAdmin}`)
+            .send({ativo: statusUser})
             .expect(403)
             expect(res.body?.message).toEqual("Não pode alterar o status de si mesmo.")
 
         });
-        it('deve retornar falha ao tentar mudar status de outro admin', async () =>{
+       it('deve retornar falha ao tentar mudar status de outro admin', async () =>{
             const res = await request(app)
             .patch(`/usuarios/${idAdmin2?._id}`)
-            .set('Authorization', `Berear ${tokenAdmin}`)
-            .send({status: statusUser})
+            .set('Authorization', `Bearer ${tokenAdmin}`)
+            .send({ativo: statusUser})
             .expect(403)
             expect(res.body?.message).toEqual("Erro de autorização: Permissão.")
 
@@ -343,13 +340,13 @@ describe('usuarioRoute', () => {
 
 async function pegarUsuario(users) {
     for(let i = 0; i<users.length; i++){
-        if(users[i]?.tipoUsuario !== "admin" && users[i]?.nome.split(' ')[0] != "Usuario")
+        if(users[i]?.grupos[0].nome !== "moderador"  && users[i]?.grupos[0] !== "admin" && users[i]?.nome.split(' ')[0] != "Usuario")
             return users[i]
     }
 }
 async function pegarAdmin(users, idAdmin) {
      for(let i = 0; i<users.length; i++){
-        if(users[i]?.tipoUsuario === "admin" && users[i]?._id != idAdmin)
+        if(users[i]?.grupos[0].nome === "moderador" && users[i]?._id != idAdmin)
             return users[i]
     }
 }

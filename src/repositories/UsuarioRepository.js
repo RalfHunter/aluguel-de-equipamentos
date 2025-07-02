@@ -1,3 +1,4 @@
+import { populate } from "dotenv"
 import UsuarioModel from "../models/Usuario.js"
 // import AvaliacaoModel from "../models/Avaliacao.js"
 import CustomError from "../utils/helpers/CustomError.js"
@@ -19,20 +20,28 @@ class UsuarioRepository {
             return data
         }
         // TODO: Fazer opções de consulta com filtros
-        const { nome, email, ativo, tipoUsuario, page = 1 } = req.query
+        const { nome, email, ativo, page = 1, grupo } = req.query
         const limite = Math.min(parseInt(req.query.limit, 10) || 10, 100);
         const filterBuilder = new UsuarioFilterBuilder()
             .comNome(nome, '')
             .comEmail(email, '')
-            .comStatus(ativo, '')
+            .comAtivo(ativo, '')
+        if(grupo){
+            await filterBuilder.comGrupo(grupo)
+        }
 
         let filtros = filterBuilder.build()
         const options = {
             page: parseInt(page),
             limit: parseInt(limite),
+            populate:[
+            {
+                path:'grupos'
+            }
+            ],
             sort: { nome: 1 }
         }
-
+        // console.log("Filtros",filtros)
         const data = await this.model.paginate(filtros, options)
         // console.log(data)
         return data
