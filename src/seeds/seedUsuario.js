@@ -4,6 +4,7 @@ import Usuario from "../models/Usuario.js"
 import bcrypt from "bcryptjs";
 import { faker } from "@faker-js/faker";
 import getGlobalFakeMapping from "./globalFakeMapping.js";
+import Grupo from "../models/Grupo.js";
 
 
 // await DbConect.conectar();
@@ -23,8 +24,13 @@ async function SeedUsuario(){
 
     await Usuario.deleteMany();
     const usuarios = [];
+    const grupos = []
     const fake = await getGlobalFakeMapping()
-
+    const comum = await Grupo.findOne({nome:"usuario"})
+    const moderador = await Grupo.findOne({nome:"moderador"})
+    const admin = await Grupo.findOne({nome:"admin"})
+    grupos.push(comum)
+    grupos.push(moderador)
 
     for (let i = 0; i < 25; i++) {
         const nome = fake.nome();
@@ -35,8 +41,8 @@ async function SeedUsuario(){
         const CPF = fake.CPF(); // Geração de CPF fictício
         const notaMedia = fake.notaMediaAvaliacao();
         const status = fake.status();
-        const tipoUsuario = fake.tipoUsuario();
         const fotoUsuario = fake.fotoUsuario()
+        const grupo = grupos[Math.floor(Math.random() * grupos.length)]._id
 
         usuarios.push({
             nome,
@@ -47,8 +53,8 @@ async function SeedUsuario(){
             CPF,
             notaMedia,
             status,
-            tipoUsuario,
-            fotoUsuario
+            fotoUsuario,
+            grupo
         });
     }
     const dev = {
@@ -60,8 +66,8 @@ async function SeedUsuario(){
         CPF: "12345612345", // Geração de CPF fictício
         notaMedia: 0,
         status: "ativo",
-        tipoUsuario: "admin",
-        fotoUsuario:'https://pt.quizur.com/_image?href=https://img.quizur.com/f/img63365b54eee492.52029189.png?lastEdited=1664506795&w=600&h=600&f=webp'
+        fotoUsuario:'https://pt.quizur.com/_image?href=https://img.quizur.com/f/img63365b54eee492.52029189.png?lastEdited=1664506795&w=600&h=600&f=webp',
+        grupo: moderador._id
         
     }
     const dev2 = {
@@ -73,9 +79,8 @@ async function SeedUsuario(){
         CPF: "12345612347", // Geração de CPF fictício
         notaMedia: 0,
         status: "ativo",
-        tipoUsuario: "admin",
-        fotoUsuario:'https://pt.quizur.com/_image?href=https://img.quizur.com/f/img63365b54eee492.52029189.png?lastEdited=1664506795&w=600&h=600&f=webp'
-        
+        fotoUsuario:'https://pt.quizur.com/_image?href=https://img.quizur.com/f/img63365b54eee492.52029189.png?lastEdited=1664506795&w=600&h=600&f=webp',
+        grupo: moderador._id
     }
     const user = {
         nome: "Usuario Padrão",
@@ -86,8 +91,8 @@ async function SeedUsuario(){
         CPF: "12345612346", // Geração de CPF fictício
         notaMedia: 0,
         status: "ativo",
-        tipoUsuario: "usuario",
-        fotoUsuario:'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmtv-wGPAGVnAMkWDSteg4qGIRHhtLCYgoDQ&s'
+        fotoUsuario:'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmtv-wGPAGVnAMkWDSteg4qGIRHhtLCYgoDQ&s',
+        grupo: comum._id
         
     }
     usuarios.push({...dev})

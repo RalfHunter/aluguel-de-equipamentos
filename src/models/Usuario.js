@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import mongoosePaginate from 'mongoose-paginate-v2';
+import { boolean } from 'zod/v4';
 
 class Usuario {
     constructor(){
@@ -11,14 +12,17 @@ class Usuario {
             dataNascimento:{type:Date, required: true},
             CPF:{type:String, required:true, unique:true},
             notaMediaAvaliacao:{type:Number},
-            status: {type: String, required: true},
-            tipoUsuario:{type:String, required: true},
+            status: {type: Boolean, required: true},
             fotoUsuario:{type:String},
             tokenUnico:{type: String, select:false},
             accessToken:{type:String, required: false, select:false},
             refreshToken:{type:String, required: false, select:false},
             codigo_recupera_senha:{type:String, select:false},
-            exp_codigo_recupera_senha:{type:String, select:false}
+            exp_codigo_recupera_senha:{type:String, select:false},
+            grupos:[{
+                type: mongoose.Schema.Types.ObjectId,
+                ref:'grupos'
+            }]
         })
         usuarioSchema.plugin(mongoosePaginate);
         this.model = mongoose.model('usuarios', usuarioSchema);
