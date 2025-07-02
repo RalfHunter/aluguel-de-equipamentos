@@ -5,6 +5,7 @@ const grupoAdmin = {
     nome: 'admin',
     descricao: 'Grupo com acesso total ao sistema',
     ativo: true,
+    nivelPermissao:0,
     permissoes: [{
         rota: "grupos",
         dominio: "locahost",
@@ -31,8 +32,9 @@ const grupoModerador = {
     nome: 'moderador',
     descricao: 'Grupo com controle sobre os usuarios',
     ativo: true,
+    nivelPermissao: 50,
     permissoes: [{
-        rota: "usuario",
+        rota: "usuarios",
         dominio: "locahost",
         ativo: true,
         buscar: true,
@@ -58,8 +60,9 @@ const grupoUsuario = {
     nome: 'usuario',
     descricao: 'Grupo que pude alocar e alugar equipamentos',
     ativo: true,
+    nivelPermissao:100,
     permissoes:[{
-        rota: 'usuario',
+        rota: 'usuarios',
         dominio: 'localhost',
         ativo: true,
         buscar: false,

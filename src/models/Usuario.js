@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import mongoosePaginate from 'mongoose-paginate-v2';
-import { boolean } from 'zod/v4';
+import Grupo from './Grupo.js';
 
 class Usuario {
     constructor(){
@@ -12,7 +12,7 @@ class Usuario {
             dataNascimento:{type:Date, required: true},
             CPF:{type:String, required:true, unique:true},
             notaMediaAvaliacao:{type:Number},
-            status: {type: Boolean, required: true},
+            ativo: {type: Boolean, required: true},
             fotoUsuario:{type:String},
             tokenUnico:{type: String, select:false},
             accessToken:{type:String, required: false, select:false},

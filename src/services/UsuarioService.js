@@ -38,7 +38,14 @@ class UsuarioService {
             })
         }
         const user = await this.repository.buscarPorId(id)
-        if (user.tipoUsuario == "admin") {
+        let permissao = false
+        for (const grupo of user.grupos){
+            permissao = grupo.nivelPermissao >= req.nivelPermissao
+            if(permissao){
+                break
+            }
+        }
+        if (permissao) {
             throw new CustomError({
                 statusCode: 403,
                 errorType: "unauthorized",

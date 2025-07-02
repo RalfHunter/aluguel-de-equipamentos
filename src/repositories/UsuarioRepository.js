@@ -18,15 +18,13 @@ class UsuarioRepository {
             const data = await this.model.findById(id)
             return data
         }
-
         // TODO: Fazer opções de consulta com filtros
-        const { nome, email, status, tipoUsuario, page = 1 } = req.query
+        const { nome, email, ativo, tipoUsuario, page = 1 } = req.query
         const limite = Math.min(parseInt(req.query.limit, 10) || 10, 100);
         const filterBuilder = new UsuarioFilterBuilder()
             .comNome(nome, '')
             .comEmail(email, '')
-            .comStatus(status, '')
-            .comTipoUsuario(tipoUsuario, '')
+            .comStatus(ativo, '')
 
         let filtros = filterBuilder.build()
         const options = {
@@ -34,6 +32,7 @@ class UsuarioRepository {
             limit: parseInt(limite),
             sort: { nome: 1 }
         }
+
         const data = await this.model.paginate(filtros, options)
         // console.log(data)
         return data
@@ -58,7 +57,7 @@ class UsuarioRepository {
     }
     async buscarPorId(id, includeTokens = false) {
         // console.log("Estou no bucarPorId no UsuarioRepository")
-        let query = this.model.findById(id)
+        let query = this.model.findById(id).populate('grupos')
         if (includeTokens) {
             console.log(includeTokens)
             query.select('+refreshToken +accessToken')

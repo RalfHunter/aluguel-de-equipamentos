@@ -17,9 +17,9 @@ class UsuarioFilterBuilder {
         }
         return this
     }
-    comStatus(status){
-        if(status){
-            this.filtros.status = {$eq: status}
+    comStatus(ativo = true){
+        if(ativo){
+            this.filtros.ativo = ativo
         }
         return this
     }

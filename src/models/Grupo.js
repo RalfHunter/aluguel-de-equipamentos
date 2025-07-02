@@ -24,6 +24,10 @@ class Grupo {
                  * Permissões personalizadas para cada rota do sistema
                  * Cada permissão define o que o grupo pode fazer em uma rota específica
                  */
+                nivelPermissao:{
+                    type:Number, 
+                    required: true
+                },
                 permissoes: [
                     {
                         rota: { 

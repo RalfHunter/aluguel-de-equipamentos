@@ -40,7 +40,7 @@ async function SeedUsuario(){
         const dataNascimento = fake.dataNascimento();
         const CPF = fake.CPF(); // Geração de CPF fictício
         const notaMedia = fake.notaMediaAvaliacao();
-        const status = fake.status();
+        const ativo = fake.ativo();
         const fotoUsuario = fake.fotoUsuario()
         const grupo = grupos[Math.floor(Math.random() * grupos.length)]._id
 
@@ -52,7 +52,7 @@ async function SeedUsuario(){
             dataNascimento,
             CPF,
             notaMedia,
-            status,
+            ativo,
             fotoUsuario,
             grupo
         });
@@ -65,9 +65,9 @@ async function SeedUsuario(){
         dataNascimento: fake.dataNascimento(),
         CPF: "12345612345", // Geração de CPF fictício
         notaMedia: 0,
-        status: "ativo",
+        ativo: true,
         fotoUsuario:'https://pt.quizur.com/_image?href=https://img.quizur.com/f/img63365b54eee492.52029189.png?lastEdited=1664506795&w=600&h=600&f=webp',
-        grupo: moderador._id
+        grupos: moderador._id
         
     }
     const dev2 = {
@@ -78,9 +78,9 @@ async function SeedUsuario(){
         dataNascimento: fake.dataNascimento(),
         CPF: "12345612347", // Geração de CPF fictício
         notaMedia: 0,
-        status: "ativo",
+        ativo: true,
         fotoUsuario:'https://pt.quizur.com/_image?href=https://img.quizur.com/f/img63365b54eee492.52029189.png?lastEdited=1664506795&w=600&h=600&f=webp',
-        grupo: moderador._id
+        grupos: moderador._id
     }
     const user = {
         nome: "Usuario Padrão",
@@ -90,10 +90,22 @@ async function SeedUsuario(){
         dataNascimento: fake.dataNascimento(),
         CPF: "12345612346", // Geração de CPF fictício
         notaMedia: 0,
-        status: "ativo",
+        ativo: true,
         fotoUsuario:'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmtv-wGPAGVnAMkWDSteg4qGIRHhtLCYgoDQ&s',
-        grupo: comum._id
+        grupos: comum._id
         
+    }
+    const Dono = {
+        nome: "Dono",
+        email: "dono@gmail.com",
+        telefone: "69 98191-0100",
+        senha:  await bcrypt.hash('Dono@1234', 8),
+        dataNascimento: fake.dataNascimento(),
+        CPF: "12345612317", // Geração de CPF fictício
+        notaMedia: 0,
+        ativo: true,
+        fotoUsuario:'https://pt.quizur.com/_image?href=https://img.quizur.com/f/img63365b54eee492.52029189.png?lastEdited=1664506795&w=600&h=600&f=webp',
+        grupos: admin._id
     }
     usuarios.push({...dev})
     usuarios.push({...user})
