@@ -1,4 +1,4 @@
-import { equipamentoSchema, equipamentoUpdateSchema } from '../../../utils/validators/schemas/zod/EquipamentoSchema.js';
+import { equipamentoSchema, equipamentoUpdateSchema } from '../../../../utils/validators/schemas/zod/EquipamentoSchema.js';
 import mongoose from 'mongoose';
 
 describe('equipamentoSchema', () => {
