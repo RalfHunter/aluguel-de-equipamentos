@@ -1,19 +1,19 @@
-import EquipamentoService from "../../services/EquipamentoService.js";
-import EquipamentoRepository from "../../repositories/EquipamentoRepository.js";
-import EquipamentoFilterBuilder from "../../repositories/filters/EquipamentoFilterBuilder.js";
-import { CustomError, HttpStatusCodes, messages } from "../../utils/helpers/index.js";
-import Reserva from '../../models/Reserva.js';
+import EquipamentoService from "../../../services/EquipamentoService.js";
+import EquipamentoRepository from "../../../repositories/EquipamentoRepository.js";
+import EquipamentoFilterBuilder from "../../../repositories/filters/EquipamentoFilterBuilder.js";
+import { CustomError, HttpStatusCodes, messages } from "../../../utils/helpers/index.js";
+import Reserva from "../../../models/Reserva.js";
 
-jest.mock('../../models/Reserva.js', () => ({
+jest.mock("../../../models/Reserva.js", () => ({
   countDocuments: jest.fn(),
 }));
 
-jest.mock("../../repositories/EquipamentoRepository.js");
-jest.mock("../../repositories/filters/EquipamentoFilterBuilder.js");
+jest.mock("../../../repositories/EquipamentoRepository.js");
+jest.mock("../../../repositories/filters/EquipamentoFilterBuilder.js");
 
 const mockCustomError = jest.fn();
-jest.mock("../../utils/helpers/index.js", () => {
-  const originalHelpers = jest.requireActual("../../utils/helpers/index.js");
+jest.mock("../../../utils/helpers/index.js", () => {
+  const originalHelpers = jest.requireActual("../../../utils/helpers/index.js");
   return {
     ...originalHelpers,
     CustomError: jest.fn().mockImplementation(function (args) {
