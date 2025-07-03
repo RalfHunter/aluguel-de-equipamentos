@@ -6,213 +6,52 @@ class GrupoService {
         this.repository = new GrupoRepository();
     }
 
-    /**
-     * Lista grupos com filtros e paginação
-     * @param {Object} req - Objeto de requisição
-     * @returns {Object} - Resultado paginado ou grupo único
-     */
     async listar(req) {
-        try {
-            return await this.repository.listar(req);
-        } catch (error) {
-            console.error('Erro no service ao listar grupos:', error);
-            throw error;
-        }
+        return await this.repository.listar(req);
     }
 
-    /**
-     * Busca grupo por ID
-     * @param {String} id - ID do grupo
-     * @returns {Object} - Dados do grupo
-     */
-    async buscarPorId(id) {
-        try {
-            return await this.repository.buscarPorId(id);
-        } catch (error) {
-            console.error('Erro no service ao buscar grupo por ID:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Cria um novo grupo
-     * @param {Object} dadosGrupo - Dados do grupo
-     * @returns {Object} - Grupo criado
-     */
     async criar(dadosGrupo) {
-        try {
-            // Validar se o nome é único
-            await this.validarNomeUnico(dadosGrupo.nome);
-
-            return await this.repository.criar(dadosGrupo);
-        } catch (error) {
-            console.error('Erro no service ao criar grupo:', error);
-            throw error;
+        // Verificar se já existe um grupo com o mesmo nome
+        const grupoExistente = await this.repository.buscarPorNome(dadosGrupo.nome);
+        if (grupoExistente) {
+            throw new CustomError({
+                statusCode: HttpStatusCodes.CONFLICT.code,
+                errorType: 'validationError',
+                field: 'nome',
+                details: [],
+                customMessage: 'Já existe um grupo com este nome'
+            });
         }
+
+        return await this.repository.criar(dadosGrupo);
     }
 
-    /**
-     * Atualiza um grupo
-     * @param {String} id - ID do grupo
-     * @param {Object} dadosAtualizacao - Dados para atualização
-     * @returns {Object} - Grupo atualizado
-     */
     async atualizar(id, dadosAtualizacao) {
-        try {
-            // Verificar se o grupo existe
-            await this.repository.buscarPorId(id);
-
-            // Validar nome único se está sendo alterado
-            if (dadosAtualizacao.nome) {
-                await this.validarNomeUnico(dadosAtualizacao.nome, id);
-            }
-
-            // Validar permissões se fornecidas
-            if (dadosAtualizacao.permissoes && dadosAtualizacao.permissoes.length > 0) {
-                await this.validarPermissoes(dadosAtualizacao.permissoes);
-            }
-
-            return await this.repository.atualizar(id, dadosAtualizacao);
-        } catch (error) {
-            console.error('Erro no service ao atualizar grupo:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Deleta um grupo
-     * @param {String} id - ID do grupo
-     * @returns {Boolean} - Sucesso da operação
-     */
-    async deletar(id) {
-        try {
-            // Verificar se o grupo existe
-            await this.repository.buscarPorId(id);
-
-            return await this.repository.deletar(id);
-        } catch (error) {
-            console.error('Erro no service ao deletar grupo:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Ativa ou desativa um grupo
-     * @param {String} id - ID do grupo
-     * @param {Boolean} ativo - Status ativo
-     * @returns {Object} - Grupo atualizado
-     */
-    async alterarStatus(id, ativo) {
-        try {
-            return await this.repository.alterarStatus(id, ativo);
-        } catch (error) {
-            console.error('Erro no service ao alterar status do grupo:', error);
-            throw error;
-        }
-    }
-
-    // MÉTODOS AUXILIARES
-
-    /**
-     * Valida se o nome do grupo é único
-     * @param {String} nome - Nome do grupo
-     * @param {String} idIgnorado - ID a ser ignorado na validação
-     */
-    async validarNomeUnico(nome, idIgnorado = null) {
-        try {
-            const grupoExistente = await this.repository.buscarPorNome(nome, idIgnorado);
-            
+        // Verificar se o grupo existe
+        await this.repository.buscarPorId(id);
+        
+        // Se o nome está sendo atualizado, verificar se não existe outro grupo com o mesmo nome
+        if (dadosAtualizacao.nome) {
+            const grupoExistente = await this.repository.buscarPorNome(dadosAtualizacao.nome, id);
             if (grupoExistente) {
                 throw new CustomError({
-                    statusCode: HttpStatusCodes.BAD_REQUEST.code,
+                    statusCode: HttpStatusCodes.CONFLICT.code,
                     errorType: 'validationError',
                     field: 'nome',
                     details: [],
                     customMessage: 'Já existe um grupo com este nome'
                 });
             }
-        } catch (error) {
-            if (error instanceof CustomError) {
-                throw error;
-            }
-            console.error('Erro ao validar nome único:', error);
-            throw new CustomError({
-                statusCode: HttpStatusCodes.INTERNAL_SERVER_ERROR.code,
-                errorType: 'serverError',
-                field: 'nome',
-                details: [],
-                customMessage: 'Erro interno ao validar nome do grupo'
-            });
         }
+
+        return await this.repository.atualizar(id, dadosAtualizacao);
     }
 
-    async adicionarPermissao(grupoId, permissao) {
-        try {
-            const grupo = await this.repository.buscarPorId(grupoId);
-            
-            // Validar se a permissão é válida
-            await this.validarPermissoes([permissao]);
-            
-            // Verificar se a permissão já existe no grupo
-            const permissaoExiste = grupo.permissoes.some(p => 
-                p.rota === permissao.rota.toLowerCase() && 
-                p.dominio === (permissao.dominio || 'localhost')
-            );
-            
-            if (permissaoExiste) {
-                throw new CustomError({
-                    statusCode: HttpStatusCodes.BAD_REQUEST.code,
-                    errorType: 'validationError',
-                    field: 'permissao',
-                    details: [],
-                    customMessage: 'Esta permissão já existe no grupo'
-                });
-            }
-            
-            // Adicionar a permissão
-            grupo.permissoes.push({
-                ...permissao,
-                rota: permissao.rota.toLowerCase()
-            });
-            
-            return await this.repository.atualizar(grupoId, { permissoes: grupo.permissoes });
-        } catch (error) {
-            console.error('Erro no service ao adicionar permissão:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Remove uma permissão de um grupo
-     * @param {String} grupoId - ID do grupo
-     * @param {String} rota - Nome da rota
-     * @param {String} dominio - Domínio da aplicação
-     * @returns {Object} - Grupo atualizado
-     */
-    async removerPermissao(grupoId, rota, dominio = 'localhost') {
-        try {
-            const grupo = await this.repository.buscarPorId(grupoId);
-            
-            // Filtrar as permissões removendo a especificada
-            const permissoesAtualizadas = grupo.permissoes.filter(p => 
-                !(p.rota === rota.toLowerCase() && p.dominio === dominio)
-            );
-            
-            if (permissoesAtualizadas.length === grupo.permissoes.length) {
-                throw new CustomError({
-                    statusCode: HttpStatusCodes.NOT_FOUND.code,
-                    errorType: 'resourceNotFound',
-                    field: 'permissao',
-                    details: [],
-                    customMessage: 'Permissão não encontrada no grupo'
-                });
-            }
-            
-            return await this.repository.atualizar(grupoId, { permissoes: permissoesAtualizadas });
-        } catch (error) {
-            console.error('Erro no service ao remover permissão:', error);
-            throw error;
-        }
+    async deletar(id) {
+        // Verificar se o grupo existe
+        await this.repository.buscarPorId(id);
+        
+        return await this.repository.deletar(id);
     }
 }
 
