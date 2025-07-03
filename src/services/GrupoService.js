@@ -1,4 +1,4 @@
-import GrupoRepository from '../repositories/grupoRepository.js';
+import GrupoRepository from '../repositories/GrupoRepository.js';
 import { CustomError, HttpStatusCodes } from '../utils/helpers/index.js';
 
 class GrupoService {
@@ -43,11 +43,6 @@ class GrupoService {
         try {
             // Validar se o nome é único
             await this.validarNomeUnico(dadosGrupo.nome);
-
-            // Validar permissões se fornecidas
-            if (dadosGrupo.permissoes && dadosGrupo.permissoes.length > 0) {
-                await this.validarPermissoes(dadosGrupo.permissoes);
-            }
 
             return await this.repository.criar(dadosGrupo);
         } catch (error) {
@@ -151,77 +146,6 @@ class GrupoService {
         }
     }
 
-    /**
-     * Valida se as permissões são válidas (existem no cadastro de rotas)
-     * @param {Array} permissoes - Array de permissões
-     */
-    async validarPermissoes(permissoes) {
-        try {
-            if (!permissoes || permissoes.length === 0) {
-                return;
-            }
-
-            // Verificar se as rotas existem no sistema
-            const rotasEncontradas = await this.repository.buscarPorPermissao(permissoes);
-            
-            if (rotasEncontradas.length !== permissoes.length) {
-                // Identificar quais rotas não foram encontradas
-                const rotasEncontradas_map = new Set(
-                    rotasEncontradas.map(r => `${r.rota}_${r.dominio}`)
-                );
-                
-                const rotasNaoEncontradas = permissoes.filter(p => 
-                    !rotasEncontradas_map.has(`${p.rota.toLowerCase()}_${p.dominio || 'localhost'}`)
-                );
-
-                throw new CustomError({
-                    statusCode: HttpStatusCodes.BAD_REQUEST.code,
-                    errorType: 'validationError',
-                    field: 'permissoes',
-                    details: rotasNaoEncontradas.map(r => ({
-                        rota: r.rota,
-                        dominio: r.dominio,
-                        message: `Rota ${r.rota} no domínio ${r.dominio || 'localhost'} não existe no sistema`
-                    })),
-                    customMessage: `Algumas rotas não existem no sistema: ${rotasNaoEncontradas.map(r => r.rota).join(', ')}`
-                });
-            }
-
-            // Verificar duplicatas dentro do próprio array
-            const combinacoes = permissoes.map(p => `${p.rota.toLowerCase()}_${p.dominio || 'localhost'}`);
-            const combinacoesUnicas = [...new Set(combinacoes)];
-            
-            if (combinacoes.length !== combinacoesUnicas.length) {
-                throw new CustomError({
-                    statusCode: HttpStatusCodes.BAD_REQUEST.code,
-                    errorType: 'validationError',
-                    field: 'permissoes',
-                    details: [],
-                    customMessage: 'Permissões duplicadas encontradas. Cada rota + domínio deve ser único'
-                });
-            }
-
-        } catch (error) {
-            if (error instanceof CustomError) {
-                throw error;
-            }
-            console.error('Erro ao validar permissões:', error);
-            throw new CustomError({
-                statusCode: HttpStatusCodes.INTERNAL_SERVER_ERROR.code,
-                errorType: 'serverError',
-                field: 'permissoes',
-                details: [],
-                customMessage: 'Erro interno ao validar permissões'
-            });
-        }
-    }
-
-    /**
-     * Adiciona uma permissão a um grupo
-     * @param {String} grupoId - ID do grupo
-     * @param {Object} permissao - Dados da permissão
-     * @returns {Object} - Grupo atualizado
-     */
     async adicionarPermissao(grupoId, permissao) {
         try {
             const grupo = await this.repository.buscarPorId(grupoId);

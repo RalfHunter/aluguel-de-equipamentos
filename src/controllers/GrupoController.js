@@ -1,6 +1,6 @@
-import GrupoService from '../services/grupoService.js';
+import GrupoService from '../services/GrupoService.js';
 import { CommonResponse, CustomError, HttpStatusCodes } from '../utils/helpers/index.js';
-import { GrupoSchema, GrupoUpdateSchema, GrupoPermissaoSchema } from '../utils/validators/schemas/zod/GrupoSchema.js';
+import { GrupoSchema, GrupoUpdateSchema} from '../utils/validators/schemas/zod/GrupoSchema.js';
 import { GrupoIdSchema, GrupoQuerySchema } from '../utils/validators/schemas/zod/querys/GrupoQuerySchema.js';
 import LogMiddleware from '../middlewares/LogMiddleware.js';
 
@@ -63,26 +63,16 @@ class GrupoController {
      * Cria um novo grupo
      */
     async criar(req, res) {
-        console.log('Estou no criar em GrupoController');
+           console.log('Estou no criar em GrupoController');
 
-        // Validação dos dados de entrada
-        const dadosValidados = GrupoSchema.parse(req.body);
+        // Validação dos dados de entrada usando Zod (estrutural)
+        const parsedData = GrupoSchema.parse(req.body);
 
-        const data = await this.service.criar(dadosValidados);
+        const data = await this.service.criar(parsedData);
 
-        // Registra evento crítico de criação de grupo
-        LogMiddleware.logCriticalEvent(req.userId, 'GRUPO_CRIADO', {
-            grupo_criado: data._id,
-            nome: data.nome,
-            criado_por: req.userMatricula
-        }, req);
+        // Se chegou até aqui, é porque deu tudo certo, retornar 201 Created 
+        return CommonResponse.created(res, data);
 
-        return CommonResponse.created(
-            res,
-            data,
-            HttpStatusCodes.CREATED.code,
-            'Grupo criado com sucesso.'
-        );
     }
 
     /**
