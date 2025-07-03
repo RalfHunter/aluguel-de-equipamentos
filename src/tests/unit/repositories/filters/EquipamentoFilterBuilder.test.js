@@ -1,7 +1,7 @@
-import EquipamentoFilterBuilder from '../../repositories/filters/EquipamentoFilterBuilder';
+import EquipamentoFilterBuilder from '../../../../repositories/filters/EquipamentoFilterBuilder';
 import mongoose from 'mongoose';
 
-jest.mock('../../models/Equipamento.js', () => 'mock-equipamento-model');
+jest.mock('../../../../models/Equipamento.js', () => 'mock-equipamento-model');
 
 jest.mock('mongoose', () => ({
   Types: {
