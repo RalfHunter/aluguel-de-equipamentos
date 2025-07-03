@@ -6,6 +6,7 @@ import { GrupoIdSchema, GrupoQuerySchema } from '../utils/validators/schemas/zod
 class GrupoController {
     constructor() {
         this.service = new GrupoService();
+        this
     }
 
     /**
@@ -54,32 +55,56 @@ class GrupoController {
     async atualizar(req, res) {
         console.log('Estou no atualizar em GrupoController');
 
-        const { id } = req.params;
-        GrupoIdSchema.parse(id);
+        //1ª Validação estrutural - validação do ID passado por parâmetro
+        const { id } = req.params || null;
+        if (id) {
+            GrupoIdSchema.parse(id); // Lança erro automaticamente se inválido
+        }
 
-        // Validação dos dados de entrada
-        console.log("Validando")
-        const dadosValidados = GrupoUpdateSchema.parse(req.body);
+        // Validação dos dados de entrada usando Zod (estrutural)
+        const parsedData = GrupoUpdateSchema.parse(req.body);
 
-        const data = await this.service.atualizar(id, dadosValidados);
+        // Chama o serviço para atualizar o grupo
+        const data = await this.service.atualizar(id, parsedData);
 
-
-
-        return CommonResponse.success(res, data, 200, 'Grupo atualizado com sucesso');
+        // Se chegou até aqui, é porque deu tudo certo, retornar 200 OK
+        return CommonResponse.success(res, data);
     }
+
 
     /**
      * Deleta um grupo
      */
     async deletar(req, res) {
         console.log('Estou no deletar em GrupoController');
+    
+        // Validação estrutural - validação do ID passado por parâmetro
+        const { id } = req.params || null;
+        if (!id) {
+            throw new CustomError('ID do grupo é obrigatório para deletar.', HttpStatusCodes.BAD_REQUEST);
+        }
+    
+        // Chama o serviço para deletar o grupo
+        const data = await this.service.deletar(id);
+    
+        // Se chegou até aqui, é porque deu tudo certo, retornar 200 OK
+        return CommonResponse.success(res, data, 200, 'Grupo excluído com sucesso.');
 
-        const { id } = req.params;
-        GrupoIdSchema.parse(id);
-
-        await this.service.deletar(id);
-        
-        return CommonResponse.success(res, null, 200, 'Grupo deletado com sucesso');
+    }
+     async verificarUsuariosAssociados(id) {
+        try {
+            const usuariosAssociados = await this.usuarioModel.findOne({ grupos: id });
+            return usuariosAssociados; // Retorna true se houver usuários, false caso contrário
+        } catch (error) {
+            console.error('Erro ao verificar usuários associados:', error);
+            throw new this.customError({
+                statusCode: 500,
+                errorType: 'internalServerError',
+                field: 'Grupo',
+                details: [],
+                customMessage: messages.error.internalServerError('Grupo')
+            });
+        }
     }
 }
 

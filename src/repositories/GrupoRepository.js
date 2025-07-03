@@ -1,6 +1,8 @@
 import Grupo from '../models/Grupo.js';
 import Usuario from '../models/Usuario.js';
 import { CustomError, messages } from '../utils/helpers/index.js';
+import GrupoFilterBuilder from './filters/GrupoFilterBuilder.js';
+import UsuarioRepository from '../repositories/UsuarioRepository.js';
 
 class GrupoRepository {
     constructor({
@@ -9,6 +11,7 @@ class GrupoRepository {
     } = {}) {
         this.model = grupoModel;
         this.usuarioModel = usuarioModel;
+
     }
 
     /**
@@ -35,19 +38,20 @@ class GrupoRepository {
         }
 
         // Construir filtros baseados nas queries
-        const filtros = {};
-        
-        if (req.query.nome) {
-            filtros.nome = { $regex: req.query.nome, $options: 'i' };
-        }
-        
-        if (req.query.ativo !== undefined) {
-            filtros.ativo = req.query.ativo === 'true';
-        }
+        const { nome, descricao, ativo = 'true', page = 1 } = req.query;
 
-        const page = parseInt(req.query.page) || 1;
+            // Garantir que o limite não ultrapasse 100
+            const limite = Math.min(parseInt(req.query.limite, 10) || 10, 100);
+
+
         const limit = Math.min(parseInt(req.query.limite) || 10, 100);
 
+        const filterBuilder = new GrupoFilterBuilder()
+        .comNome(nome || '')
+        .comDescricao(descricao || '')
+        .comAtivo(ativo || '')
+
+        const filtros = filterBuilder.build()
         const options = {
             page,
             limit,
@@ -58,12 +62,7 @@ class GrupoRepository {
         return await this.model.paginate(filtros, options);
     }
 
-    /**
-     * Busca grupo por nome
-     * @param {String} nome - Nome do grupo
-     * @param {String} idIgnorado - ID a ser ignorado na busca (para updates)
-     * @returns {Object|null} - Dados do grupo ou null
-     */
+    
     async buscarPorNome(nome, idIgnorado = null) {
         const filtro = { nome: { $regex: `^${nome}$`, $options: 'i' } };
         
@@ -126,11 +125,6 @@ class GrupoRepository {
         return true;
     }
 
-    /**
-     * Busca grupo por ID
-     * @param {String} id - ID do grupo
-     * @returns {Object} - Dados do grupo
-     */
     async buscarPorId(id) {
         const grupo = await this.model.findById(id).lean();
         if (!grupo) {
@@ -144,6 +138,22 @@ class GrupoRepository {
         }
         return grupo;
     }
+        async verificarUsuariosAssociados(id) {
+        try {
+            const usuariosAssociados = await this.usuarioModel.findOne({ grupos: id });
+            return usuariosAssociados; // Retorna true se houver usuários, false caso contrário
+        } catch (error) {
+            console.error('Erro ao verificar usuários associados:', error);
+            throw new CustomError({
+                statusCode: 500,
+                errorType: 'internalServerError',
+                field: 'Grupo',
+                details: [],
+                customMessage: messages.error.internalServerError('Grupo')
+            });
+        }
+    }
+
 }
 
 export default GrupoRepository;
