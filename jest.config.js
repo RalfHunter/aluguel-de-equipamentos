@@ -20,7 +20,7 @@ export default  {
     // testMatch:['**/UsuarioController.test.js']
     // testMatch:['**/AuthMiddleware.test.js']]
     // testMatch:['**/usuarioRouter.test.js']
-    testMatch:['**/EquipamentoQuerySchema.test.js']
+    //testMatch:['**/EquipamentoController.test.js']
 
 
 };
