@@ -1,8 +1,8 @@
-import EquipamentoRepository from '../../repositories/EquipamentoRepository.js';
-import EquipamentoModel from '../../models/Equipamento.js';
-import { CustomError, HttpStatusCodes } from '../../utils/helpers/index.js';
+import EquipamentoRepository from '../../../repositories/EquipamentoRepository.js';
+import EquipamentoModel from '../../../models/Equipamento.js';
+import { CustomError, HttpStatusCodes } from '../../../utils/helpers/index.js';
 
-jest.mock('../../models/Equipamento.js');
+jest.mock('../../../models/Equipamento.js');
 
 const mockPaginate = jest.fn();
 const mockFindById = jest.fn();
