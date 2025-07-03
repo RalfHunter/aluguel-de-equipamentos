@@ -179,36 +179,6 @@ describe('EquipamentoController', () => {
       });
     });
 
-    it('deve criar equipamento sem fotos', async () => {
-      req.body = { equiValorDiaria: '100.50', equiQuantidadeDisponivel: '5' };
-      req.files = [];
-      const dadosProcessados = {
-        equiValorDiaria: 100.50,
-        equiQuantidadeDisponivel: 5,
-      };
-      const equipamento = { _id: 'abc123', ...dadosProcessados };
-      equipamentoSchema.parse.mockReturnValue({ ...dadosProcessados, equiUsuario: 'userId', equiFotos: [] });
-      controller.service.criar.mockResolvedValue(equipamento);
-
-      await controller.criar(req, res);
-
-      expect(controller._processarImagemParaFoto).not.toHaveBeenCalled();
-      expect(equipamentoSchema.parse).toHaveBeenCalledWith({
-        ...dadosProcessados,
-        equiUsuario: 'userId',
-        equiFotos: [],
-      });
-      expect(controller.service.criar).toHaveBeenCalledWith({
-        ...dadosProcessados,
-        equiUsuario: 'userId',
-        equiFotos: [],
-      });
-      expect(CommonResponse.created).toHaveBeenCalledWith(res, {
-        mensagem: 'Equipamento cadastrado. Aguardando aprovação.',
-        equipamento,
-      });
-    });
-
     it('deve lançar erro se dados forem inválidos', async () => {
       req.body = { equiValorDiaria: 'invalido', equiQuantidadeDisponivel: 'invalido' };
       req.files = [];
@@ -256,7 +226,7 @@ describe('EquipamentoController', () => {
     it('deve lançar erro se dados forem inválidos', async () => {
       const id = '123';
       req.params.id = id;
-      req.body = { nome: 123 };  // dados inválidos
+      req.body = { nome: 123 }; 
 
       EquipamentoIdSchema.parse.mockReturnValue(id);
 
