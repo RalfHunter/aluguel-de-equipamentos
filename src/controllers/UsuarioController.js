@@ -59,7 +59,7 @@ class UsuarioController {
         UsuarioIdSchema.parse(id)
         const parseData = await UsuarioUpdateSchema.parseAsync(req.body)
         const data = await this.service.alterarStatus(id, parseData, req)
-        return CommonResponse.success(res, data, 200, `Status alterado com sucesso para ${parseData.status}`)
+        return CommonResponse.success(res, data, 200, `Status alterado com sucesso para ${parseData.ativo}`)
     }
 }
 

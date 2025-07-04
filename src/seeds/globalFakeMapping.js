@@ -11,24 +11,50 @@ const fakeMappings = {
   },
 
 
-   Usuario: {
-        nome: () => fakebr.name.firstName() + " " + fakebr.name.lastName(),
-        email: () => fakebr.internet.email(),
-        telefone: () => fakebr.phone.phoneNumber(),
-        senha: () => fakebr.internet.password(),
-        dataNascimento: () => gerarDataAleatoria(),
-        CPF: () => fakebr.br.cpf(),
-        notaMediaAvaliacao: () => fakebr.random.number({ min: 0, max: 10 }),
-        status: () => fakebr.random.arrayElement(['ativo', 'inativo']),
-        tipoUsuario: () => fakebr.random.arrayElement(['admin', 'usuario']),
-        fotoUsuario: () => fakebr.internet.avatar(),
-        tokenUnico:() =>"",
-        accessToken: () => "",
-        refreshToken:() => "",
-        codigo_recupera_senha:() =>"",
-        exp_codigo_recupera_senha:() =>""
-    }, 
+  Usuario: {
+    nome: () => fakebr.name.firstName() + " " + fakebr.name.lastName(),
+    email: () => fakebr.internet.email(),
+    telefone: () => fakebr.phone.phoneNumber(),
+    senha: () => fakebr.internet.password(),
+    dataNascimento: () => gerarDataAleatoria(),
+    CPF: () => fakebr.br.cpf(),
+    notaMediaAvaliacao: () => fakebr.random.number({ min: 0, max: 10 }),
+    ativo: () => fakebr.random.arrayElement([true, false]),
+    fotoUsuario: () => fakebr.internet.avatar(),
+    tokenUnico: () => "",
+    accessToken: () => "",
+    refreshToken: () => "",
+    codigo_recupera_senha: () => "",
+    exp_codigo_recupera_senha: () => "",
+    grupos:() => []
+  },
 
+  Grupo: {
+    nome: () => fakebr.helpers.arrayElement([
+      'Administradores', 'Gerentes', 'Estoquistas', 'Auditores',
+      'Vendedores', 'Supervisores', 'Operadores', 'Consultores'
+    ]),
+    descricao: () => fakebr.lorem.sentence(),
+    ativo: () => fakebr.datatype.boolean(0.9), // 90% chance de estar ativo
+    data_criacao: () => fakebr.date.past(),
+    data_atualizacao: () => fakebr.date.recent(),
+    nivelPermissao: () => fakebr.random.arrayElement([50, 100]),
+    permissoes: () => {
+      const rotas = ['produtos', 'fornecedores', 'usuarios', 'grupos', 'logs', 'relatorios', 'dashboard'];
+      const rotaAleatoria = fakebr.helpers.arrayElement(rotas);
+      return {
+        rota: rotaAleatoria,
+        dominio: 'localhost',
+        ativo: true,
+        buscar: fakebr.datatype.boolean(0.8),
+        enviar: fakebr.datatype.boolean(0.6),
+        substituir: fakebr.datatype.boolean(0.5),
+        modificar: fakebr.datatype.boolean(0.7),
+        excluir: fakebr.datatype.boolean(0.3)
+      };
+    }
+  }
+  ,
   Endereco: {
 
     endeLogradouro: () => fakebr.address.streetName(),

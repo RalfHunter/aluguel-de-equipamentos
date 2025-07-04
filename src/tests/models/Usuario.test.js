@@ -38,7 +38,7 @@ describe('Modelo de Usuário', () => {
             senha: "Fulano@123",
             dataNascimento: new Date(),
             CPF: "54425888065",
-            status: "ativo",
+            ativo: true,
             tipoUsuario: "usuario",
             fotoUsuario: "https://s3.amazonaws.com/uifaces/faces/twitter/johannesneu/128.jpg"
 
@@ -52,8 +52,7 @@ describe('Modelo de Usuário', () => {
         expect(savedUser.telefone).toBe(userData.telefone)
         expect(savedUser.dataNascimento).toStrictEqual(userData.dataNascimento)
         expect(savedUser.CPF).toBe(userData.CPF)
-        expect(savedUser.status).toBe(userData.status)
-        expect(savedUser.tipoUsuario).toBe(userData.tipoUsuario)
+        expect(savedUser.ativo).toBe(userData.ativo)
         expect(savedUser.fotoUsuario).toBe(userData.fotoUsuario)
     })
     it('Não deve criar um usuário com email duplicado', async () => {
@@ -64,7 +63,7 @@ describe('Modelo de Usuário', () => {
             senha: "Fulano@123",
             dataNascimento: new Date(),
             CPF: "54425888065",
-            status: "ativo",
+            ativo: true,
             tipoUsuario: "usuario",
             fotoUsuario: "https://s3.amazonaws.com/uifaces/faces/twitter/johannesneu/128.jpg"
         }
@@ -75,7 +74,7 @@ describe('Modelo de Usuário', () => {
             senha: "Fulano@123",
             dataNascimento: new Date(),
             CPF: "27793868005",
-            status: "ativo",
+            ativo: true,
             tipoUsuario: "usuario",
             fotoUsuario: "https://s3.amazonaws.com/uifaces/faces/twitter/johannesneu/128.jpg"
         }
@@ -93,8 +92,7 @@ describe('Modelo de Usuário', () => {
             senha: "Fulano@123",
             dataNascimento: new Date(),
             CPF: "54425888065",
-            status: "ativo",
-            tipoUsuario: "usuario",
+            ativo: true,
             fotoUsuario: "https://s3.amazonaws.com/uifaces/faces/twitter/johannesneu/128.jpg"
         }
         const userData2 = {
@@ -104,8 +102,7 @@ describe('Modelo de Usuário', () => {
             senha: "Fulano@123",
             dataNascimento: new Date(),
             CPF: "27793868005",
-            status: "ativo",
-            tipoUsuario: "usuario",
+            ativo: true,
             fotoUsuario: "https://s3.amazonaws.com/uifaces/faces/twitter/johannesneu/128.jpg"
         }
         const user1 = new Usuario(userData)
@@ -122,8 +119,7 @@ describe('Modelo de Usuário', () => {
             senha: "Fulano@123",
             dataNascimento: new Date(),
             CPF: "54425888065",
-            status: "ativo",
-            tipoUsuario: "usuario",
+            ativo: true,
             fotoUsuario: "https://s3.amazonaws.com/uifaces/faces/twitter/johannesneu/128.jpg"
         }
         const userData2 = {
@@ -133,8 +129,7 @@ describe('Modelo de Usuário', () => {
             senha: "Fulano@123",
             dataNascimento: new Date(),
             CPF: "54425888065",
-            status: "ativo",
-            tipoUsuario: "usuario",
+            ativo: true,
             fotoUsuario: "https://s3.amazonaws.com/uifaces/faces/twitter/johannesneu/128.jpg"
         }
         const user1 = new Usuario(userData)

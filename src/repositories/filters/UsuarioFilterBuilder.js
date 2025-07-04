@@ -1,9 +1,12 @@
 import UsuarioModel from "../../models/Usuario.js"
-
+import GrupoModel from "../../models/Grupo.js"
+import GrupoRepository from "../GrupoRepository.js"
 class UsuarioFilterBuilder {
     constructor(){
         this.filtros = {}
         this.usuarioModel = UsuarioModel
+        this.grupoModel = GrupoModel
+        this.grupoRepository = new GrupoRepository()
     }
     comNome(nome){
         if(nome){
@@ -17,18 +20,31 @@ class UsuarioFilterBuilder {
         }
         return this
     }
-    comStatus(status){
-        if(status){
-            this.filtros.status = {$eq: status}
+    comAtivo(ativo) {
+        if (ativo === 'true') {
+            this.filtros.ativo = true;
         }
-        return this
-    }
-    comTipoUsuario(tipo){
-        if(tipo){
-            this.filtros.tipoUsuario = {$eq: tipo}
+        if (ativo === 'false') {
+            this.filtros.ativo = false;
         }
-        return this
+        return this;
     }
+    async comGrupo(grupo) {
+        if (grupo) {
+            // Não re-instancie o grupoRepository aqui.
+            const gruposEncontrados = await this.grupoRepository.buscarPorNome(grupo);
+
+            const grupoIds = gruposEncontrados
+                ? Array.isArray(gruposEncontrados)
+                    ? gruposEncontrados.map(g => g._id)
+                    : [gruposEncontrados._id]
+                : [];
+
+            this.filtros.grupos = { $in: grupoIds };
+        }
+        return this;
+    }
+
     build(){
         // console.log(this.filtros)
         return this.filtros

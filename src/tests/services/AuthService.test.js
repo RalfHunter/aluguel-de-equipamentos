@@ -124,7 +124,8 @@ describe('AuthService - carregatokens', () => {
                 nome: 'Fulano',
                 nota: 0,
                 email: "Witney_Saraiva75@hotmail.com",
-                status: 'ativo'
+                ativo: true,
+                status: "ativo"
             }
             service.repository.removeToken.mockResolvedValue(mockData)
             const resultado = await service.logout(mockData.id)
@@ -137,7 +138,8 @@ describe('AuthService - carregatokens', () => {
                 nome: 'Fulano',
                 nota: 0,
                 email: "Witney_Saraiva75@hotmail.com",
-                status: 'ativo'
+                ativo: true,
+                status: "ativo"
             }
             service.repository.removeToken.mockRejectedValue(new CustomError({
                 statusCode: 404,
@@ -166,7 +168,8 @@ describe('AuthService - carregatokens', () => {
                 senha: '$2b$08$g3EwTL5DLNQDtzqYaJs/COncY6TNqmkuxjyXS6HfxTYqX0YNTtsia',
                 refreshToken: null,
                 accessToken: null,
-                status: 'ativo'
+                ativo: true,
+                status: "ativo"
             }
             // A função passada aqui, transforma o objeto javascript em um objeto mongoose
             // Para que pesso ser convertido em objeto javascript novamente, afim de não
@@ -179,7 +182,8 @@ describe('AuthService - carregatokens', () => {
                     senha: '$2b$08$g3EwTL5DLNQDtzqYaJs/COncY6TNqmkuxjyXS6HfxTYqX0YNTtsia',
                     refeshToken: null,
                     accessToken: null,
-                    status: 'ativo'
+                    ativo: true,
+                status: "ativo"
                 })
             })
             bcrypt.compare.mockResolvedValue(true)
@@ -221,7 +225,8 @@ describe('AuthService - carregatokens', () => {
                 senha: '$2b$08$g3EwTL5DLNQDtzqYaJs/COncY6TNqmkuxjyXS6HfxTYqX0YNTtsia',
                 refreshToken: null,
                 accessToken: null,
-                status: 'ativo'
+                ativo: true,
+                status: "ativo"
             }
             service.usuarioRepository.buscarPorEmailCadastrado.mockResolvedValue(mockData)
             await expect(service.login(req.body)).rejects.toMatchObject({
@@ -262,7 +267,8 @@ describe('AuthService - carregatokens', () => {
                 senha: '$2b$08$g3EwTL5DLNQDtzqYaJs/COncY6TNqmkuxjyXS6HfxTYqX0YNTtsia',
                 refreshToken: null,
                 accessToken: null,
-                status: 'ativo'
+                ativo: true,
+                status: "ativo"
             }
             service.usuarioRepository.buscarPorEmailCadastrado.mockResolvedValue(mockData)
             bcrypt.compare.mockResolvedValue(true)
@@ -274,7 +280,8 @@ describe('AuthService - carregatokens', () => {
             const mockUser = {
                 _id: '123',
                 refreshToken: 'token.valido',
-                status: 'ativo',
+                ativo: true,
+                status: "ativo",
                 toObject: () => ({ _id: '123', refreshToken: 'token.valido' })
             };
 
@@ -294,7 +301,8 @@ describe('AuthService - carregatokens', () => {
         it('deve lançar erro 500 se refreshToken der erro desconhecido ao validar', async () => {
             const mockUser = {
                 _id: '123',
-                status: 'ativo',
+                ativo: true,
+                status: "ativo",
                 refreshToken: 'token.invalido',
                 toObject: () => ({ _id: '123', refreshToken: 'token.invalido' })
             };
@@ -327,7 +335,8 @@ describe('AuthService - carregatokens', () => {
                 senha: '$2b$08$g3EwTL5DLNQDtzqYaJs/COncY6TNqmkuxjyXS6HfxTYqX0YNTtsia',
                 refreshToken: null,
                 accessToken: null,
-                status: 'ativo'
+                ativo: true,
+                status: "ativo"
             }
             // A função passada aqui, transforma o objeto javascript em um objeto mongoose
             // Para que pesso ser convertido em objeto javascript novamente, afim de não
@@ -340,7 +349,8 @@ describe('AuthService - carregatokens', () => {
                     senha: '$2b$08$g3EwTL5DLNQDtzqYaJs/COncY6TNqmkuxjyXS6HfxTYqX0YNTtsia',
                     refeshToken: 'token válido',
                     accessToken: null,
-                    status: 'ativo'
+                    ativo: true,
+                status: "ativo"
                 })
             })
             bcrypt.compare.mockResolvedValue(true)
@@ -363,7 +373,8 @@ describe('AuthService - carregatokens', () => {
                 senha: '$2b$08$g3EwTL5DLNQDtzqYaJs/COncY6TNqmkuxjyXS6HfxTYqX0YNTtsia',
                 refreshToken: 'token válido',
                 accessToken: null,
-                status: 'ativo'
+                ativo: true,
+                status: "ativo"
             }
             // A função passada aqui, transforma o objeto javascript em um objeto mongoose
             // Para que pesso ser convertido em objeto javascript novamente, afim de não
@@ -376,7 +387,8 @@ describe('AuthService - carregatokens', () => {
                     senha: '$2b$08$g3EwTL5DLNQDtzqYaJs/COncY6TNqmkuxjyXS6HfxTYqX0YNTtsia',
                     refeshToken: null,
                     accessToken: null,
-                    status: 'ativo'
+                    ativo: true,
+                status: "ativo"
                 })
             })
             bcrypt.compare.mockResolvedValue(true)
@@ -399,7 +411,8 @@ describe('AuthService - carregatokens', () => {
                 senha: '$2b$08$g3EwTL5DLNQDtzqYaJs/COncY6TNqmkuxjyXS6HfxTYqX0YNTtsia',
                 refreshToken: null,
                 accessToken: null,
-                status: 'ativo'
+                ativo: true,
+                status: "ativo"
             }
             service.usuarioRepository.buscarPorId.mockResolvedValue({
                 ...mockData, toObject: () => ({
@@ -409,7 +422,8 @@ describe('AuthService - carregatokens', () => {
                     senha: '$2b$08$g3EwTL5DLNQDtzqYaJs/COncY6TNqmkuxjyXS6HfxTYqX0YNTtsia',
                     refreshToken: null,
                     accessToken: null,
-                    status: 'ativo'
+                    ativo: true,
+                status: "ativo"
                 })
             })
             service.TokenUtil.generateAccessToken.mockResolvedValue(true)
@@ -423,8 +437,10 @@ describe('AuthService - carregatokens', () => {
                 _id: '123',
                 refreshToken: 'token-antigo',
                 senha: 'senha',
-                status: 'ativo',
-                toObject: () => ({ _id: '123', refreshToken: 'token-antigo', status: 'ativo' })
+                ativo: true,
+                status: "ativo",
+                toObject: () => ({ _id: '123', refreshToken: 'token-antigo', ativo: true,
+                status: "ativo" })
             };
 
             service.usuarioRepository.buscarPorId.mockResolvedValue(mockUser);
@@ -447,8 +463,10 @@ describe('AuthService - carregatokens', () => {
                 _id: '123',
                 refreshToken: 'token-diferente',
                 senha: 'senha',
-                status: 'ativo',
-                toObject: () => ({ _id: '123', refreshToken: 'token-diferente', status: 'ativo' })
+                ativo: true,
+                status: "ativo",
+                toObject: () => ({ _id: '123', refreshToken: 'token-diferente', ativo: true,
+                status: "ativo" })
             };
             service.usuarioRepository.buscarPorId.mockResolvedValue(mockUser)
 
@@ -474,7 +492,8 @@ describe('AuthService - carregatokens', () => {
                 senha: '$2b$08$g3EwTL5DLNQDtzqYaJs/COncY6TNqmkuxjyXS6HfxTYqX0YNTtsia',
                 refreshToken: null,
                 accessToken: null,
-                status: 'ativo'
+                ativo: true,
+                status: "ativo"
             }
             service.usuarioRepository.buscarPorEmailCadastrado.mockResolvedValue(mockData)
             service.usuarioRepository.atualizar.mockResolvedValue(mockData)
@@ -531,7 +550,8 @@ describe('AuthService - carregatokens', () => {
                 senha: '$2b$08$g3EwTL5DLNQDtzqYaJs/COncY6TNqmkuxjyXS6HfxTYqX0YNTtsia',
                 refreshToken: null,
                 accessToken: null,
-                status: 'ativo'
+                ativo: true,
+                status: "ativo"
             }
             service.usuarioRepository.buscarPorEmailCadastrado.mockResolvedValue(mockData);
             service.usuarioRepository.buscarPorCodigoRecuperacao
@@ -555,7 +575,8 @@ describe('AuthService - carregatokens', () => {
                 senha: '$2b$08$g3EwTL5DLNQDtzqYaJs/COncY6TNqmkuxjyXS6HfxTYqX0YNTtsia',
                 refreshToken: null,
                 accessToken: null,
-                status: 'ativo'
+                ativo: true,
+                status: "ativo"
             }
             service.usuarioRepository.buscarPorEmailCadastrado.mockResolvedValue(mockData)
             service.usuarioRepository.atualizar.mockResolvedValue(null)

@@ -1,18 +1,18 @@
 // middlewares/AuthPermission.js
-import { promisify } from 'util';
+
 import jwt from 'jsonwebtoken';
+import UsuarioRepository from '../repositories/UsuarioRepository.js';
 import { CustomError, errorHandler, messages } from '../utils/helpers/index.js';
-import AuthService from '../services/AuthService.js';
+
 // Certifique-se de que as variáveis de ambiente estejam carregadas
-const JWT_SECRET = process.env.JWT_SECRET_ACCESS_TOKEN;
+const JWT_SECRET_ACCESS_TOKEN = process.env.JWT_SECRET_ACCESS_TOKEN;
 
 class AuthPermission {
   constructor() {
     this.jwt = jwt;
-    this.JWT_SECRET = JWT_SECRET;
+    this.usuario = new UsuarioRepository()
+    this.JWT_SECRET_ACCESS_TOKEN = JWT_SECRET_ACCESS_TOKEN;
     this.messages = messages;
-    this.service = new AuthService();
-
 
     // Vincula o método handle ao contexto da instância
     this.handle = this.handle.bind(this);
@@ -20,25 +20,105 @@ class AuthPermission {
 
   async handle(req, res, next) {
     try {
-      // 1. Extrai o token do cabeçalho Authorization
-      const authHeader = req.headers.authorization;
+     // 1. Extrair o token do cabeçalho Authorization
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log("TOKENNNNNNNNNNNNN")
+      throw new CustomError({
+        statusCode: 401,
+        errorType: 'authenticationError',
+        field: 'Authorization',
+        details: [],
+        customMessage: 'Token não encontrado ou inválido.'
+      });
+    }
 
-      const [scheme, token] = authHeader.split(' ');
-      const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET_ACCESS_TOKEN);
-      
-      const tokenData = await this.service.carregatokens(decoded.id);
-      // console.log("AQUIIIIIII",tokenData?.data?.refreshToken)
-    
-    
-      if(tokenData?.data?.tipoUsuario !== "admin"){
+    const token = authHeader.split(' ')[1];
+
+    // 2. Decodificar o token para obter o ID do usuário
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET_ACCESS_TOKEN);
+    } catch (err) {
+      throw new CustomError({
+        statusCode: 401,
+        errorType: 'authenticationError',
+        field: 'Token',
+        details: [],
+        customMessage: 'Token inválido ou expirado.'
+      });
+    }
+    const userId = decoded.id;
+
+    // 3. Buscar o usuário no banco de dados
+    const usuario = await this.usuario.buscarPorId(req.user_id)
+    console.log("USUARIO", usuario)
+    if (!usuario) {
+      throw new CustomError({
+        statusCode: 404,
+        errorType: 'resourceNotFound',
+        field: 'Usuario',
+        details: [],
+        customMessage: 'Usuário não encontrado.'
+      });
+    }
+  
+
+    // 4. Extrair a rota e o método da requisição
+    const rotaCompleta = req.route?.path || req.url.split('?')[0]; // Remove query params
+    const rotaReq = rotaCompleta.split('/').filter(Boolean)[0].toLowerCase();
+    const metodoReq = req.method;
+
+    // 5. Verificar se algum grupo do usuário tem permissão para acessar a rota
+    const metodoMap = {
+      'GET': 'buscar',
+      'POST': 'enviar',
+      'PUT': 'substituir',
+      'PATCH': 'modificar',
+      'DELETE': 'excluir'
+    };
+
+    const metodoPermissao = metodoMap[metodoReq];
+    if (!metodoPermissao) {
+      throw new CustomError({
+        statusCode: 405,
+        errorType: 'methodNotAllowed',
+        field: 'Método',
+        details: [],
+        customMessage: 'Método HTTP não permitido.'
+      });
+    }
+
+    let hasPermission = false;
+
+    for (const grupo of usuario.grupos) {
+      const permissao = grupo.permissoes.find(
+        (p) => p.rota === rotaReq && p[metodoPermissao] === true
+      );
+      // grupo.permissoes.find((p) => console.log(`${p.rota} === ${rotaReq} && ${p[metodoPermissao]} === true`))
+      if (permissao) {
+        hasPermission = true;
+        break;
+      }
+    }
+      if (!hasPermission) {
+        console.log(hasPermission)
         throw new CustomError({
-          statusCode: 401,
-          errorType: 'unauthorized',
-          field: 'Token',
+          statusCode: 403,
+          errorType: 'forbidden',
+          field: 'Permissão',
           details: [],
-          customMessage: 'Somente administradores tem acesso'
+          customMessage: this.messages.error.resourceNotFound('Permissão')
         });
       }
+
+      // 8. Anexa o usuário ao objeto de requisição para uso posterior
+      req.user = { id: userId };
+      let nivelPermissao = null
+      for(const grupo of usuario.grupos){
+        nivelPermissao = nivelPermissao >= grupo.nivelPermissao ? nivelPermissao : grupo.nivelPermissao
+      }
+      req.nivelPermissao = nivelPermissao
       // 9. Permite a continuação da requisição
       next();
     } catch (error) {
