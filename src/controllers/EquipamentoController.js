@@ -96,6 +96,9 @@ class EquipamentoController {
         return CommonResponse.error(
           res,
           HttpStatusCodes.FORBIDDEN.code,
+          'forbidden',
+          null,
+          [],
           'Acesso restrito a administradores para filtrar equipamentos pendentes.'
         );
       }
@@ -107,10 +110,32 @@ class EquipamentoController {
 
   async listarPorId(req, res) {
     const { id } = req.params;
-    EquipamentoIdSchema.parse(id);
+
+    const validation = EquipamentoIdSchema.safeParse(id);
+    if (!validation.success) {
+      return CommonResponse.error(
+        res,
+        HttpStatusCodes.BAD_REQUEST.code,
+        'invalidId',
+        'id',
+        [],
+        'ID inválido.'
+      );
+    }
 
     const usuarioId = req.user_id?.toString();
     const equipamento = await this.service.listarPorId(id, usuarioId);
+
+    if (!equipamento) {
+      return CommonResponse.error(
+        res,
+        HttpStatusCodes.NOT_FOUND.code,
+        'notFound',
+        null,
+        [],
+        'Equipamento não encontrado.'
+      );
+    }
 
     return CommonResponse.success(res, equipamento);
   }
@@ -123,6 +148,17 @@ class EquipamentoController {
     for (const file of files) {
       const foto = this._processarImagemParaFoto(file, req);
       equiFotos.push(foto);
+    }
+
+    if (equiFotos.length === 0) {
+      return CommonResponse.error(
+        res,
+        HttpStatusCodes.BAD_REQUEST.code,
+        'badRequest',
+        null,
+        [],
+        'É obrigatório enviar pelo menos uma foto.'
+      );
     }
 
     const dadosProcessados = this._processarDadosFormulario(req.body);
@@ -144,10 +180,32 @@ class EquipamentoController {
 
   async atualizar(req, res) {
     const { id } = req.params;
-    EquipamentoIdSchema.parse(id);
+
+    const validation = EquipamentoIdSchema.safeParse(id);
+    if (!validation.success) {
+      return CommonResponse.error(
+        res,
+        HttpStatusCodes.BAD_REQUEST.code,
+        'invalidId',
+        'id',
+        [],
+        'ID inválido.'
+      );
+    }
 
     const dadosAtualizados = equipamentoUpdateSchema.parse(req.body);
     const equipamento = await this.service.atualizar(id, dadosAtualizados);
+
+    if (!equipamento) {
+      return CommonResponse.error(
+        res,
+        HttpStatusCodes.NOT_FOUND.code,
+        'notFound',
+        null,
+        [],
+        'Equipamento não encontrado para atualização.'
+      );
+    }
 
     return CommonResponse.success(res, equipamento, 200, 'Equipamento atualizado com sucesso.');
   }
@@ -156,13 +214,42 @@ class EquipamentoController {
     const usuario = await Usuario.findById(req.user_id);
 
     if (!usuario || usuario.tipoUsuario !== 'admin') {
-      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito a administradores.');
+      return CommonResponse.error(
+        res,
+        HttpStatusCodes.FORBIDDEN.code,
+        'forbidden',
+        null,
+        [],
+        'Acesso restrito a administradores.'
+      );
     }
 
     const { id } = req.params;
-    EquipamentoIdSchema.parse(id);
+    const validation = EquipamentoIdSchema.safeParse(id);
+    if (!validation.success) {
+      return CommonResponse.error(
+        res,
+        HttpStatusCodes.BAD_REQUEST.code,
+        'invalidId',
+        'id',
+        [],
+        'ID inválido.'
+      );
+    }
 
     const equipamento = await this.service.aprovar(id);
+
+    if (!equipamento) {
+      return CommonResponse.error(
+        res,
+        HttpStatusCodes.NOT_FOUND.code,
+        'notFound',
+        null,
+        [],
+        'Equipamento não encontrado para aprovação.'
+      );
+    }
+
     return CommonResponse.success(res, equipamento, 200, 'Equipamento aprovado com sucesso.');
   }
 
@@ -170,13 +257,42 @@ class EquipamentoController {
     const usuario = await Usuario.findById(req.user_id);
 
     if (!usuario || usuario.tipoUsuario !== 'admin') {
-      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito a administradores.');
+      return CommonResponse.error(
+        res,
+        HttpStatusCodes.FORBIDDEN.code,
+        'forbidden',
+        null,
+        [],
+        'Acesso restrito a administradores.'
+      );
     }
 
     const { id } = req.params;
-    EquipamentoIdSchema.parse(id);
+    const validation = EquipamentoIdSchema.safeParse(id);
+    if (!validation.success) {
+      return CommonResponse.error(
+        res,
+        HttpStatusCodes.BAD_REQUEST.code,
+        'invalidId',
+        'id',
+        [],
+        'ID inválido.'
+      );
+    }
 
     const resultado = await this.service.reprovar(id);
+
+    if (!resultado) {
+      return CommonResponse.error(
+        res,
+        HttpStatusCodes.NOT_FOUND.code,
+        'notFound',
+        null,
+        [],
+        'Equipamento não encontrado para reprovação.'
+      );
+    }
+
     return CommonResponse.success(res, resultado, 200, 'Equipamento reprovado e excluído com sucesso.');
   }
 
@@ -184,14 +300,42 @@ class EquipamentoController {
     const { id } = req.params;
     const file = req.file;
 
-    EquipamentoIdSchema.parse(id);
+    const validation = EquipamentoIdSchema.safeParse(id);
+    if (!validation.success) {
+      return CommonResponse.error(
+        res,
+        HttpStatusCodes.BAD_REQUEST.code,
+        'invalidId',
+        'id',
+        [],
+        'ID inválido.'
+      );
+    }
 
     if (!file) {
-      return CommonResponse.error(res, HttpStatusCodes.BAD_REQUEST.code, 'Nenhuma foto foi enviada.');
+      return CommonResponse.error(
+        res,
+        HttpStatusCodes.BAD_REQUEST.code,
+        'badRequest',
+        null,
+        [],
+        'Nenhuma foto foi enviada.'
+      );
     }
 
     const novaFoto = this._processarImagemParaFoto(file, req);
     const equipamento = await this.service.adicionarFoto(id, novaFoto);
+
+    if (!equipamento) {
+      return CommonResponse.error(
+        res,
+        HttpStatusCodes.NOT_FOUND.code,
+        'notFound',
+        null,
+        [],
+        'Equipamento não encontrado para adicionar foto.'
+      );
+    }
 
     return CommonResponse.success(res, equipamento, 200, 'Foto adicionada com sucesso.');
   }

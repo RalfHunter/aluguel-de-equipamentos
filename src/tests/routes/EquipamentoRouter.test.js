@@ -63,8 +63,7 @@ describe('Rotas Equipamentos - Integração', () => {
     it('Retorna erro 403 para usuário comum ao filtrar status pendente', async () => {
       mockUsuario('comum');
 
-      Equipamento.paginate.mockResolvedValue(null); // simula falha de permissão
-
+      Equipamento.paginate.mockResolvedValue(null); 
       const res = await request(app)
         .get('/equipamentos?status=pendente')
         .set('Authorization', `Bearer ${tokenUser}`);
@@ -250,65 +249,43 @@ describe('Rotas Equipamentos - Integração', () => {
   });
 
   describe('PATCH /equipamentos/:id/reprovar', () => {
-    it('Admin reprova equipamento com motivo válido', async () => {
-      mockUsuario('admin');
+  it('Admin reprova (exclui) equipamento com sucesso', async () => {
+    mockUsuario('admin');
 
-      Equipamento.findById.mockResolvedValue({
-        _id: validId,
-        equiStatus: 'pendente',
-        save: jest.fn().mockResolvedValue({ _id: validId, equiStatus: 'reprovado' }),
-      });
-
-      const res = await request(app)
-        .patch(`/equipamentos/${validId}/reprovar`)
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({ motivoReprovacaoPublicacao: 'Fotos inadequadas' });
-
-      expect(res.statusCode).toBe(200);
-      expect(res.body.message).toMatch(/reprovado/i);
+    Equipamento.findByIdAndDelete.mockResolvedValue({
+      _id: validId,
     });
 
-    it('Retorna 400 se motivo de reprovação não for informado', async () => {
-      mockUsuario('admin');
+    const res = await request(app)
+      .patch(`/equipamentos/${validId}/reprovar`)
+      .set('Authorization', `Bearer ${tokenAdmin}`);
 
-      Equipamento.findById.mockResolvedValue({
-        _id: validId,
-        equiStatus: 'pendente',
-        save: jest.fn().mockResolvedValue(true),
-      });
-
-      const res = await request(app)
-        .patch(`/equipamentos/${validId}/reprovar`)
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({});
-
-      expect(res.statusCode).toBe(400);
-    });
-
-    it('Usuário comum recebe 403 ao tentar reprovar', async () => {
-      mockUsuario('comum');
-
-      const res = await request(app)
-        .patch(`/equipamentos/${validId}/reprovar`)
-        .set('Authorization', `Bearer ${tokenUser}`)
-        .send({ motivoReprovacaoPublicacao: 'Razão' });
-
-      expect(res.statusCode).toBe(403);
-    });
-
-    it('Retorna 404 se equipamento não existir para reprovar', async () => {
-      mockUsuario('admin');
-
-      Equipamento.findById.mockResolvedValue(null);
-
-      const res = await request(app)
-        .patch(`/equipamentos/${invalidId}/reprovar`)
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({ motivoReprovacaoPublicacao: 'Razão' });
-
-      expect(res.statusCode).toBe(404);
-    });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.message).toMatch(/reprovado/i);
   });
+
+  it('Usuário comum recebe 403 ao tentar reprovar', async () => {
+    mockUsuario('comum');
+
+    const res = await request(app)
+      .patch(`/equipamentos/${validId}/reprovar`)
+      .set('Authorization', `Bearer ${tokenUser}`);
+
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('Retorna 404 se equipamento não existir para reprovar', async () => {
+    mockUsuario('admin');
+
+    Equipamento.findByIdAndDelete.mockResolvedValue(null);
+
+    const res = await request(app)
+      .patch(`/equipamentos/${invalidId}/reprovar`)
+      .set('Authorization', `Bearer ${tokenAdmin}`);
+
+    expect(res.statusCode).toBe(404);
+  });
+});
 
   describe('POST /equipamentos/:id/foto', () => {
     it('Adiciona foto ao equipamento', async () => {
