@@ -57,9 +57,7 @@ class GrupoController {
 
         //1ª Validação estrutural - validação do ID passado por parâmetro
         const { id } = req.params || null;
-        if (id) {
-            GrupoIdSchema.parse(id); // Lança erro automaticamente se inválido
-        }
+        GrupoIdSchema.parse(id)
 
         // Validação dos dados de entrada usando Zod (estrutural)
         const parsedData = GrupoUpdateSchema.parse(req.body);
