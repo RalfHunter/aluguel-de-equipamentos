@@ -86,11 +86,13 @@ describe('UsuarioController', () => {
 
   describe('atualizar', () => {
     it('deve atualizar um usuário pelo id recebido no req.user_id', async () => {
-      req = { user_id: '67959501ea0999e0a0fa9f59', body: {
-        nome: "Nome Alterado Com Sucesso",
-        email: "emailalteradocomsucesso@gmail.com",
-        telefone: "(69) 99999-9999"
-      }};
+      req = {
+        user_id: '67959501ea0999e0a0fa9f59', body: {
+          nome: "Nome Alterado Com Sucesso",
+          email: "emailalteradocomsucesso@gmail.com",
+          telefone: "(69) 99999-9999"
+        }
+      };
       const updatedData = {
         id: req.user_id,
         nome: req.body.nome,

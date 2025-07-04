@@ -52,7 +52,7 @@ class AuthPermission {
 
     // 3. Buscar o usuário no banco de dados
     const usuario = await this.usuario.buscarPorId(req.user_id)
-    console.log("USUARIO", usuario)
+    // console.log("USUARIO", usuario)
     if (!usuario) {
       throw new CustomError({
         statusCode: 404,

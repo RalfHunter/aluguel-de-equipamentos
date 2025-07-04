@@ -29,9 +29,8 @@ class GrupoController {
         }
 
         const data = await this.service.listar(req);
-        const message = id ? 'Grupo encontrado com sucesso' : 'Grupos listados com sucesso';
         
-        return CommonResponse.success(res, data, 200, message);
+        return CommonResponse.success(res, data);
     }
 
     /**
@@ -57,9 +56,7 @@ class GrupoController {
 
         //1ª Validação estrutural - validação do ID passado por parâmetro
         const { id } = req.params || null;
-        if (id) {
-            GrupoIdSchema.parse(id); // Lança erro automaticamente se inválido
-        }
+        GrupoIdSchema.parse(id)
 
         // Validação dos dados de entrada usando Zod (estrutural)
         const parsedData = GrupoUpdateSchema.parse(req.body);
@@ -83,28 +80,13 @@ class GrupoController {
         if (!id) {
             throw new CustomError('ID do grupo é obrigatório para deletar.', HttpStatusCodes.BAD_REQUEST);
         }
-    
+        const parsedData = GrupoIdSchema.parse(id)
         // Chama o serviço para deletar o grupo
         const data = await this.service.deletar(id);
     
         // Se chegou até aqui, é porque deu tudo certo, retornar 200 OK
         return CommonResponse.success(res, data, 200, 'Grupo excluído com sucesso.');
 
-    }
-     async verificarUsuariosAssociados(id) {
-        try {
-            const usuariosAssociados = await this.usuarioModel.findOne({ grupos: id });
-            return usuariosAssociados; // Retorna true se houver usuários, false caso contrário
-        } catch (error) {
-            console.error('Erro ao verificar usuários associados:', error);
-            throw new this.customError({
-                statusCode: 500,
-                errorType: 'internalServerError',
-                field: 'Grupo',
-                details: [],
-                customMessage: messages.error.internalServerError('Grupo')
-            });
-        }
     }
 }
 
