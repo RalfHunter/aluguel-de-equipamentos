@@ -1,5 +1,5 @@
 import GrupoRepository from '../repositories/GrupoRepository.js';
-import { CustomError, HttpStatusCodes } from '../utils/helpers/index.js';
+import { CustomError, HttpStatusCodes, messages } from '../utils/helpers/index.js';
 
 class GrupoService {
     constructor() {
@@ -30,7 +30,7 @@ class GrupoService {
 
     async atualizar(id, parsedData) {
         console.log('Estou no atualizar em GrupoService');
-
+        
         // Garante que o grupo exista
         await this.ensureGroupExists(id);
 

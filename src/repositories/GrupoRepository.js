@@ -8,48 +8,45 @@ class GrupoRepository {
     constructor({
         grupoModel = Grupo,
         usuarioModel = Usuario,
+        customError = CustomError
     } = {}) {
         this.model = grupoModel;
         this.usuarioModel = usuarioModel;
+        this.customError = customError
 
     }
-
-    /**
-     * Lista grupos com filtros e paginação
-     * @param {Object} req - Objeto de requisição
-     * @returns {Object} - Resultado paginado
-     */
     async listar(req) {
         const { id } = req.params || {};
-        
+
         // Se foi fornecido um ID, busca apenas esse grupo
         if (id) {
             const grupo = await this.model.findById(id).lean();
             if (!grupo) {
-                throw new CustomError({
+                throw new this.customError({
                     statusCode: 404,
                     errorType: 'resourceNotFound',
                     field: 'Grupo',
                     details: [],
-                    customMessage: 'Grupo não encontrado'
+                    customMessage: messages.error.resourceNotFound('Grupo')
                 });
             }
+
             return grupo;
         }
 
         // Construir filtros baseados nas queries
         const { nome, descricao, ativo = 'true', page = 1 } = req.query;
 
-            // Garantir que o limite não ultrapasse 100
-            const limite = Math.min(parseInt(req.query.limite, 10) || 10, 100);
+        // Garantir que o limite não ultrapasse 100
+        const limite = Math.min(parseInt(req.query.limite, 10) || 10, 100);
 
 
         const limit = Math.min(parseInt(req.query.limite) || 10, 100);
 
         const filterBuilder = new GrupoFilterBuilder()
-        .comNome(nome || '')
-        .comDescricao(descricao || '')
-        .comAtivo(ativo || '')
+            .comNome(nome || '')
+            .comDescricao(descricao || '')
+            .comAtivo(ativo || '')
 
         const filtros = filterBuilder.build()
         const options = {
@@ -62,10 +59,10 @@ class GrupoRepository {
         return await this.model.paginate(filtros, options);
     }
 
-    
+
     async buscarPorNome(nome, idIgnorado = null) {
         const filtro = { nome: { $regex: `^${nome}$`, $options: 'i' } };
-        
+
         if (idIgnorado) {
             filtro._id = { $ne: idIgnorado };
         }
@@ -78,51 +75,70 @@ class GrupoRepository {
         return await grupo.save();
     }
 
-    async atualizar(id, dadosAtualizacao) {
-        const grupo = await this.model.findByIdAndUpdate(
-            id,
-            dadosAtualizacao,
-            { new: true, runValidators: true }
-        );
+    async atualizar(id, parsedData) {
+        try {
+            const grupo = await this.model.findByIdAndUpdate(id, parsedData, { new: true });
 
-        if (!grupo) {
-            throw new CustomError({
-                statusCode: 404,
-                errorType: 'resourceNotFound',
+            if (!grupo) {
+                throw new this.customError({
+                    statusCode: 404,
+                    errorType: 'resourceNotFound',
+                    field: 'Grupo',
+                    details: [],
+                    customMessage: messages.error.resourceNotFound('Grupo')
+                });
+            }
+            return grupo;
+        } catch (error) {
+            console.error('Erro ao atualizar grupo:', error);
+            // Verificar se o erro já possui uma propriedade 'statusCode'
+            if (error.statusCode) {
+                throw error;
+            }
+            // Caso contrário, lançar um erro interno do servidor
+            throw new this.customError({
+                statusCode: 500,
+                errorType: 'internalServerError',
                 field: 'Grupo',
                 details: [],
-                customMessage: 'Grupo não encontrado'
+                customMessage: messages.error.internalServerError('Grupo')
             });
         }
 
-        return grupo;
+
+
     }
 
     async deletar(id) {
-        // Verificar se há usuários associados ao grupo
-        const usuarioAssociado = await this.usuarioModel.findOne({ grupos: id }).lean();
-        if (usuarioAssociado) {
-            throw new CustomError({
-                statusCode: 400,
-                errorType: 'validationError',
-                field: 'grupo',
-                details: [],
-                customMessage: 'Não é possível deletar o grupo pois há usuários associados a ele'
-            });
-        }
+        try {
+            const grupoDeletado = await this.model.findByIdAndDelete(id);
 
-        const resultado = await this.model.findByIdAndDelete(id);
-        if (!resultado) {
-            throw new CustomError({
-                statusCode: 404,
-                errorType: 'resourceNotFound',
+            if (!grupoDeletado) {
+                throw new this.customError({
+                    statusCode: 404,
+                    errorType: 'resourceNotFound',
+                    field: 'Grupo',
+                    details: [],
+                    customMessage: messages.error.resourceNotFound('Grupo')
+                });
+            }
+            return grupoDeletado;
+        } catch (error) {
+            console.error('Erro ao deletar grupo:', error);
+            // Verificar se o erro já possui uma propriedade 'statusCode'
+            if (error.statusCode) {
+                throw error;
+            }
+            // Caso contrário, lançar um erro interno do servidor
+            throw new this.customError({
+                statusCode: 500,
+                errorType: 'internalServerError',
                 field: 'Grupo',
                 details: [],
-                customMessage: 'Grupo não encontrado'
+                customMessage: messages.error.internalServerError('Grupo')
             });
         }
 
-        return true;
     }
 
     async buscarPorId(id) {
@@ -138,7 +154,7 @@ class GrupoRepository {
         }
         return grupo;
     }
-        async verificarUsuariosAssociados(id) {
+    async verificarUsuariosAssociados(id) {
         try {
             const usuariosAssociados = await this.usuarioModel.findOne({ grupos: id });
             return usuariosAssociados; // Retorna true se houver usuários, false caso contrário

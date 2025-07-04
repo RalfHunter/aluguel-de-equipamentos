@@ -328,63 +328,6 @@ describe('GrupoController', () => {
         });
     });
 
-    describe('verificarUsuariosAssociados', () => {
-        beforeEach(() => {
-            Grupo.usuarioModel = {
-                findOne: jest.fn()
-            };
-            Grupo.customError = jest.fn();
-        });
-
-        it('deve retornar usuários associados se existirem', async () => {
-            const id = 'abc123';
-            const mockUsuario = { _id: 'user1', grupos: [id] };
-
-            Grupo.usuarioModel.findOne.mockResolvedValue(mockUsuario);
-
-            const result = await Grupo.verificarUsuariosAssociados(id);
-
-            expect(Grupo.usuarioModel.findOne).toHaveBeenCalledWith({ grupos: id });
-            expect(result).toEqual(mockUsuario);
-        });
-
-        it('deve retornar null se não houver usuários associados', async () => {
-            const id = 'abc123';
-
-            Grupo.usuarioModel.findOne.mockResolvedValue(null);
-
-            const result = await Grupo.verificarUsuariosAssociados(id);
-
-            expect(Grupo.usuarioModel.findOne).toHaveBeenCalledWith({ grupos: id });
-            expect(result).toBeNull();
-        });
-
-        it('deve lançar erro customizado se houver erro na consulta', async () => {
-            const id = 'abc123';
-            const dbError = new Error('Database error');
-
-            Grupo.usuarioModel.findOne.mockRejectedValue(dbError);
-
-            // Mockar this.customError como uma função construtora
-            Grupo.customError = jest.fn().mockImplementation((config) => {
-                const error = new Error(config.customMessage || 'Internal server error');
-                error.statusCode = config.statusCode;
-                return error;
-            });
-
-            await expect(Grupo.verificarUsuariosAssociados(id)).rejects.toThrow();
-
-            expect(Grupo.usuarioModel.findOne).toHaveBeenCalledWith({ grupos: id });
-            expect(Grupo.customError).toHaveBeenCalledWith({
-                statusCode: 500,
-                errorType: 'internalServerError',
-                field: 'Grupo',
-                details: [],
-                customMessage: 'Internal server error'
-            });
-        });
-    });
-
     describe('constructor', () => {
         it('deve inicializar com GrupoService', () => {
             const newController = new GrupoController();
