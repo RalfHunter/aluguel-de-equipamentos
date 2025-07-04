@@ -99,13 +99,19 @@ class EquipamentoService {
     const limite = parseInt(filtros.limit) || 10;
     const builder = new EquipamentoFilterBuilder();
 
-    const status = filtros.status
-      ? filtros.status === 'true'
-        ? 'ativo'
-        : filtros.status === 'false'
-          ? 'pendente'
-          : filtros.status
-      : 'ativo';
+    let status = 'ativo'; // padrão
+
+    if (typeof filtros.status === 'string') {
+      if (filtros.status === 'true' || filtros.status.toLowerCase() === 'ativo') {
+        status = 'ativo';
+      } else if (filtros.status === 'false' || filtros.status.toLowerCase() === 'pendente') {
+        status = 'pendente';
+      } else if (['ativo', 'pendente', 'inativo'].includes(filtros.status.toLowerCase())) {
+        status = filtros.status.toLowerCase();
+      } else {
+        status = 'ativo';
+      }
+    }
 
     builder
       .comCategoria(filtros.categoria)
@@ -117,6 +123,13 @@ class EquipamentoService {
   }
 
   async _buscarEquipamentoExistente(id) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new CustomError({
+        statusCode: HttpStatusCodes.BAD_REQUEST.code,
+        customMessage: 'ID inválido.',
+      });
+    }
+
     const equipamento = await this.repository.listarPorId(id);
     if (!equipamento) {
       throw new CustomError({

@@ -15,7 +15,7 @@ router
     .get("/equipamentos/:id", AuthMiddleware, asyncWrapper(equipamentoController.listarPorId.bind(equipamentoController)))
 
     //cadastrar um equipamento
-    .post("/equipamentos", AuthMiddleware, upload.array('file'), asyncWrapper(equipamentoController.criar.bind(equipamentoController)))
+    .post("/equipamentos", AuthMiddleware, upload.array('files'), asyncWrapper(equipamentoController.criar.bind(equipamentoController)))
 
     //atualizar dados do equipamento (que esteja ativo)
     .patch("/equipamentos/:id", AuthMiddleware, asyncWrapper(equipamentoController.atualizar.bind(equipamentoController)))
@@ -25,5 +25,7 @@ router
 
     //rota adm reprovar um equipamento
     .patch("/equipamentos/:id/reprovar", AuthMiddleware, asyncWrapper(equipamentoController.reprovar.bind(equipamentoController)));
+
+    
 
 export default router;
