@@ -12,7 +12,7 @@ class Usuario {
             dataNascimento:{type:Date, required: true},
             CPF:{type:String, required:true, unique:true},
             notaMediaAvaliacao:{type:Number},
-            ativo: {type: Boolean, required: true},
+            ativo: {type: Boolean, required: true, default:true},
             fotoUsuario:{type:String},
             tokenUnico:{type: String, select:false},
             accessToken:{type:String, required: false, select:false},

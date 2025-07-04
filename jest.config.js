@@ -20,7 +20,7 @@ export default  {
     // testMatch:['**/UsuarioController.test.js']
     // testMatch:['**/AuthMiddleware.test.js']
     // testMatch:['**/usuarioRouter.test.js']
-    // testMatch:['**/authRouter.test.js']
+    testMatch:['**/authRouter.test.js']
     // testMatch:['**/GrupoController.test.js']
     // testMatch:['**/GrupoService.test.js']
     // testMatch:['**/GrupoRepository.test.js']

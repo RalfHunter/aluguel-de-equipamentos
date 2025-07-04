@@ -1,6 +1,7 @@
 import request from 'supertest'
 import mongoose from 'mongoose';
-import { email } from 'zod/v4';
+import fakerbr from 'faker-br';
+import { gerarDataAleatoria } from '../../utils/helpers/randomPastDate';
 
 describe('authRouter', () => {
     let usuarioToken;
@@ -171,7 +172,7 @@ describe('authRouter', () => {
                 accessToken: usuarioToken
             }
             const res = await request(app)
-            .post('/instrospect')
+            .post('/introspect')
             .send(body)
             .expect(200)
             expect(res.body?.message).toEqual('autorizado')
@@ -187,7 +188,7 @@ describe('authRouter', () => {
                 invalido:'inválido'
             }
             const res = await request(app)
-            .post('/instrospect')
+            .post('/introspect')
             .send(body)
             .expect(400)
             expect(res.body?.message).toEqual('Erro de validação. 1 campo(s) inválido(s).')
@@ -229,5 +230,26 @@ describe('authRouter', () => {
            expect(res.body?.message).toEqual('Erro de validação. 1 campo(s) inválido(s).')
            expect(res.body?.errors[0]).toEqual({"message": "Formato de email inválido.", "path": "email"})
         });
+    });
+    describe('post /signup', () =>{
+        it('deve realziar singup com sucesso', async() =>{
+            const body = gerarUsuarioFake()
+            const res = await request(app)
+            .post('/signup')
+            .send(body)
+
+            console.log(res.body)
+        })
     })
 })
+
+function gerarUsuarioFake() {
+  return {
+    nome: fakerbr.name.firstName() + ' ' + fakerbr.name.lastName(),
+    email: fakerbr.internet.email(),
+    telefone: fakerbr.phone.phoneNumber(), // ex: (11) 91234-5678
+    senha: fakerbr.internet.password(12), // pode criptografar depois
+    dataNascimento: gerarDataAleatoria(), // ou fake.date.past(30)
+    CPF: fakerbr.br.cpf(),
+}
+}
