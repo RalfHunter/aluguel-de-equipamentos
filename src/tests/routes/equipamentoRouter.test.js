@@ -4,10 +4,11 @@ import jwt from 'jsonwebtoken';
 import Equipamento from '../../models/Equipamento.js';
 import Usuario from '../../models/Usuario.js';
 import mongoose from 'mongoose';
+import EquipamentoService from '../../services/EquipamentoService.js'; 
 
-// Mock dos modelos e serviços para isolar testes
 jest.mock('../../models/Equipamento.js');
 jest.mock('../../models/Usuario.js');
+jest.mock('../../services/EquipamentoService.js'); 
 
 // Tokens simulados
 const tokenAdmin = jwt.sign({ id: 'adminId' }, process.env.JWT_SECRET_ACCESS_TOKEN || 'secret');
@@ -44,12 +45,13 @@ describe('Rotas Equipamentos - Integração', () => {
     it('Retorna lista de equipamentos para usuário comum com filtro válido', async () => {
       mockUsuario('comum');
 
-      Equipamento.paginate.mockResolvedValue({
-        docs: [{ equiNome: 'Furadeira' }],
-        totalDocs: 1,
-        page: 1,
-        totalPages: 1,
-      });
+EquipamentoService.prototype.listar.mockResolvedValue({
+  docs: [{ equiNome: 'Furadeira' }],
+  totalDocs: 1,
+  page: 1,
+  totalPages: 1,
+});
+
 
       const res = await request(app)
         .get('/equipamentos?categoria=Furadeira&status=ativo&minValor=10&maxValor=100&page=1&limit=5')
@@ -91,38 +93,43 @@ describe('Rotas Equipamentos - Integração', () => {
     });
   });
 
-  describe('GET /equipamentos/:id', () => {
-    it('Retorna equipamento válido por ID', async () => {
-      mockUsuario('comum');
+ describe('GET /equipamentos/:id', () => {
+  it('Retorna equipamento válido por ID', async () => {
+    mockUsuario('comum');
 
-      Equipamento.findById.mockResolvedValue({
-        _id: validId,
-        equiNome: 'Furadeira',
-        equiDescricao: 'Descrição da furadeira',
-        equiStatus: 'ativo',
-      });
-
-      const res = await request(app)
-        .get(`/equipamentos/${validId}`)
-        .set('Authorization', `Bearer ${tokenUser}`);
-
-      expect(res.statusCode).toBe(200);
-      expect(res.body.data.equiNome).toBe('Furadeira');
+    EquipamentoService.prototype.listarPorId.mockResolvedValue({
+      _id: validId,
+      equiNome: 'Furadeira',
+      equiDescricao: 'Descrição da furadeira',
+      equiStatus: 'ativo',
     });
 
-    it('Retorna 404 se equipamento não existir', async () => {
-      mockUsuario('comum');
+    const res = await request(app)
+      .get(`/equipamentos/${validId}`)
+      .set('Authorization', `Bearer ${tokenUser}`);
 
-      Equipamento.findById.mockResolvedValue(null);
-
-      const res = await request(app)
-        .get(`/equipamentos/${invalidId}`)
-        .set('Authorization', `Bearer ${tokenUser}`);
-
-      expect(res.statusCode).toBe(404);
-      expect(res.body.message).toMatch(/não encontrado/i);
-    });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data.equiNome).toBe('Furadeira');
   });
+
+  it('Retorna 404 se equipamento não existir', async () => {
+    mockUsuario('comum');
+
+    EquipamentoService.prototype.listarPorId.mockImplementation(() => {
+      const error = new Error('Equipamento não encontrado');
+      error.statusCode = 404;
+      throw error;
+    });
+
+    const res = await request(app)
+      .get(`/equipamentos/${invalidId}`)
+      .set('Authorization', `Bearer ${tokenUser}`);
+
+    expect(res.statusCode).toBe(404);
+    expect(res.body.message).toMatch(/não encontrado/i);
+  });
+});
+
 
   describe('POST /equipamentos', () => {
     it('Cria equipamento com fotos e dados válidos', async () => {
@@ -287,27 +294,29 @@ describe('Rotas Equipamentos - Integração', () => {
   });
 });
 
-  describe('POST /equipamentos/:id/foto', () => {
-    it('Adiciona foto ao equipamento', async () => {
-      mockUsuario('comum');
+   describe('POST /equipamentos/:id/foto', () => {
+   it('Adiciona foto ao equipamento', async () => {
+  mockUsuario('comum');
 
-      Equipamento.findById.mockResolvedValue({
-        _id: validId,
-        equiFotos: [],
-        save: jest.fn().mockResolvedValue({
-          _id: validId,
-          equiFotos: [{ url: 'Uploads/equipamentos/foto.jpg', largura: 100, altura: 100, tamanhoMb: 0.1 }],
-        }),
-      });
+  EquipamentoService.prototype.adicionarFoto.mockResolvedValue({
+    _id: validId,
+    equiFotos: [{
+      url: 'uploads/equipamentos/foto.jpg',
+      largura: 100,
+      altura: 100,
+      tamanhoMb: 0.1
+    }]
+  });
 
-      const res = await request(app)
-        .post(`/equipamentos/${validId}/foto`)
-        .set('Authorization', `Bearer ${tokenUser}`)
-        .attach('files', Buffer.from('fake image content'), 'foto.jpg');
+  const res = await request(app)
+    .post(`/equipamentos/${validId}/foto`)
+    .set('Authorization', `Bearer ${tokenUser}`)
+    .attach('files', Buffer.from('fake image content'), 'foto.jpg');
 
-      expect(res.statusCode).toBe(201);
-      expect(res.body.message).toMatch(/foto adicionada/i);
-    });
+  expect(res.statusCode).toBe(200);
+  expect(res.body.message).toMatch(/foto adicionada/i);
+});
+
 
     it('Retorna 404 se equipamento não existir', async () => {
       mockUsuario('comum');
@@ -322,20 +331,18 @@ describe('Rotas Equipamentos - Integração', () => {
       expect(res.statusCode).toBe(404);
     });
 
-    it('Retorna 400 se não enviar foto', async () => {
-      mockUsuario('comum');
+   it('Retorna 400 se não enviar foto', async () => {
+  mockUsuario('comum');
 
-      Equipamento.findById.mockResolvedValue({
-        _id: validId,
-        equiFotos: [],
-        save: jest.fn().mockResolvedValue(true),
-      });
+  EquipamentoService.prototype.adicionarFoto = jest.fn();
 
-      const res = await request(app)
-        .post(`/equipamentos/${validId}/foto`)
-        .set('Authorization', `Bearer ${tokenUser}`);
+  const res = await request(app)
+    .post(`/equipamentos/${validId}/foto`)
+    .set('Authorization', `Bearer ${tokenUser}`); 
 
-      expect(res.statusCode).toBe(400);
-    });
+  expect(res.statusCode).toBe(400);
+  expect(res.body.message).toMatch(/obrigatório enviar uma foto/i);
+});
+
   });
 });

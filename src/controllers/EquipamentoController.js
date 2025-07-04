@@ -296,49 +296,50 @@ class EquipamentoController {
     return CommonResponse.success(res, resultado, 200, 'Equipamento reprovado e excluído com sucesso.');
   }
 
-  async adicionarFoto(req, res) {
-    const { id } = req.params;
-    const file = req.file;
+ async adicionarFoto(req, res) {
+  const { id } = req.params;
+  const file = req.file;
 
-    const validation = EquipamentoIdSchema.safeParse(id);
-    if (!validation.success) {
-      return CommonResponse.error(
-        res,
-        HttpStatusCodes.BAD_REQUEST.code,
-        'invalidId',
-        'id',
-        [],
-        'ID inválido.'
-      );
-    }
-
-    if (!file) {
-      return CommonResponse.error(
-        res,
-        HttpStatusCodes.BAD_REQUEST.code,
-        'badRequest',
-        null,
-        [],
-        'Nenhuma foto foi enviada.'
-      );
-    }
-
-    const novaFoto = this._processarImagemParaFoto(file, req);
-    const equipamento = await this.service.adicionarFoto(id, novaFoto);
-
-    if (!equipamento) {
-      return CommonResponse.error(
-        res,
-        HttpStatusCodes.NOT_FOUND.code,
-        'notFound',
-        null,
-        [],
-        'Equipamento não encontrado para adicionar foto.'
-      );
-    }
-
-    return CommonResponse.success(res, equipamento, 200, 'Foto adicionada com sucesso.');
+  const validation = EquipamentoIdSchema.safeParse(id);
+  if (!validation.success) {
+    return CommonResponse.error(
+      res,
+      HttpStatusCodes.BAD_REQUEST.code,
+      'invalidId',
+      'id',
+      [],
+      'ID inválido.'
+    );
   }
+
+  if (!file) {
+    return CommonResponse.error(
+      res,
+      HttpStatusCodes.BAD_REQUEST.code,
+      'badRequest',
+      null,
+      [],
+      'É obrigatório enviar uma foto.'
+    );
+  }
+
+  const novaFoto = this._processarImagemParaFoto(file, req);
+  const equipamento = await this.service.adicionarFoto(id, novaFoto);
+
+  if (!equipamento) {
+    return CommonResponse.error(
+      res,
+      HttpStatusCodes.NOT_FOUND.code,
+      'notFound',
+      null,
+      [],
+      'Equipamento não encontrado para adicionar foto.'
+    );
+  }
+
+  return CommonResponse.success(res, equipamento, 200, 'Foto adicionada com sucesso.');
+}
+
 }
 
 export default EquipamentoController;
