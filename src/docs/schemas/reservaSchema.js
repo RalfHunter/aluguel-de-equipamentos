@@ -69,7 +69,7 @@ const reservaSchemas = {
     ],
     description: 'Schema para criação de reserva',
   },
-  ReservaPutPatch: {
+  ReservaPatch: {
     type: 'object',
     properties: {
       dataInicial: reservaJsonSchema.properties.dataInicial,
@@ -90,7 +90,7 @@ const removalMapping = {
   ReservaItem: [],
   ReservaDetalhes: [],
   ReservaPost: ['createdAt', 'updatedAt', '_id'],
-  ReservaPutPatch: ['createdAt', 'updatedAt', '_id'],
+  ReservaPatch: ['createdAt', 'updatedAt', '_id'],
 };
 
 Object.entries(removalMapping).forEach(([schemaKey, fields]) => {
@@ -113,6 +113,6 @@ reservaSchemas.ReservaPost.example = {
   equipamentos: '507f1f77bcf86cd799439011',
   usuarios: '507f191e810c19729de860ea',
 };
-reservaSchemas.ReservaPutPatch.example = await generateExample(reservaSchemas.ReservaPutPatch, null, reservaMongooseSchema);
+reservaSchemas.ReservaPatch.example = await generateExample(reservaSchemas.ReservaPatch, null, reservaMongooseSchema);
 
 export default reservaSchemas;
