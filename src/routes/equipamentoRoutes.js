@@ -10,7 +10,7 @@ const equipamentoController = new EquipamentoController();
 router
     //lista todos os equipamentos cadastrados
     .get("/equipamentos", AuthMiddleware, asyncWrapper(equipamentoController.listar.bind(equipamentoController)))
-
+ 
     //lista um equipamento especifico
     .get("/equipamentos/:id", AuthMiddleware, asyncWrapper(equipamentoController.listarPorId.bind(equipamentoController)))
 

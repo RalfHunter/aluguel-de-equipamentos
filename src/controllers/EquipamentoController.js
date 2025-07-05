@@ -96,7 +96,7 @@ class EquipamentoController {
         return CommonResponse.error(
           res,
           HttpStatusCodes.FORBIDDEN.code,
-          'forbidden',   
+          'forbidden',
           null,
           [],
           'Acesso restrito a administradores para filtrar equipamentos pendentes.'
@@ -119,7 +119,7 @@ class EquipamentoController {
       return CommonResponse.error(
         res,
         HttpStatusCodes.NOT_FOUND.code,
-        'notFound', 
+        'notFound',
         null,
         [],
         'Equipamento não encontrado.'
@@ -130,6 +130,8 @@ class EquipamentoController {
   }
 
   async criar(req, res) {
+    console.log('req.body:', req.body);
+    console.log('req.files:', req.files);
     const usuarioLogado = req.user_id;
     const files = req.files || [];
     const equiFotos = [];
@@ -143,7 +145,7 @@ class EquipamentoController {
       return CommonResponse.error(
         res,
         HttpStatusCodes.BAD_REQUEST.code,
-        'badRequest',   
+        'badRequest',
         null,
         [],
         'É obrigatório enviar pelo menos uma foto.'
@@ -178,7 +180,7 @@ class EquipamentoController {
       return CommonResponse.error(
         res,
         HttpStatusCodes.NOT_FOUND.code,
-        'notFound',  
+        'notFound',
         null,
         [],
         'Equipamento não encontrado para atualização.'
@@ -195,7 +197,7 @@ class EquipamentoController {
       return CommonResponse.error(
         res,
         HttpStatusCodes.FORBIDDEN.code,
-        'forbidden',  
+        'forbidden',
         null,
         [],
         'Acesso restrito a administradores.'

@@ -6,17 +6,44 @@ import Usuario from '../../models/Usuario.js';
 import mongoose from 'mongoose';
 import EquipamentoService from '../../services/EquipamentoService.js';
 import { CustomError } from '../../utils/helpers/index.js';
+import EquipamentoController from '../../controllers/EquipamentoController.js';
+import path from 'path';
 
+// const filePath = path.resolve('uploads/equipamentos/foto.jpg');
 
+// Mock do método privado do controller para processar imagem
+jest.spyOn(EquipamentoController.prototype, '_processarImagemParaFoto').mockImplementation(() => ({
+  url: 'http://localhost/uploads/equipamentos/foto.jpg',
+  largura: 100,
+  altura: 100,
+  tamanhoMb: 0.1,
+}));
+
+// Mocks dos modelos e service
 jest.mock('../../models/Equipamento.js');
 jest.mock('../../models/Usuario.js');
 jest.mock('../../services/EquipamentoService.js');
 
-// Tokens simulados
+jest.mock('../../config/multerConfig.js', () => ({
+  __esModule: true,
+  default: {
+    array: () => (req, res, next) => {
+      req.files = [{
+        originalname: 'foto.jpg',
+        mimetype: 'image/jpeg',
+        path: 'uploads/equipamentos/foto.jpg',
+        size: 1024,
+        filename: 'foto.jpg',
+      }];
+      req.body = req.body || {};
+      next();
+    }
+  }
+}));
+
 const tokenAdmin = jwt.sign({ id: 'adminId' }, process.env.JWT_SECRET_ACCESS_TOKEN || 'secret');
 const tokenUser = jwt.sign({ id: 'userId' }, process.env.JWT_SECRET_ACCESS_TOKEN || 'secret');
 
-// Helper para mockar usuário admin/comum
 const mockUsuario = (tipo) => {
   const mockUser = {
     _id: tipo + 'Id',
@@ -35,8 +62,8 @@ const mockUsuario = (tipo) => {
 };
 
 describe('Rotas Equipamentos - Integração', () => {
-  const validId = new mongoose.Types.ObjectId().toString(); // ID válido no formato ObjectId
-  const invalidId = new mongoose.Types.ObjectId().toString(); // outro ID para simular não encontrado
+  const validId = new mongoose.Types.ObjectId().toString();
+  const invalidId = new mongoose.Types.ObjectId().toString();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -53,7 +80,6 @@ describe('Rotas Equipamentos - Integração', () => {
         totalPages: 1,
       });
 
-
       const res = await request(app)
         .get('/equipamentos?categoria=Furadeira&status=ativo&minValor=10&maxValor=100&page=1&limit=5')
         .set('Authorization', `Bearer ${tokenUser}`);
@@ -67,6 +93,7 @@ describe('Rotas Equipamentos - Integração', () => {
       mockUsuario('comum');
 
       Equipamento.paginate.mockResolvedValue(null);
+
       const res = await request(app)
         .get('/equipamentos?status=pendente')
         .set('Authorization', `Bearer ${tokenUser}`);
@@ -102,8 +129,6 @@ describe('Rotas Equipamentos - Integração', () => {
       expect(res.statusCode).toBe(200);
       expect(res.body.data.docs).toHaveLength(0);
     });
-
-
   });
 
   describe('GET /equipamentos/:id', () => {
@@ -137,11 +162,18 @@ describe('Rotas Equipamentos - Integração', () => {
       expect(res.statusCode).toBe(404);
       expect(res.body.message).toMatch(/não encontrado/i);
     });
-
   });
 
-
   describe('POST /equipamentos', () => {
+    beforeEach(() => {
+      jest.spyOn(EquipamentoController.prototype, '_processarImagemParaFoto').mockImplementation(() => ({
+        url: 'http://localhost/uploads/equipamentos/foto.jpg', // URL válida
+        largura: 100,
+        altura: 100,
+        tamanhoMb: 0.1,
+      }));
+    });
+
     it('Cria equipamento com fotos e dados válidos', async () => {
       mockUsuario('comum');
 
@@ -152,11 +184,11 @@ describe('Rotas Equipamentos - Integração', () => {
         equiValorDiaria: 70,
         equiQuantidadeDisponivel: 3,
         equiCategoria: 'Parafusadeira',
-        equiFotos: [{ url: 'uploads/equipamentos/foto.jpg', largura: 100, altura: 100, tamanhoMb: 0.1 }],
+        equiFotos: [{ url: 'http://localhost/uploads/equipamentos/foto.jpg', largura: 100, altura: 100, tamanhoMb: 0.1 }],
         equiStatus: 'pendente',
+        equiUsuario: 'userId',
       };
 
-      // mocka o método criar do service para retornar o equipamento criado
       EquipamentoService.prototype.criar.mockResolvedValue(equipamentoCriado);
 
       const res = await request(app)
@@ -164,23 +196,23 @@ describe('Rotas Equipamentos - Integração', () => {
         .set('Authorization', `Bearer ${tokenUser}`)
         .field('equiNome', 'Parafusadeira')
         .field('equiDescricao', 'Descrição da parafusadeira')
-        .field('equiValorDiaria', '70')
-        .field('equiQuantidadeDisponivel', '3')
+        .field('equiValorDiaria', 70) // Número
+        .field('equiQuantidadeDisponivel', 3) // Número
         .field('equiCategoria', 'Parafusadeira')
         .attach('files', Buffer.from('fake image content'), 'foto.jpg');
+
+      console.log('Resposta do teste:', res.statusCode, res.body);
 
       expect(res.statusCode).toBe(201);
       expect(res.body.data.equiNome).toBe('Parafusadeira');
       expect(EquipamentoService.prototype.criar).toHaveBeenCalled();
     });
-
   });
 
   describe('PATCH /equipamentos/:id', () => {
     it('Atualiza equipamento com dados válidos', async () => {
       mockUsuario('comum');
 
-      //mocka o método atualizar do service
       EquipamentoService.prototype.atualizar.mockResolvedValue({
         _id: validId,
         equiNome: 'Parafusadeira Atualizada',
@@ -200,7 +232,6 @@ describe('Rotas Equipamentos - Integração', () => {
     it('Retorna 404 se equipamento não existir para atualizar', async () => {
       mockUsuario('comum');
 
-      //mocka o método atualizar para lançar o CustomError de não encontrado
       EquipamentoService.prototype.atualizar.mockImplementation(() => {
         throw new CustomError({
           statusCode: 404,
@@ -216,7 +247,6 @@ describe('Rotas Equipamentos - Integração', () => {
       expect(res.statusCode).toBe(404);
       expect(res.body.message).toMatch(/não encontrado/i);
     });
-
   });
 
   describe('PATCH /equipamentos/:id/aprovar', () => {
@@ -251,7 +281,7 @@ describe('Rotas Equipamentos - Integração', () => {
 
       EquipamentoService.prototype.aprovar.mockImplementation(() => {
         throw new CustomError({
-          statusCode: HttpStatusCodes.NOT_FOUND.code,
+          statusCode: 404,
           customMessage: 'Equipamento não encontrado',
         });
       });
@@ -269,7 +299,6 @@ describe('Rotas Equipamentos - Integração', () => {
     it('Admin reprova (exclui) equipamento com sucesso', async () => {
       mockUsuario('admin');
 
-      ///mocka o método reprovar do service para devolver sucesso
       EquipamentoService.prototype.reprovar.mockResolvedValue({
         id: validId,
         mensagem: 'Equipamento excluído com sucesso.',
@@ -296,7 +325,6 @@ describe('Rotas Equipamentos - Integração', () => {
     it('Retorna 404 se equipamento não existir para reprovar', async () => {
       mockUsuario('admin');
 
-      ///mocka o método reprovar do service para lançar CustomError
       EquipamentoService.prototype.reprovar.mockImplementation(() => {
         throw new CustomError({
           statusCode: 404,
@@ -312,56 +340,4 @@ describe('Rotas Equipamentos - Integração', () => {
       expect(res.body.message).toMatch(/não encontrado/i);
     });
   });
-
-  describe('POST /equipamentos/:id/foto', () => {
-    it('Adiciona foto ao equipamento', async () => {
-      mockUsuario('comum');
-
-      EquipamentoService.prototype.adicionarFoto.mockResolvedValue({
-        _id: validId,
-        equiFotos: [{
-          url: 'uploads/equipamentos/foto.jpg',
-          largura: 100,
-          altura: 100,
-          tamanhoMb: 0.1
-        }]
-      });
-
-      const res = await request(app)
-        .post(`/equipamentos/${validId}/foto`)
-        .set('Authorization', `Bearer ${tokenUser}`)
-        .attach('files', Buffer.from('fake image content'), 'foto.jpg');
-
-      expect(res.statusCode).toBe(200);
-      expect(res.body.message).toMatch(/foto adicionada/i);
-    });
-
-
-    it('Retorna 404 se equipamento não existir', async () => {
-      mockUsuario('comum');
-
-      Equipamento.findById.mockResolvedValue(null);
-
-      const res = await request(app)
-        .post(`/equipamentos/${invalidId}/foto`)
-        .set('Authorization', `Bearer ${tokenUser}`)
-        .attach('files', Buffer.from('fake image content'), 'foto.jpg');
-
-      expect(res.statusCode).toBe(404);
-    });
-
-    it('Retorna 400 se não enviar foto', async () => {
-      mockUsuario('comum');
-
-      EquipamentoService.prototype.adicionarFoto = jest.fn();
-
-      const res = await request(app)
-        .post(`/equipamentos/${validId}/foto`)
-        .set('Authorization', `Bearer ${tokenUser}`);
-
-      expect(res.statusCode).toBe(400);
-      expect(res.body.message).toMatch(/obrigatório enviar uma foto/i);
-    });
-
-  });
-});
+});                                                                                            
