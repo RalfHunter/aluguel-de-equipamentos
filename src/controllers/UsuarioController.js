@@ -62,7 +62,7 @@ class UsuarioController {
         const data = await this.service.alterarStatus(id, parseData, req)
         return CommonResponse.success(res, data, 200, `Status alterado com sucesso para ${parseData.ativo}`)
     }
-    async criarComsenha(req, res){
+    async criarComSenha(req, res){
          console.log('Estou no criar em UsuarioController');
 
         // valida os dados

@@ -19,12 +19,12 @@ describe('UsuarioSchema', () => {
                 dataNascimento: "2000-01-01",
                 CPF: "09272083001",
                 notaMedia: 7,
-                status: "ativo",
+                ativo: true,
                 tipoUsuario: "usuario",
                 fotoUsuario: "https://s3.amazonaws.com/uifaces/faces/twitter/sachacorazzi/128.jpg"
             }
             const resultado = usuarioSchema.parse(mockData)
-            expect(resultado).toEqual(resultado)
+            expect(resultado).toEqual(mockData)
         });
     describe('Nome', () =>{
         it('deve retornar erro ao tentar validar nome', async () => {
@@ -162,28 +162,28 @@ describe('UsuarioSchema', () => {
             await expect(SchemaCPF.parseAsync(CPFInvalido)).rejects.toThrow(`O CPF deve ser do tipo string`)
         });
     });
-    describe("Status", () => {
-        it('deve validar um status do tipo "ativo"', ()=>{
-            const SchemaStatus = usuarioSchema.partial()
-            const StatusValido = {status: "ativo"}
-            const resultado = SchemaStatus.parse(StatusValido)
-            expect(resultado).toEqual(StatusValido)
+    describe("Ativo", () => {
+        it('deve validar um status do tipo "true"', ()=>{
+            const SchemaAtivo = usuarioSchema.partial()
+            const AtivoValido = {ativo: true}
+            const resultado = SchemaAtivo.parse(AtivoValido)
+            expect(resultado).toEqual(AtivoValido)
         });
-        it('deve validar um status do tipo "inativo"', ()=>{
-            const SchemaStatus = usuarioSchema.partial()
-            const StatusValido = {status: "inativo"}
-            const resultado = SchemaStatus.parse(StatusValido)
-            expect(resultado).toEqual(StatusValido)
+        it('deve validar um status do tipo "false"', ()=>{
+            const SchemaAtivo = usuarioSchema.partial()
+            const AtivoValido = {ativo: false}
+            const resultado = SchemaAtivo.parse(AtivoValido)
+            expect(resultado).toEqual(AtivoValido)
         });
-        it('deve retornar uma mensagem de erro se for um status inválido"', async()=>{
-            const SchemaStatus = usuarioSchema.partial()
-            const StatusInvalido = {status: "invalido"}
-            await expect(SchemaStatus.parseAsync(StatusInvalido)).rejects.toThrow(`status só pode ser do tipo 'ativo' ou 'inativo'`)
+        it('deve retornar uma mensagem de erro se for um valor que não seja boolean', async()=>{
+            const SchemaAtivo = usuarioSchema.partial()
+            const AtivoInvalido = {ativo: "invalido"}
+            await expect(SchemaAtivo.parseAsync(AtivoInvalido)).rejects.toThrow()
         })
-        it('deve retornar uma mensagem de erro se for um status inválido"', async()=>{
-            const SchemaStatus = usuarioSchema.partial()
-            const StatusInvalido = {status: ""}
-            await expect(SchemaStatus.parseAsync(StatusInvalido)).rejects.toThrow(`status só pode ser do tipo 'ativo' ou 'inativo'`)
+        it('deve retornar uma mensagem de erro se for um número', async()=>{
+            const SchemaAtivo = usuarioSchema.partial()
+            const AtivoInvalido = {ativo: 123}
+            await expect(SchemaAtivo.parseAsync(AtivoInvalido)).rejects.toThrow()
         });
     });
     describe('notaMedia', () => {

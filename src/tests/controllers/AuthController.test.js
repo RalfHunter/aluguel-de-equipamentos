@@ -240,6 +240,6 @@ describe("AuthController", () => {
   }
 ]"
 `)
-        })
-    })
+        });
+    });
 })

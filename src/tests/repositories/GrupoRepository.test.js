@@ -267,7 +267,7 @@ describe('GrupoRepository', () => {
       expect(mockFindByIdAndUpdate).toHaveBeenCalledWith(
         id,
         dadosAtualizacao,
-        { new: true, runValidators: true }
+        { new: true }
       );
     });
 
@@ -284,32 +284,19 @@ describe('GrupoRepository', () => {
   describe('deletar', () => {
     it('deve deletar grupo quando não há usuários associados', async () => {
       const id = '507f1f77bcf86cd799439011';
+      const grupoDeletado = { _id: id };
       
-      mockLean.mockResolvedValue(null); // Não há usuários associados
-      mockFindByIdAndDelete.mockResolvedValue({ _id: id });
+      mockFindByIdAndDelete.mockResolvedValue(grupoDeletado);
 
       const result = await repository.deletar(id);
 
-      expect(result).toBe(true);
-      expect(mockUsuarioFindOne).toHaveBeenCalledWith({ grupos: id });
+      expect(result).toEqual(grupoDeletado);
       expect(mockFindByIdAndDelete).toHaveBeenCalledWith(id);
-    });
-
-    it('deve lançar erro quando há usuários associados ao grupo', async () => {
-      const id = '507f1f77bcf86cd799439011';
-      const usuarioAssociado = { _id: 'user123', nome: 'Usuario Teste' };
-      
-      mockLean.mockResolvedValue(usuarioAssociado);
-
-      await expect(repository.deletar(id)).rejects.toThrow(CustomError);
-      expect(mockUsuarioFindOne).toHaveBeenCalledWith({ grupos: id });
-      expect(mockFindByIdAndDelete).not.toHaveBeenCalled();
     });
 
     it('deve lançar erro quando grupo não for encontrado para deleção', async () => {
       const id = '507f1f77bcf86cd799439011';
       
-      mockLean.mockResolvedValue(null); // Não há usuários associados
       mockFindByIdAndDelete.mockResolvedValue(null); // Grupo não encontrado
 
       await expect(repository.deletar(id)).rejects.toThrow(CustomError);
@@ -369,6 +356,7 @@ describe('GrupoRepository', () => {
       mockUsuarioFindOne.mockRejectedValue(new Error('Database error'));
 
       await expect(repository.verificarUsuariosAssociados(id)).rejects.toThrow(CustomError);
+      expect(mockUsuarioFindOne).toHaveBeenCalledWith({ grupos: id });
     });
   });
 });

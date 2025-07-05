@@ -114,9 +114,15 @@ describe('UsuarioRepository', () => {
     });
     describe('deve cadastrar um usuário', () => {
         it('deve ter sucesso ao cadastrar um usuário', async() => {
-            usuarioRepository.model.create.mockResolvedValue({...req.params,...mockData})
+            const expectedResult = {
+                ...req.params,
+                ...mockData,
+                senha: "$2b$08$aJPQu/6o0B4yCywMX1KAzewhCUkhvVQssUODlw.6ZpLDa79WNAlvS" // senha hasheada
+            };
+            
+            usuarioRepository.model.create.mockResolvedValue(expectedResult)
             const resultado = await usuarioRepository.cadastrarUsuario(mockData)
-            expect(resultado).toEqual({...req.params, ...mockData})
+            expect(resultado).toEqual(expectedResult)
         });
     });
     describe('não deve encontrar dados duplicados no banco de dados', () => {
@@ -129,9 +135,12 @@ describe('UsuarioRepository', () => {
             await expect(usuarioRepository.buscarPorTelefone(mockData.telefone)).resolves.toBeUndefined()
         });
         it('deve encontrar um usuário por id', async () => {
-            usuarioRepository.model.findById.mockResolvedValue({...req.params, ...mockData})
-            const resultado = await usuarioRepository.buscarPorId({...req.params})
+            const mockPopulate = jest.fn().mockResolvedValue({...req.params, ...mockData});
+            usuarioRepository.model.findById.mockReturnValue({ populate: mockPopulate });
+            
+            const resultado = await usuarioRepository.buscarPorId(req.params.id)
             expect(resultado).toEqual({...req.params, ...mockData})
+            expect(mockPopulate).toHaveBeenCalledWith('grupos')
         });
         it('deve buscar um usuário por cpf e rotrnar nada/undefind', async() => {
             usuarioRepository.model.findOne.mockResolvedValue(null)
@@ -149,11 +158,13 @@ describe('UsuarioRepository', () => {
             await expect(usuarioRepository.buscarPorTelefone(mockData.telefone)).rejects.toThrowErrorMatchingInlineSnapshot(`"Conflito de recurso em Usuário contém Telefone."`)
         });
         it('deve retornar erro ao realizar consulta por id', async () => {
-            usuarioRepository.model.findById.mockResolvedValue(null)
+            const mockPopulate = jest.fn().mockResolvedValue(null);
+            usuarioRepository.model.findById.mockReturnValue({ populate: mockPopulate });
+            
             await expect(usuarioRepository.buscarPorId(req.params.id)).rejects.toThrowErrorMatchingInlineSnapshot(`"Recurso não encontrado em Usuário."`)
         });
         it('deve retornar erro ao realizar consulta por cpf', async() => {
-            usuarioRepository.model.findOne({...req.params, ...mockData})
+            usuarioRepository.model.findOne.mockResolvedValue({...req.params, ...mockData})
             await expect(usuarioRepository.buscarPorCpf(mockData.CPF)).rejects.toThrowErrorMatchingInlineSnapshot(`"Conflito de recurso em Usuário contém CPF."`)
         })
     })

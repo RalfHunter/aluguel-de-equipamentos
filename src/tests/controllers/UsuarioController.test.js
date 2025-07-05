@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, jest } from "@jest/globals";
 import UsuarioController from "../../controllers/UsuarioController.js";
 import UsuarioService from "../../services/UsuarioService.js";
-
 jest.mock("../../services/UsuarioService.js");
 
 describe('UsuarioController', () => {
@@ -154,4 +153,34 @@ describe('UsuarioController', () => {
       await expect(usuarioController.alterarStatus(req, res)).rejects.toThrow();
     });
   });
+  describe('criaComSenha', () =>{
+        it('deve ter sucesso ao criar usuário com senha', async ()=>{
+            req.body ={
+                nome:"Nome Valido",
+                email:"email@gmail.com",
+                telefone:"69 9898-5555",
+                senha: "Senha@1234",
+                dataNascimento:"2001-01-01",
+                CPF:"29116291085",
+                fotoUsuario:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSmTF0S7JfdTHAJiZ8WrkwclOW8Eutb3fsOGA&s"
+            }
+            
+            // O schema adiciona campos padrão, então vamos criar o objeto esperado
+            const expectedData = {
+                ...req.body,
+                tipoUsuario: "usuario"
+            };
+            
+            // Mock que simula um documento Mongoose com método toObject
+            const mockUsuarioDocument = {
+                ...expectedData,
+                toObject: jest.fn().mockReturnValue(expectedData)
+            };
+            
+            usuarioController.service.cadastrarUsuario.mockResolvedValue(mockUsuarioDocument)
+            await usuarioController.criarComSenha(req, res)
+            expect(usuarioController.service.cadastrarUsuario).toHaveBeenCalledWith(expectedData)
+            expect(mockUsuarioDocument.toObject).toHaveBeenCalled()
+        })
+    })
 });

@@ -15,5 +15,5 @@ router
   .post("/refresh", asyncWrapper(authController.refresh.bind(authController)))
   .post("/introspect", asyncWrapper(authController.pass.bind(authController)))
   .post("/recover", asyncWrapper(authController.recuperaSenha.bind(authController)))
-  .post("/signup", asyncWrapper(usuarioController.criarComsenha.bind(usuarioController)))
+  .post("/signup", asyncWrapper(usuarioController.criarComSenha.bind(usuarioController)))
 export default router;
