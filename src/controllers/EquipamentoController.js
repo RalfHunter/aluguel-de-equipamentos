@@ -40,9 +40,9 @@ class EquipamentoController {
   _validarHeaderImagem(buffer) {
     if (!Buffer.isBuffer(buffer) || buffer.length < 4) return false;
 
-    if (buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) return true; // JPEG
-    if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) return true; // PNG
-    if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46) return true; // RIFF
+    if (buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) return true; 
+    if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) return true; 
+    if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46) return true; 
 
     return false;
   }
@@ -130,8 +130,8 @@ class EquipamentoController {
   }
 
   async criar(req, res) {
-    console.log('req.body:', req.body);
-    console.log('req.files:', req.files);
+    //console.log('req.body:', req.body);
+    //console.log('req.files:', req.files);
     const usuarioLogado = req.user_id;
     const files = req.files || [];
     const equiFotos = [];

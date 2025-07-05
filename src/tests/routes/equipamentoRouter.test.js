@@ -7,11 +7,11 @@ import mongoose from 'mongoose';
 import EquipamentoService from '../../services/EquipamentoService.js';
 import { CustomError } from '../../utils/helpers/index.js';
 import EquipamentoController from '../../controllers/EquipamentoController.js';
-import path from 'path';
+//import path from 'path';
 
-// const filePath = path.resolve('uploads/equipamentos/foto.jpg');
+// const filePath = path.resolve('Uploads/equipamentos/foto.jpg');
 
-// Mock do método privado do controller para processar imagem
+// mock do método privado do controller para processar imagem
 jest.spyOn(EquipamentoController.prototype, '_processarImagemParaFoto').mockImplementation(() => ({
   url: 'http://localhost/uploads/equipamentos/foto.jpg',
   largura: 100,
@@ -19,43 +19,70 @@ jest.spyOn(EquipamentoController.prototype, '_processarImagemParaFoto').mockImpl
   tamanhoMb: 0.1,
 }));
 
-// Mocks dos modelos e service
+// mocks dos modelos e service
 jest.mock('../../models/Equipamento.js');
 jest.mock('../../models/Usuario.js');
 jest.mock('../../services/EquipamentoService.js');
 
-jest.mock('../../config/multerConfig.js', () => ({
-  __esModule: true,
-  default: {
-    array: () => (req, res, next) => {
-      req.files = [{
-        originalname: 'foto.jpg',
-        mimetype: 'image/jpeg',
-        path: 'uploads/equipamentos/foto.jpg',
-        size: 1024,
-        filename: 'foto.jpg',
-      }];
-      req.body = req.body || {};
-      next();
+// mocks para o middleware authMiddleware
+jest.mock('../../middlewares/authMiddleware.js', () => {
+  const mongoose = require('mongoose');
+  const jwt = require('jsonwebtoken');
+
+  const userObjectId = new mongoose.Types.ObjectId().toString();
+  const adminObjectId = new mongoose.Types.ObjectId().toString();
+
+  const secret = process.env.JWT_SECRET_ACCESS_TOKEN || 'secret';
+
+  const tokenAdmin = jwt.sign({ id: adminObjectId }, secret);
+  const tokenUser = jwt.sign({ id: userObjectId }, secret);
+
+  global.__TOKEN_ADMIN__ = tokenAdmin;
+  global.__TOKEN_USER__ = tokenUser;
+  global.__ADMIN_ID__ = adminObjectId;
+  global.__USER_ID__ = userObjectId;
+
+  return (req, res, next) => {
+    const authHeader = req.headers['authorization'] || '';
+    const token = authHeader.replace(/^Bearer\s+/i, '');
+
+    if (!token) {
+      return res.status(401).json({ message: 'Token não informado!' });
     }
-  }
-}));
 
-const tokenAdmin = jwt.sign({ id: 'adminId' }, process.env.JWT_SECRET_ACCESS_TOKEN || 'secret');
-const tokenUser = jwt.sign({ id: 'userId' }, process.env.JWT_SECRET_ACCESS_TOKEN || 'secret');
+    if (token === tokenAdmin) {
+      req.user_id = adminObjectId;
+      return next();
+    }
 
+    if (token === tokenUser) {
+      req.user_id = userObjectId;
+      return next();
+    }
+    return res.status(401).json({ message: 'Token inválido!' });
+  };
+});
+
+const tokenAdmin = global.__TOKEN_ADMIN__;
+const tokenUser = global.__TOKEN_USER__;
+const adminObjectId = global.__ADMIN_ID__;
+const userObjectId = global.__USER_ID__;
+
+// mock pra retornar usuário pelo id
 const mockUsuario = (tipo) => {
+  const id = tipo === 'admin' ? adminObjectId : userObjectId;
+  const token = tipo === 'admin' ? tokenAdmin : tokenUser;
   const mockUser = {
-    _id: tipo + 'Id',
+    _id: id,
     tipoUsuario: tipo,
-    refreshToken: tokenUser,
-    accessToken: tokenAdmin,
+    refreshToken: token,
+    accessToken: token,
     select: jest.fn().mockReturnThis(),
     exec: jest.fn().mockResolvedValue({
-      _id: tipo + 'Id',
+      _id: id,
       tipoUsuario: tipo,
-      refreshToken: tokenUser,
-      accessToken: tokenAdmin,
+      refreshToken: token,
+      accessToken: token,
     }),
   };
   Usuario.findById.mockReturnValue(mockUser);
@@ -67,6 +94,16 @@ describe('Rotas Equipamentos - Integração', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.resetModules();
+    jest.mock('../../models/Equipamento.js');
+    jest.mock('../../models/Usuario.js');
+    jest.mock('../../services/EquipamentoService.js');
+    jest.spyOn(EquipamentoController.prototype, '_processarImagemParaFoto').mockImplementation(() => ({
+      url: 'http://localhost/uploads/equipamentos/foto.jpg',
+      largura: 100,
+      altura: 100,
+      tamanhoMb: 0.1,
+    }));
   });
 
   describe('GET /equipamentos', () => {
@@ -129,6 +166,28 @@ describe('Rotas Equipamentos - Integração', () => {
       expect(res.statusCode).toBe(200);
       expect(res.body.data.docs).toHaveLength(0);
     });
+
+    it('Retorna lista padrão de equipamentos mesmo sem filtros', async () => {
+      mockUsuario('comum');
+
+      EquipamentoService.prototype.listar.mockResolvedValue({
+        docs: [
+          { equiNome: 'Martelo' },
+          { equiNome: 'Chave de fenda' }
+        ],
+        totalDocs: 2,
+        page: 1,
+        totalPages: 1,
+      });
+
+      const res = await request(app)
+        .get('/equipamentos')
+        .set('Authorization', `Bearer ${tokenUser}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.docs).toHaveLength(2);
+      expect(res.body.data.docs[0].equiNome).toBe('Martelo');
+    });
   });
 
   describe('GET /equipamentos/:id', () => {
@@ -165,15 +224,6 @@ describe('Rotas Equipamentos - Integração', () => {
   });
 
   describe('POST /equipamentos', () => {
-    beforeEach(() => {
-      jest.spyOn(EquipamentoController.prototype, '_processarImagemParaFoto').mockImplementation(() => ({
-        url: 'http://localhost/uploads/equipamentos/foto.jpg', // URL válida
-        largura: 100,
-        altura: 100,
-        tamanhoMb: 0.1,
-      }));
-    });
-
     it('Cria equipamento com fotos e dados válidos', async () => {
       mockUsuario('comum');
 
@@ -184,28 +234,90 @@ describe('Rotas Equipamentos - Integração', () => {
         equiValorDiaria: 70,
         equiQuantidadeDisponivel: 3,
         equiCategoria: 'Parafusadeira',
-        equiFotos: [{ url: 'http://localhost/uploads/equipamentos/foto.jpg', largura: 100, altura: 100, tamanhoMb: 0.1 }],
+        equiFotos: [{
+          url: 'http://localhost/uploads/equipamentos/foto.jpg',
+          largura: 100,
+          altura: 100,
+          tamanhoMb: 0.1,
+        }],
         equiStatus: 'pendente',
-        equiUsuario: 'userId',
+        equiUsuario: userObjectId,
       };
 
       EquipamentoService.prototype.criar.mockResolvedValue(equipamentoCriado);
 
+      jest.mock('../../config/multerConfig.js', () => ({
+        __esModule: true,
+        default: {
+          array: () => (req, res, next) => {
+            req.files = [{
+              originalname: 'foto.jpg',
+              mimetype: 'image/jpeg',
+              path: 'Uploads/equipamentos/foto.jpg',
+              size: 102400,
+              filename: 'foto.jpg',
+            }];
+            req.body = {
+              equiNome: 'Parafusadeira',
+              equiDescricao: 'Descrição da parafusadeira',
+              equiValorDiaria: '70',
+              equiQuantidadeDisponivel: '3',
+              equiCategoria: 'Parafusadeira',
+            };
+            next();
+          }
+        }
+      }), { virtual: true });
+
       const res = await request(app)
         .post('/equipamentos')
         .set('Authorization', `Bearer ${tokenUser}`)
+        .set('Content-Type', 'multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW')
         .field('equiNome', 'Parafusadeira')
         .field('equiDescricao', 'Descrição da parafusadeira')
-        .field('equiValorDiaria', 70) // Número
-        .field('equiQuantidadeDisponivel', 3) // Número
+        .field('equiValorDiaria', '70')
+        .field('equiQuantidadeDisponivel', '3')
         .field('equiCategoria', 'Parafusadeira')
         .attach('files', Buffer.from('fake image content'), 'foto.jpg');
 
-      console.log('Resposta do teste:', res.statusCode, res.body);
-
       expect(res.statusCode).toBe(201);
-      expect(res.body.data.equiNome).toBe('Parafusadeira');
+      expect(res.body.data.equipamento.equiNome).toBe('Parafusadeira');
       expect(EquipamentoService.prototype.criar).toHaveBeenCalled();
+    });
+
+    it('Retorna 400 se dados obrigatórios estiverem ausentes (validação falhar)', async () => {
+      mockUsuario('comum');
+
+      //reesetar todos os mocks para evitar interferência
+      EquipamentoService.prototype.criar.mockImplementation(() => {
+        throw new Error('Não deveria chegar aqui devido à validação');
+      });
+
+      jest.mock('../../config/multerConfig.js', () => ({
+        __esModule: true,
+        default: {
+          array: () => (req, res, next) => {
+            req.files = [{
+              originalname: 'foto.jpg',
+              mimetype: 'image/jpeg',
+              path: 'Uploads/equipamentos/foto.jpg',
+              size: 102400,
+              filename: 'foto.jpg',
+            }];
+            req.body = {};
+            next();
+          }
+        }
+      }), { virtual: true });
+
+      const res = await request(app)
+        .post('/equipamentos')
+        .set('Authorization', `Bearer ${tokenUser}`)
+        .set('Content-Type', 'multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW')
+        .attach('files', Buffer.from('fake image content'), 'foto.jpg');
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toMatch(/obrigatórios|validação/i);
     });
   });
 
@@ -339,5 +451,33 @@ describe('Rotas Equipamentos - Integração', () => {
       expect(res.statusCode).toBe(404);
       expect(res.body.message).toMatch(/não encontrado/i);
     });
+
+    it('Retorna 403 ao tentar reprovar equipamento que já foi aprovado', async () => {
+      mockUsuario('admin');
+
+      EquipamentoService.prototype.reprovar.mockImplementation(() => {
+        throw new CustomError({
+          statusCode: 403,
+          customMessage: 'Apenas equipamentos pendentes podem ser reprovados.',
+        });
+      });
+
+      const res = await request(app)
+        .patch(`/equipamentos/${validId}/reprovar`)
+        .set('Authorization', `Bearer ${tokenAdmin}`);
+
+      expect(res.statusCode).toBe(403);
+      expect(res.body.message).toMatch(/pendentes/i);
+    });
   });
-});                                                                                            
+
+  describe('Autenticação - Token', () => {
+    it('Retorna 401 ao tentar acessar rota sem token', async () => {
+      const res = await request(app)
+        .get('/equipamentos');
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body.message).toMatch(/não autorizado|token/i);
+    });
+  });
+});

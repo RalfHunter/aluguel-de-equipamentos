@@ -99,7 +99,7 @@ class EquipamentoService {
     const limite = parseInt(filtros.limit) || 10;
     const builder = new EquipamentoFilterBuilder();
 
-    let status = 'ativo'; // padrão
+    let status = 'ativo'; ///padrão
 
     if (typeof filtros.status === 'string') {
       if (filtros.status === 'true' || filtros.status.toLowerCase() === 'ativo') {
