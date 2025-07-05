@@ -7,6 +7,7 @@ import usuario from "./usuarioRouter.js"
 import reserva from "./reservaRoutes.js"
 import avaliacoes from "./avaliacaoRoutes.js"
 import equipamentoRoutes from "./equipamentoRoutes.js";
+import grupo from'./grupoRouter.js'
 import '../models/Avaliacao.js';
 import login from "./authRoutes.js";
 import swaggerJSDoc from "swagger-jsdoc";
@@ -33,7 +34,9 @@ const routes = (app) => {
         reserva,
         avaliacoes,
         equipamentoRoutes,
-        login
+        login,
+        grupo
+        
     );
 
     app.use((req, res) => {

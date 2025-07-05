@@ -59,8 +59,7 @@ class AuthService {
                 customMessage: messages.error.unauthorized('Senha ou Email')
             });
         }
-        if(userEncontrado.status !== "ativo"){
-
+        if(!userEncontrado.ativo){
             throw new CustomError({
                 statusCode: 403,
                 errorType:'unauthorized',

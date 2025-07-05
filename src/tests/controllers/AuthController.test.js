@@ -6,6 +6,7 @@ import { tr } from '@faker-js/faker'
 import jwt from 'jsonwebtoken'
 import { promisify } from 'util'
 
+
 jest.mock('../../services/AuthService.js')
 jest.mock('jsonwebtoken')
 describe("AuthController", () => {
@@ -144,31 +145,26 @@ describe("AuthController", () => {
     describe('revoke', () => {
         it('sucesso ao remover tokens do usuario', async () => {
             const mockData = { data: null, errors: [], message: "Requisição bem-sucedida" }
-            req.body.id = '123'
+            req.body.id = '68654c39ac28e36ce3578c68'
             controller.service.revoke.mockResolvedValue(req.body.id)
             await controller.revoke(req, res)
-            expect(controller.service.revoke).toHaveBeenCalledWith('123')
+            expect(controller.service.revoke).toHaveBeenCalledWith('68654c39ac28e36ce3578c68')
             expect(res.status).toHaveBeenCalledWith(200)
             expect(res.json).toHaveBeenCalledWith(mockData)
         });
-        it('falha ao fazer revoke, id não fornecido', async () => {
-            controller.service.revoke.mockRejectedValue(new CustomError({
-                statusCode: 404,
-                errorType: 'resourceNotFound',
-                field: 'Usuário',
-                details: [],
-                customMessage: messages.error.resourceNotFound('Usuário'),
-            }));
-
-            await expect(controller.revoke(req, res)).rejects.toThrow(CustomError);
-
-            try {
-                await controller.revoke(req, res);
-            } catch (err) {
-                expect(err.statusCode).toBe(404); // Verifica se o statusCode está correto
-                expect(err).toBeInstanceOf(CustomError);
-                expect(err.message).toBe(messages.error.resourceNotFound('Usuário'));
-            }
+        it('falha ao fazer revoke, id não fornecido ou é inválido', async () => {
+            req.body.id = null; // Simulating missing ID
+            await expect(controller.revoke(req, res)).rejects.toThrowErrorMatchingInlineSnapshot(`
+"[
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "null",
+    "path": [],
+    "message": "Expected string, received null"
+  }
+]"
+`);
         });
     });
     describe('introspect', () => {

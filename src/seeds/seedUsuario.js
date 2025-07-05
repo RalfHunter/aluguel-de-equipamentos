@@ -4,6 +4,7 @@ import Usuario from "../models/Usuario.js"
 import bcrypt from "bcryptjs";
 import { faker } from "@faker-js/faker";
 import getGlobalFakeMapping from "./globalFakeMapping.js";
+import Grupo from "../models/Grupo.js";
 
 
 // await DbConect.conectar();
@@ -23,8 +24,13 @@ async function SeedUsuario(){
 
     await Usuario.deleteMany();
     const usuarios = [];
+    const gruposNome = []
     const fake = await getGlobalFakeMapping()
-
+    const comum = await Grupo.findOne({nome:"usuario"})
+    const moderador = await Grupo.findOne({nome:"moderador"})
+    const admin = await Grupo.findOne({nome:"admin"})
+    gruposNome.push(comum)
+    gruposNome.push(moderador)
 
     for (let i = 0; i < 25; i++) {
         const nome = fake.nome();
@@ -34,9 +40,9 @@ async function SeedUsuario(){
         const dataNascimento = fake.dataNascimento();
         const CPF = fake.CPF(); // Geração de CPF fictício
         const notaMedia = fake.notaMediaAvaliacao();
-        const status = fake.status();
-        const tipoUsuario = fake.tipoUsuario();
-        const fotoUsuario = fake.fotoUsuario()
+        const ativo = fake.ativo();
+        const fotoUsuario = fake.fotoUsuario();
+        const grupos = [gruposNome[Math.floor(Math.random() * gruposNome.length)]._id];
 
         usuarios.push({
             nome,
@@ -46,9 +52,9 @@ async function SeedUsuario(){
             dataNascimento,
             CPF,
             notaMedia,
-            status,
-            tipoUsuario,
-            fotoUsuario
+            ativo,
+            fotoUsuario,
+            grupos
         });
     }
     const dev = {
@@ -59,9 +65,9 @@ async function SeedUsuario(){
         dataNascimento: fake.dataNascimento(),
         CPF: "12345612345", // Geração de CPF fictício
         notaMedia: 0,
-        status: "ativo",
-        tipoUsuario: "admin",
-        fotoUsuario:'https://pt.quizur.com/_image?href=https://img.quizur.com/f/img63365b54eee492.52029189.png?lastEdited=1664506795&w=600&h=600&f=webp'
+        ativo: true,
+        fotoUsuario:'https://pt.quizur.com/_image?href=https://img.quizur.com/f/img63365b54eee492.52029189.png?lastEdited=1664506795&w=600&h=600&f=webp',
+        grupos: [moderador._id]
         
     }
     const dev2 = {
@@ -72,10 +78,9 @@ async function SeedUsuario(){
         dataNascimento: fake.dataNascimento(),
         CPF: "12345612347", // Geração de CPF fictício
         notaMedia: 0,
-        status: "ativo",
-        tipoUsuario: "admin",
-        fotoUsuario:'https://pt.quizur.com/_image?href=https://img.quizur.com/f/img63365b54eee492.52029189.png?lastEdited=1664506795&w=600&h=600&f=webp'
-        
+        ativo: true,
+        fotoUsuario:'https://pt.quizur.com/_image?href=https://img.quizur.com/f/img63365b54eee492.52029189.png?lastEdited=1664506795&w=600&h=600&f=webp',
+        grupos: [moderador._id]
     }
     const user = {
         nome: "Usuario Padrão",
@@ -85,14 +90,27 @@ async function SeedUsuario(){
         dataNascimento: fake.dataNascimento(),
         CPF: "12345612346", // Geração de CPF fictício
         notaMedia: 0,
-        status: "ativo",
-        tipoUsuario: "usuario",
-        fotoUsuario:'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmtv-wGPAGVnAMkWDSteg4qGIRHhtLCYgoDQ&s'
+        ativo: true,
+        fotoUsuario:'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmtv-wGPAGVnAMkWDSteg4qGIRHhtLCYgoDQ&s',
+        grupos: [comum._id]
         
+    }
+    const Dono = {
+        nome: "Dono",
+        email: "dono@gmail.com",
+        telefone: "69 98191-0100",
+        senha:  await bcrypt.hash('Dono@1234', 8),
+        dataNascimento: fake.dataNascimento(),
+        CPF: "12345612317", // Geração de CPF fictício
+        notaMedia: 0,
+        ativo: true,
+        fotoUsuario:'https://pt.quizur.com/_image?href=https://img.quizur.com/f/img63365b54eee492.52029189.png?lastEdited=1664506795&w=600&h=600&f=webp',
+        grupos: [admin._id]
     }
     usuarios.push({...dev})
     usuarios.push({...user})
     usuarios.push({...dev2})
+    usuarios.push({...Dono})
     // Inserir no banco
     await Usuario.collection.insertMany(usuarios);
     // console.log(`${usuarios.length} usuários inseridos com sucesso!`);

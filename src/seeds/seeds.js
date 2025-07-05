@@ -8,18 +8,20 @@ import Usuario from "../models/Usuario.js";
 import Avaliacao from "../models/Avaliacao.js";
 import Equipamento from "../models/Equipamento.js";
 import Endereco from "../models/Endereco.js";
+import Grupo from "../models/Grupo.js";
 
 import SeedReserva from "./seedReserva.js"
 import SeedUsuario from "./seedUsuario.js"
 import SeedAvaliacao from "./seedAvaliacao.js"
 import SeedEquipamentos from "./seedEquipamento.js";
 import SeedEndereco from "./seedEndereco.js";
+import SeedGrupo from "./seedGrupo.js";
 
 await DbConnect.conectar();
 
 async function main(){
     try {
-
+      await SeedGrupo()
       const usuarios = await SeedUsuario();
       //const enderecos = await SeedEndereco(usuarios);
       const equipamentos = await SeedEquipamentos(usuarios);
