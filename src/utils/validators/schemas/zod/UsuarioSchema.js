@@ -50,9 +50,7 @@ const UsuarioSchema = z.object({
     .string({message:`O CPF deve ser do tipo string`})
     .length(11, { message: "O CPF deve conter 11 caracteres numéricos"})
     .refine(UsuarioValidator.validarCPF, {message: "CPF inválido"}),
-    status:z
-    .enum(["ativo", "inativo"], {message: `status só pode ser do tipo 'ativo' ou 'inativo'`})
-    .default("inativo"),
+    ativo: z.boolean().default(true).optional(),
     notaMedia:z
     .number()
     .min(0, {message: "A nota não pode ser menor que 0"})

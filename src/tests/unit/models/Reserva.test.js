@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
-import Reserva from "../../models/Reserva.js";
-import Equipamento from "../../models/Equipamento.js";
-import Usuario from "../../models/Usuario.js";
+import Reserva from "../../../models/Reserva.js";
+import Equipamento from "../../../models/Equipamento.js";
+import Usuario from "../../../models/Usuario.js";
 //import { it, expect, describe, beforeAll, afterAll } from "@jest/globals";
 import { MongoMemoryServer } from "mongodb-memory-server";
 

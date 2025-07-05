@@ -6,7 +6,7 @@ import AuthenticationError from '../../../utils/errors/AuthenticationError.js';
 import { CustomError } from '../../../utils/helpers/index.js';
 
 jest.mock('jsonwebtoken');
-jest.mock('../../services/AuthService.js');
+jest.mock('../../../services/AuthService.js');
 
 describe('AuthMiddleware integrado', () => {
   let req, res, next;

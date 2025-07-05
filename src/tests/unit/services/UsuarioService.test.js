@@ -1,9 +1,9 @@
-import UsuarioService from "../../services/UsuarioService";
-import UsuarioRepository from "../../repositories/UsuarioRepository";
+import UsuarioService from "../../../services/UsuarioService.js";
+import UsuarioRepository from "../../../repositories/UsuarioRepository.js"
 import { afterEach, beforeEach, describe, expect, jest } from "@jest/globals";
-import { CustomError, messages } from "../../utils/helpers";
+import { CustomError, messages } from "../../../utils/helpers/index.js";
 import { it } from '@jest/globals';
-jest.mock('../../repositories/UsuarioRepository')
+jest.mock('../../../repositories/UsuarioRepository.js')
 
 describe('UsuarioService', () => {
     let usuarioService;
@@ -74,18 +74,24 @@ describe('UsuarioService', () => {
                 tipoUsuario: "usuario",
                 fotoUsuario: "http://lorempixel.com/640/480"
             }
+            
+            const verificaGrupos = { ...mockData, grupos: [] }; // Mock do resultado de verificaGrupos
+            
             req.body = mockData
             usuarioService.repository.buscarPorCpf.mockResolvedValue(null)
             usuarioService.repository.buscarPorEmail.mockResolvedValue(null)
             usuarioService.repository.buscarPorTelefone.mockResolvedValue(null)
-            usuarioService.repository.cadastrarUsuario.mockResolvedValue({ id: '67959501ea0999e0a0fa9f58', ...mockData })
+            usuarioService.repository.verificaGrupos.mockResolvedValue(verificaGrupos)
+            usuarioService.repository.cadastrarUsuario.mockResolvedValue({ id: '67959501ea0999e0a0fa9f58', ...verificaGrupos })
+            
             const resultado = await usuarioService.cadastrarUsuario(mockData)
-            // console.log("Resultado:", resultado)
+            
             expect(resultado).toHaveProperty('id')
             expect(usuarioService.repository.buscarPorCpf).toHaveBeenCalledWith(mockData.CPF)
             expect(usuarioService.repository.buscarPorEmail).toHaveBeenCalledWith(mockData.email)
             expect(usuarioService.repository.buscarPorTelefone).toHaveBeenCalledWith(mockData.telefone)
-            expect(usuarioService.repository.cadastrarUsuario).toHaveBeenCalledWith(expect.objectContaining(mockData))
+            expect(usuarioService.repository.verificaGrupos).toHaveBeenCalledWith(mockData)
+            expect(usuarioService.repository.cadastrarUsuario).toHaveBeenCalledWith(verificaGrupos)
         });
         it("deve lançar um erro se o CPF já estiver em uso", async () => {
             const mockData = {

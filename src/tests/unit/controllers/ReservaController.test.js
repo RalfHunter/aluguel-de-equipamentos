@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, jest } from '@jest/globals';
-import ReservaController from '../../controllers/ReservaController.js';
-import ReservaService from '../../services/ReservaService.js';
+import ReservaController from '../../../controllers/ReservaController.js';
+import ReservaService from '../services/ReservaService.js.js';
 import mongoose from 'mongoose';
 
 jest.mock('../../services/ReservaService.js');

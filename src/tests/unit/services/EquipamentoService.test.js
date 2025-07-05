@@ -1,8 +1,15 @@
 import EquipamentoService from "../../../services/EquipamentoService.js";
+<<<<<<< HEAD
 import EquipamentoRepository from "../../../repositories/EquipamentoRepository.js";
 import EquipamentoFilterBuilder from "../../../repositories/filters/EquipamentoFilterBuilder.js";
 import { CustomError, HttpStatusCodes, messages } from "../../../utils/helpers/index.js";
 import Reserva from "../../../models/Reserva.js";
+=======
+import EquipamentoRepository from "../../../repositories/EquipamentoRepository.js
+import EquipamentoFilterBuilder from "../../../repositories/filters/EquipamentoFilterBuilder.js
+import { CustomError, HttpStatusCodes, messages } from "../../../utils/helpers/index.js";
+import Reserva from '../../../models/Reserva.js
+>>>>>>> a5025f0e6885dbce0263adcd6fd56f9a116eec62
 
 jest.mock("../../../models/Reserva.js", () => ({
   countDocuments: jest.fn(),

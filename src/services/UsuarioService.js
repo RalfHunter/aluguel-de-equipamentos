@@ -25,7 +25,8 @@ class UsuarioService {
         await this.repository.buscarPorCpf(body.CPF)
         await this.repository.buscarPorEmail(body.email)
         await this.repository.buscarPorTelefone(body.telefone)
-        const data = await this.repository.cadastrarUsuario(body)
+        const user = await this.repository.verificaGrupos(body)
+        const data = await this.repository.cadastrarUsuario(user)
         return data
     }
     async alterarStatus(id, parseData, req) {
@@ -38,7 +39,15 @@ class UsuarioService {
             })
         }
         const user = await this.repository.buscarPorId(id)
-        if (user.tipoUsuario == "admin") {
+        let permissao = false
+        for (const grupo of user.grupos){
+            permissao = grupo.nivelPermissao <= req.nivelPermissao
+            if(permissao){
+                break
+            }
+        }
+        console.log(permissao)
+        if (permissao) {
             throw new CustomError({
                 statusCode: 403,
                 errorType: "unauthorized",

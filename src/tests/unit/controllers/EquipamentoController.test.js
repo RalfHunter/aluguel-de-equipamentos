@@ -1,10 +1,18 @@
 import { afterEach, beforeEach, describe, expect, jest, it } from '@jest/globals';
 import EquipamentoController from '../../../controllers/EquipamentoController.js';
+<<<<<<< HEAD
 import EquipamentoService from '../../../services/EquipamentoService.js';
 import { CommonResponse, HttpStatusCodes } from '../../../utils/helpers/index.js';
 import { equipamentoSchema, equipamentoUpdateSchema } from '../../../utils/validators/schemas/zod/EquipamentoSchema.js';
 import { EquipamentoQuerySchema, EquipamentoIdSchema } from '../../../utils/validators/schemas/zod/querys/EquipamentoQuerySchema.js';
 import Usuario from '../../../models/Usuario.js';
+=======
+import EquipamentoService from '../services/EquipamentoService.js.js';
+import { CommonResponse, HttpStatusCodes } from '../../../utils/helpers/index.js';
+import { equipamentoSchema, equipamentoUpdateSchema } from '../validators/schemas/zod/EquipamentoSchema.js.js';
+import { EquipamentoQuerySchema, EquipamentoIdSchema } from '../validators/schemas/zod/querys/EquipamentoQuerySchema.js.js';
+import Usuario from '../models/Usuario.js.js';
+>>>>>>> a5025f0e6885dbce0263adcd6fd56f9a116eec62
 import fs from 'fs';
 import sizeOf from 'image-size';
 
