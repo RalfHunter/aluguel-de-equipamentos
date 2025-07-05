@@ -21,12 +21,12 @@ export default  {
     // testMatch:['**/UsuarioService.test.js']
     // testMatch:['**/UsuarioRepository.test.js']
     // testMatch:['**/AuthMiddleware.test.js']
-    // testMatch:['**/usuarioRouter.test.js']
-    // testMatch:['**/authRouter.test.js']
+    // testMatch:['**/usuarioRoutes.test.js']
+    // testMatch:['**/authRoutes.test.js']
     // testMatch:['**/GrupoController.test.js']
     // testMatch:['**/GrupoService.test.js']
     // testMatch:['**/GrupoRepository.test.js']
-    // testMatch:['**/grupoRouter.test.js']
-    testMatch:['**/UsuarioSchema.test.js']
+    // testMatch:['**/grupoRoutes.test.js']
+    // testMatch:['**/UsuarioSchema.test.js']
 
 };
