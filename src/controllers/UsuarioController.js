@@ -52,6 +52,7 @@ class UsuarioController {
         // console.log("Estou no cadastrarUsuario")
         await UsuarioSchema.parseAsync(req.body)
         const data = await this.service.cadastrarUsuario(req.body)
+        
         return CommonResponse.success(res, data, 201, 'Usuário criado com sucesso!')
     }
     async alterarStatus(req, res){
@@ -60,6 +61,19 @@ class UsuarioController {
         const parseData = await UsuarioUpdateSchema.parseAsync(req.body)
         const data = await this.service.alterarStatus(id, parseData, req)
         return CommonResponse.success(res, data, 200, `Status alterado com sucesso para ${parseData.ativo}`)
+    }
+    async criarComSenha(req, res){
+         console.log('Estou no criar em UsuarioController');
+
+        // valida os dados
+        const parsedData = UsuarioSchema.parse(req.body);
+        let data = await this.service.cadastrarUsuario(parsedData);
+
+        // Converte o documento Mongoose para um objeto simples
+        let usuarioLimpo = data.toObject();
+
+        return CommonResponse.created(res, usuarioLimpo);
+
     }
 }
 

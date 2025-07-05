@@ -133,7 +133,7 @@ class AuthService {
             });
         }
 
-         if(userEncontrado.status !== "ativo"){
+         if(!userEncontrado.ativo){
 
             throw new CustomError({
                 statusCode: 403,

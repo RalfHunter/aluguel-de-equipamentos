@@ -25,7 +25,8 @@ class UsuarioService {
         await this.repository.buscarPorCpf(body.CPF)
         await this.repository.buscarPorEmail(body.email)
         await this.repository.buscarPorTelefone(body.telefone)
-        const data = await this.repository.cadastrarUsuario(body)
+        const user = await this.repository.verificaGrupos(body)
+        const data = await this.repository.cadastrarUsuario(user)
         return data
     }
     async alterarStatus(id, parseData, req) {

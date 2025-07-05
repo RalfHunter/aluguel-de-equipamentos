@@ -5,6 +5,8 @@ import CustomError from "../utils/helpers/CustomError.js"
 import messages from "../utils/helpers/messages.js"
 import UsuarioFilterBuilder from "./filters/UsuarioFilterBuilder.js"
 import bcrypt from 'bcrypt'
+import Grupo from "../models/Grupo.js"
+import Usuario from "../models/Usuario.js"
 
 class UsuarioRepository {
     constructor({
@@ -26,7 +28,7 @@ class UsuarioRepository {
             .comNome(nome, '')
             .comEmail(email, '')
             .comAtivo(ativo, '')
-        if(grupo){
+        if (grupo) {
             await filterBuilder.comGrupo(grupo)
         }
 
@@ -34,10 +36,10 @@ class UsuarioRepository {
         const options = {
             page: parseInt(page),
             limit: parseInt(limite),
-            populate:[
-            {
-                path:'grupos'
-            }
+            populate: [
+                {
+                    path: 'grupos'
+                }
             ],
             sort: { nome: 1 }
         }
@@ -135,9 +137,9 @@ class UsuarioRepository {
             })
         }
     }
-    async cadastrarUsuario(req) {
-        req.body.senha = await bcrypt.hash(req.body.senha, 8)
-        const data = await this.model.create(req.body)
+    async cadastrarUsuario(body) {
+        body.senha = await bcrypt.hash(body.senha, 8)
+        const data = await this.model.create(body)
         return data
     }
     async alterarStatus(id, parseData) {
@@ -164,6 +166,20 @@ class UsuarioRepository {
         }
         return usuario;
     }
-
+    async verificaGrupos(body) {
+        let grupos = body.grupos
+        if (!grupos || grupos.length === 0) {
+            const grupoPadrao = await Grupo.findOne().sort({ nivelPermissao: -1 })
+            if (!grupoPadrao) {
+                throw new Error("Nenhum grupo encontrado para atribuição automática.");
+            }
+            grupos = [grupoPadrao._id]
+        }
+        const novoUsuario = new Usuario({
+            ...body,
+            grupos
+        })
+        return novoUsuario
+    }
 }
 export default UsuarioRepository
