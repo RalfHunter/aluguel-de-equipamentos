@@ -12,175 +12,150 @@ import bcrypt from 'bcrypt';
 import AuthHelper from '../utils/AuthHelper.js';
 import { UsuarioUpdateSchema } from '../utils/validators/schemas/zod/UsuarioSchema.js';
 import sizeOf from 'image-size';
+import HttpStatusCodes from '../utils/helpers/HttpStatusCodes.js';
 // Configuração para ES6 modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const diretorio = 'uploads/usuarios';
 
 class UsuarioService {
-    constructor() {
-        this.repository = new UsuarioRepository()
-    }
-    async listar(req) {
-        // console.log("Estou no listar em Usuario")
-        const data = await this.repository.listar(req)
-        // console.log("Estou retornando os dados em UsuarioService")
-        return data
-    }
-    async updateUsuario(id, parseData) {
-        // console.log("Estou no updateUsuario Service")
-        await this.repository.buscarPorEmail(parseData.email, id)
-        await this.repository.buscarPorTelefone(parseData.telefone, id)
-        const data = await this.repository.updateUsuario(id, parseData)
-        return data
-    }
+  constructor() {
+    this.repository = new UsuarioRepository()
+  }
+  async listar(req) {
+    // console.log("Estou no listar em Usuario")
+    const data = await this.repository.listar(req)
+    // console.log("Estou retornando os dados em UsuarioService")
+    return data
+  }
+  async updateUsuario(id, parseData) {
+    // console.log("Estou no updateUsuario Service")
+    await this.repository.buscarPorEmail(parseData.email, id)
+    await this.repository.buscarPorTelefone(parseData.telefone, id)
+    const data = await this.repository.updateUsuario(id, parseData)
+    return data
+  }
 
-    async cadastrarUsuario(body) {
-        await this.repository.buscarPorCpf(body.CPF)
-        await this.repository.buscarPorEmail(body.email)
-        await this.repository.buscarPorTelefone(body.telefone)
-        const user = await this.repository.verificaGrupos(body)
-        const data = await this.repository.cadastrarUsuario(user)
-        return data
-    }
-    async alterarStatus(id, parseData, req) {
-        if(req.user_id == id){
-            throw new CustomError({
-                statusCode: 403,
-                errorType: "unauthorized",
-                details: [],
-                customMessage: "Não pode alterar o status de si mesmo."
-            })
-        }
-        const user = await this.repository.buscarPorId(id)
-        let permissao = false
-        for (const grupo of user.grupos){
-            permissao = grupo.nivelPermissao <= req.nivelPermissao
-            if(permissao){
-                break
-            }
-        }
-        console.log(permissao)
-        if (permissao) {
-            throw new CustomError({
-                statusCode: 403,
-                errorType: "unauthorized",
-                details: [],
-                customMessage: messages.error.unauthorized("Permissão")
-            })
-        }
-        const data = await this.repository.alterarStatus(id, parseData)
-        return data
-    }
-    
-    async processarFoto(userId, file) {
-    // 1) valida extensão
-    const ext = path.extname(file.name).slice(1).toLowerCase();
-    const validExts = ['jpg', 'jpeg', 'png', 'svg'];
-    if (!validExts.includes(ext)) {
+  async cadastrarUsuario(body) {
+    await this.repository.buscarPorCpf(body.CPF)
+    await this.repository.buscarPorEmail(body.email)
+    await this.repository.buscarPorTelefone(body.telefone)
+    const user = await this.repository.verificaGrupos(body)
+    const data = await this.repository.cadastrarUsuario(user)
+    return data
+  }
+  async alterarStatus(id, parseData, req) {
+    if (req.user_id == id) {
       throw new CustomError({
-        statusCode: HttpStatusCodes.BAD_REQUEST.code,
-        errorType: 'validationError',
-        field: 'file',
+        statusCode: 403,
+        errorType: "unauthorized",
         details: [],
-        customMessage: 'Extensão de arquivo inválida. Permitido: jpg, jpeg, png, svg.',
-      });
+        customMessage: "Não pode alterar o status de si mesmo."
+      })
     }
-
-    // 2) valida tamanho (max 50MB)
-    const MAX_BYTES = 50 * 1024 * 1024;
-    if (file.size > MAX_BYTES) {
+    const user = await this.repository.buscarPorId(id)
+    let permissao = false
+    for (const grupo of user.grupos) {
+      permissao = grupo.nivelPermissao <= req.nivelPermissao
+      if (permissao) {
+        break
+      }
+    }
+    // console.log(permissao)
+    if (permissao) {
       throw new CustomError({
-        statusCode: HttpStatusCodes.BAD_REQUEST.code,
-        errorType: 'validationError',
-        field: 'file',
+        statusCode: 403,
+        errorType: "unauthorized",
         details: [],
-        customMessage: `Arquivo não pode exceder ${MAX_BYTES / (1024 * 1024)} MB.`,
-      });
+        customMessage: messages.error.unauthorized("Permissão")
+      })
     }
-
-    // 3) prepara paths
-    // const fileName = `${uuidv4()}.${ext}`;
-    const fileName = `${userId}.${ext}`;
-    const uploadsDir = path.join(__dirname, '..', '..', 'uploads', 'usuarios');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-    const uploadPath = path.join(uploadsDir, fileName);
-
-    // 4) redimensiona/comprime
-    const transformer = sharp(file.data)
-      .resize(400, 400, { fit: sharp.fit.cover, position: sharp.strategy.entropy });
-    if (['jpg', 'jpeg'].includes(ext)) {
-      transformer.jpeg({ quality: 80 });
-    }
-    const buffer = await transformer.toBuffer();
-    if(fs.existsSync(uploadPath)){
-      fs.unlinkSync(uploadPath)
-    }
-    await fs.promises.writeFile(uploadPath, buffer);
-
-    // 5) atualiza usuário no banco
-    const dados = { fotoUsuario: fileName };
-    UsuarioUpdateSchema.parse(dados);
-    await this.updateUsuario(userId, dados);
-
-    // 6) retorna metadados adicionais
-    return {
-      fileName,
-      metadata: {
-        fileExtension: ext,
-        fileSize: file.size,
-        md5: file.md5, // vem do express-fileupload
-      },
-    };
+    const data = await this.repository.alterarStatus(id, parseData)
+    return data
   }
-  async validarFoto(){
-    if (!Buffer.isBuffer(buffer) || buffer.length < 4) return false;
 
-    if (buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) return true; // JPEG
-    if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) return true; // PNG
-    if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46) return true; // RIFF
+  // ...existing code...
 
-    return false;
-  }
-  async obterDimensoesFoto(caminhoArquivo) {
-      if (!fs.existsSync(caminhoArquivo)) {
-        throw new Error('Arquivo não encontrado');
+
+  // ...existing code...
+
+  async atualizarFotoUsuario(userId, nomeArquivo, metadadosFoto) {
+    try {
+      // Verificar se o usuário existe
+      const usuarioExistente = await this.repository.buscarPorId(userId);
+      if (!usuarioExistente) {
+        throw new CustomError({
+          statusCode: HttpStatusCodes.NOT_FOUND.code,
+          errorType: 'resourceNotFound',
+          field: 'Usuario',
+          details: [],
+          customMessage: 'Usuário não encontrado.'
+        });
       }
-  
-      const stats = fs.statSync(caminhoArquivo);
-      if (stats.size === 0) {
-        throw new Error('Arquivo está vazio');
-      }
-  
-      const buffer = fs.readFileSync(caminhoArquivo);
-  
-      if (!this._validarHeaderImagem(buffer)) {
-        throw new Error('Arquivo não é uma imagem válida');
-      }
-  
-      const dimensoes = sizeOf(buffer);
-  
-      if (!dimensoes?.width || !dimensoes?.height) {
-        throw new Error('Não foi possível obter dimensões válidas');
-      }
-  
-      return dimensoes;
+
+      // Criar URL completa da foto
+      const urlCompleta = `uploads/usuarios/${nomeArquivo}`;
+
+      // Dados para atualização
+      const dadosAtualizacao = {
+        fotoUsuario: urlCompleta
+      };
+
+      // Validar dados com schema
+      UsuarioUpdateSchema.parse(dadosAtualizacao);
+
+      // Atualizar no banco de dados
+      const usuarioAtualizado = await this.repository.atualizar(userId, dadosAtualizacao);
+
+      return {
+        id: usuarioAtualizado._id,
+        nome: usuarioAtualizado.nome,
+        email: usuarioAtualizado.email,
+        fotoUsuario: usuarioAtualizado.fotoUsuario,
+        metadados: metadadosFoto
+      };
+
+    } catch (error) {
+      console.error('Erro ao atualizar foto do usuário:', error);
+      throw error;
     }
-    async _processarImagemParaFoto(file, req) {
-    await this._validarArquivoImagem(file);
-
-    const dimensoes = this._obterDimensoesImagem(file.path);
-    const tamanhoMb = +(file.size / (1024 * 1024)).toFixed(2);
-
-    return {
-      url: `${req.protocol}://${req.get('host')}/uploads/equipamentos/${file.filename}`,
-      largura: dimensoes.width,
-      altura: dimensoes.height,
-      tamanhoMb,
-    };
   }
+
+  // Função auxiliar para remover foto antiga (opcional)
+  async removerFotoAnterior(userId) {
+    try {
+      const usuario = await this.repository.buscarPorId(userId);
+      if (usuario && usuario.fotoUsuario) {
+        const caminhoFotoAntiga = path.join(process.cwd(), usuario.fotoUsuario);
+        if (fs.existsSync(caminhoFotoAntiga)) {
+          fs.unlinkSync(caminhoFotoAntiga);
+          console.log('Foto anterior removida:', caminhoFotoAntiga);
+        }
+      }
+    } catch (error) {
+      console.warn('Erro ao remover foto anterior:', error.message);
+      // Não propagar o erro, apenas logar
+    }
+  }
+
+  async getFoto(id){
+    const data = await this.repository.buscarPorId(id)
+    // const objetoJs = await data.toObject()
+    const foto  = data.fotoUsuario
+    if(fs.existsSync(foto)){
+      return foto
+    }
+     throw new CustomError({
+          statusCode: HttpStatusCodes.NOT_FOUND.code,
+          errorType: 'resourceNotFound',
+          field: 'Foto',
+          details: [],
+          customMessage: 'Foto não encontrada.'
+      })
+
+  }
+
 
 }
 export default UsuarioService

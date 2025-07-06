@@ -4,6 +4,7 @@ import UsuarioController from "../controllers/UsuarioController.js"
 import AuthMiddleware from "../middlewares/AuthMiddleware.js"
 import AuthPermission from "../middlewares/AuthPermission.js"
 import upload from "../config/multerConfig.js"
+import uploadUsuario from "../config/multerUserConfig.js"
 const router = express.Router()
 
 const usuarioController = new UsuarioController()
@@ -14,5 +15,6 @@ router
     .patch("/usuarios/",AuthMiddleware, asyncWrapper(usuarioController.updateUsuario.bind(usuarioController)))
     .patch("/usuarios/:id",AuthMiddleware, AuthPermission, asyncWrapper(usuarioController.alterarStatus.bind(usuarioController)))
     .post("/usuarios", AuthMiddleware, AuthPermission, asyncWrapper(usuarioController.cadastrarUsuario.bind(usuarioController)))
-    .post("/usuarios/:id/foto", AuthMiddleware, AuthPermission, upload.array('file'), asyncWrapper(usuarioController.fotoUpload.bind(usuarioController)))
+    .post("/usuarios/:id/foto", AuthMiddleware, AuthPermission, uploadUsuario.single('file'), asyncWrapper(usuarioController.fotoUpload.bind(usuarioController)))
+    .get("/usuarios/:id/foto", AuthMiddleware, asyncWrapper(usuarioController.getFoto.bind(usuarioController)))
 export default router
