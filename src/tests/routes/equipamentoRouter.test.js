@@ -1,483 +1,364 @@
 import request from 'supertest';
-import app from '../../app.js';
-import jwt from 'jsonwebtoken';
-import Equipamento from '../../models/Equipamento.js';
-import Usuario from '../../models/Usuario.js';
 import mongoose from 'mongoose';
-import EquipamentoService from '../../services/EquipamentoService.js';
-import { CustomError } from '../../utils/helpers/index.js';
-import EquipamentoController from '../../controllers/EquipamentoController.js';
-//import path from 'path';
+import dotenv from 'dotenv';
+import http from 'http';
+import app from '../../app.js';
+import '../../routes/equipamentoRoutes.js'; 
 
-// const filePath = path.resolve('Uploads/equipamentos/foto.jpg');
+dotenv.config();
 
-// mock do método privado do controller para processar imagem
-jest.spyOn(EquipamentoController.prototype, '_processarImagemParaFoto').mockImplementation(() => ({
-  url: 'http://localhost/uploads/equipamentos/foto.jpg',
-  largura: 100,
-  altura: 100,
-  tamanhoMb: 0.1,
-}));
+const PORT = process.env.PORT || 5011;
+const BASE_URL = `http://localhost:${PORT}`;
 
-// mocks dos modelos e service
-jest.mock('../../models/Equipamento.js');
-jest.mock('../../models/Usuario.js');
-jest.mock('../../services/EquipamentoService.js');
+let server;
+let tokenAdmin;
+let tokenUser;
 
-// mocks para o middleware authMiddleware
-jest.mock('../../middlewares/authMiddleware.js', () => {
-  const mongoose = require('mongoose');
-  const jwt = require('jsonwebtoken');
+jest.setTimeout(30000);
 
-  const userObjectId = new mongoose.Types.ObjectId().toString();
-  const adminObjectId = new mongoose.Types.ObjectId().toString();
-
-  const secret = process.env.JWT_SECRET_ACCESS_TOKEN || 'secret';
-
-  const tokenAdmin = jwt.sign({ id: adminObjectId }, secret);
-  const tokenUser = jwt.sign({ id: userObjectId }, secret);
-
-  global.__TOKEN_ADMIN__ = tokenAdmin;
-  global.__TOKEN_USER__ = tokenUser;
-  global.__ADMIN_ID__ = adminObjectId;
-  global.__USER_ID__ = userObjectId;
-
-  return (req, res, next) => {
-    const authHeader = req.headers['authorization'] || '';
-    const token = authHeader.replace(/^Bearer\s+/i, '');
-
-    if (!token) {
-      return res.status(401).json({ message: 'Token não informado!' });
+describe('Rotas de Equipamentos - Integração', () => {
+  beforeAll(async () => {
+    // conecta ao MongoDB
+    try {
+      await mongoose.connect(process.env.MONGO_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      });
+    } catch (err) {
+      console.error('Erro ao conectar ao MongoDB:', err);
+      throw err;
     }
 
-    if (token === tokenAdmin) {
-      req.user_id = adminObjectId;
-      return next();
-    }
+    // Inicia o servidor
+    server = http.createServer(app);
+    await new Promise((resolve) => server.listen(PORT, resolve));
 
-    if (token === tokenUser) {
-      req.user_id = userObjectId;
-      return next();
-    }
-    return res.status(401).json({ message: 'Token inválido!' });
-  };
-});
+    const unique = Date.now() + '-' + Math.floor(Math.random() * 10000);
+    const adminEmail = `admin${unique}@teste.com`;
+    const userEmail = `user${unique}@teste.com`;
 
-const tokenAdmin = global.__TOKEN_ADMIN__;
-const tokenUser = global.__TOKEN_USER__;
-const adminObjectId = global.__ADMIN_ID__;
-const userObjectId = global.__USER_ID__;
+    try {
+      await request(BASE_URL)
+        .post('/usuarios')
+        .send({
+          nome: 'Admin Teste',
+          email: adminEmail,
+          senha: 'Senha@123',
+          tipoUsuario: 'admin',
+          ativo: true,
+        });
+    } catch (err) {}
 
-// mock pra retornar usuário pelo id
-const mockUsuario = (tipo) => {
-  const id = tipo === 'admin' ? adminObjectId : userObjectId;
-  const token = tipo === 'admin' ? tokenAdmin : tokenUser;
-  const mockUser = {
-    _id: id,
-    tipoUsuario: tipo,
-    refreshToken: token,
-    accessToken: token,
-    select: jest.fn().mockReturnThis(),
-    exec: jest.fn().mockResolvedValue({
-      _id: id,
-      tipoUsuario: tipo,
-      refreshToken: token,
-      accessToken: token,
-    }),
-  };
-  Usuario.findById.mockReturnValue(mockUser);
-};
+    // faz login como admin
+    const adminLoginRes = await request(BASE_URL)
+      .post('/login')
+      .send({ email: adminEmail, senha: 'Senha@123' });
+    tokenAdmin = adminLoginRes.body?.data?.user?.accessToken;
+    expect(tokenAdmin).toBeTruthy();
 
-describe('Rotas Equipamentos - Integração', () => {
-  const validId = new mongoose.Types.ObjectId().toString();
-  const invalidId = new mongoose.Types.ObjectId().toString();
+    // criando usuário comum para testes
+    try {
+      await request(BASE_URL)
+        .post('/usuarios')
+        .send({
+          nome: 'User Teste',
+          email: userEmail,
+          senha: 'Senha@123',
+          tipoUsuario: 'comum',
+          ativo: true,
+        });
+    } catch (err) {}
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    jest.resetModules();
-    jest.mock('../../models/Equipamento.js');
-    jest.mock('../../models/Usuario.js');
-    jest.mock('../../services/EquipamentoService.js');
-    jest.spyOn(EquipamentoController.prototype, '_processarImagemParaFoto').mockImplementation(() => ({
-      url: 'http://localhost/uploads/equipamentos/foto.jpg',
-      largura: 100,
-      altura: 100,
-      tamanhoMb: 0.1,
-    }));
+    //faz login como usuário comum
+    const userLoginRes = await request(BASE_URL)
+      .post('/login')
+      .send({ email: userEmail, senha: 'Senha@123' });
+    tokenUser = userLoginRes.body?.data?.user?.accessToken;
+    expect(tokenUser).toBeTruthy();
   });
 
+  afterAll(async () => {
+    await mongoose.disconnect();
+    if (server) {
+      await new Promise((resolve) => server.close(resolve));
+    }
+  });
+
+  // equipamento válido
+  const criarEquipamentoValido = async (token, override = {}) => {
+    const unique = Date.now() + '-' + Math.floor(Math.random() * 10000);
+    const dados = {
+      equiNome: `Parafusadeira ${unique}`,
+      equiDescricao: 'Descrição da parafusadeira',
+      equiValorDiaria: '70',
+      equiQuantidadeDisponivel: '3',
+      equiCategoria: 'Parafusadeira',
+      ...override,
+    };
+
+    const res = await request(BASE_URL)
+      .post('/equipamentos')
+      .set('Authorization', `Bearer ${token}`)
+      .set('Content-Type', 'multipart/form-data')
+      .field('equiNome', dados.equiNome)
+      .field('equiDescricao', dados.equiDescricao)
+      .field('equiValorDiaria', dados.equiValorDiaria)
+      .field('equiQuantidadeDisponivel', dados.equiQuantidadeDisponivel)
+      .field('equiCategoria', dados.equiCategoria);
+
+    // Aguarda persistência
+    await new Promise((r) => setTimeout(r, 150));
+    return res.body.data;
+  };
+
   describe('GET /equipamentos', () => {
-    it('Retorna lista de equipamentos para usuário comum com filtro válido', async () => {
-      mockUsuario('comum');
-
-      EquipamentoService.prototype.listar.mockResolvedValue({
-        docs: [{ equiNome: 'Furadeira' }],
-        totalDocs: 1,
-        page: 1,
-        totalPages: 1,
-      });
-
-      const res = await request(app)
-        .get('/equipamentos?categoria=Furadeira&status=ativo&minValor=10&maxValor=100&page=1&limit=5')
+    it('deve listar equipamentos para usuário comum com filtro válido', async () => {
+      const res = await request(BASE_URL)
+        .get('/equipamentos?categoria=Parafusadeira&status=ativo&minValor=10&maxValor=100&page=1&limit=5')
         .set('Authorization', `Bearer ${tokenUser}`);
 
-      expect(res.statusCode).toBe(200);
-      expect(res.body.data.docs).toHaveLength(1);
-      expect(res.body.data.docs[0].equiNome).toBe('Furadeira');
+      expect(res.status).toBe(200);
+      expect(res.body.data).toBeDefined();
+      expect(Array.isArray(res.body.data.docs || res.body.data)).toBe(true);
     });
 
-    it('Retorna erro 403 para usuário comum ao filtrar status pendente', async () => {
-      mockUsuario('comum');
-
-      Equipamento.paginate.mockResolvedValue(null);
-
-      const res = await request(app)
+    it('deve retornar erro 403 para usuário comum ao filtrar status pendente', async () => {
+      const res = await request(BASE_URL)
         .get('/equipamentos?status=pendente')
         .set('Authorization', `Bearer ${tokenUser}`);
 
-      expect(res.statusCode).toBe(403);
+      expect(res.status).toBe(403);
       expect(res.body.message).toMatch(/restrito a administradores/i);
     });
 
-    it('Permite admin filtrar status pendente', async () => {
-      mockUsuario('admin');
-
-      EquipamentoService.prototype.listar.mockImplementation(async (filtros) => {
-        if (filtros.status === 'pendente') {
-          return {
-            docs: [],
-            totalDocs: 0,
-            page: 1,
-            totalPages: 0,
-          };
-        }
-        return {
-          docs: [{ equiNome: 'Furadeira' }],
-          totalDocs: 1,
-          page: 1,
-          totalPages: 1,
-        };
-      });
-
-      const res = await request(app)
+    it('deve permitir admin filtrar status pendente', async () => {
+      const res = await request(BASE_URL)
         .get('/equipamentos?status=pendente')
         .set('Authorization', `Bearer ${tokenAdmin}`);
 
-      expect(res.statusCode).toBe(200);
-      expect(res.body.data.docs).toHaveLength(0);
+      expect(res.status).toBe(200);
+      expect(res.body.data).toBeDefined();
     });
 
-    it('Retorna lista padrão de equipamentos mesmo sem filtros', async () => {
-      mockUsuario('comum');
-
-      EquipamentoService.prototype.listar.mockResolvedValue({
-        docs: [
-          { equiNome: 'Martelo' },
-          { equiNome: 'Chave de fenda' }
-        ],
-        totalDocs: 2,
-        page: 1,
-        totalPages: 1,
-      });
-
-      const res = await request(app)
+    it('deve listar equipamentos sem filtros', async () => {
+      const res = await request(BASE_URL)
         .get('/equipamentos')
         .set('Authorization', `Bearer ${tokenUser}`);
 
-      expect(res.statusCode).toBe(200);
-      expect(res.body.data.docs).toHaveLength(2);
-      expect(res.body.data.docs[0].equiNome).toBe('Martelo');
+      expect(res.status).toBe(200);
+      expect(res.body.data).toBeDefined();
+      expect(Array.isArray(res.body.data.docs || res.body.data)).toBe(true);
+    });
+
+    it('deve retornar erro 401 sem token', async () => {
+      const res = await request(BASE_URL).get('/equipamentos');
+      expect(res.status).toBe(401);
+      expect(res.body.message).toMatch(/não autorizado|token/i);
     });
   });
 
   describe('GET /equipamentos/:id', () => {
-    it('Retorna equipamento válido por ID', async () => {
-      mockUsuario('comum');
+    it('deve retornar equipamento por ID válido', async () => {
+      const equipamento = await criarEquipamentoValido(tokenUser);
+      expect(equipamento).toHaveProperty('_id');
 
-      EquipamentoService.prototype.listarPorId.mockResolvedValue({
-        _id: validId,
-        equiNome: 'Furadeira',
-        equiDescricao: 'Descrição da furadeira',
-        equiStatus: 'ativo',
-      });
-
-      const res = await request(app)
-        .get(`/equipamentos/${validId}`)
+      const res = await request(BASE_URL)
+        .get(`/equipamentos/${equipamento._id}`)
         .set('Authorization', `Bearer ${tokenUser}`);
 
-      expect(res.statusCode).toBe(200);
-      expect(res.body.data.equiNome).toBe('Furadeira');
+      expect(res.status).toBe(200);
+      expect(res.body.data._id).toBe(equipamento._id);
+      expect(res.body.data.equiNome).toMatch(/Parafusadeira/);
     });
 
-    it('Retorna 404 se equipamento não existir', async () => {
-      mockUsuario('comum');
-
-      EquipamentoService.prototype.listarPorId.mockResolvedValue(null);
-
-      const res = await request(app)
-        .get(`/equipamentos/${invalidId}`)
+    it('deve retornar 404 para ID inexistente', async () => {
+      const id = new mongoose.Types.ObjectId().toString();
+      const res = await request(BASE_URL)
+        .get(`/equipamentos/${id}`)
         .set('Authorization', `Bearer ${tokenUser}`);
 
-      expect(res.statusCode).toBe(404);
+      expect(res.status).toBe(404);
       expect(res.body.message).toMatch(/não encontrado/i);
     });
   });
 
   describe('POST /equipamentos', () => {
-    it('Cria equipamento com fotos e dados válidos', async () => {
-      mockUsuario('comum');
-
-      const equipamentoCriado = {
-        _id: validId,
-        equiNome: 'Parafusadeira',
+    it('deve criar equipamento com dados válidos', async () => {
+      const unique = Date.now() + '-' + Math.floor(Math.random() * 10000);
+      const dados = {
+        equiNome: `Parafusadeira ${unique}`,
         equiDescricao: 'Descrição da parafusadeira',
-        equiValorDiaria: 70,
-        equiQuantidadeDisponivel: 3,
+        equiValorDiaria: '70',
+        equiQuantidadeDisponivel: '3',
         equiCategoria: 'Parafusadeira',
-        equiFotos: [{
-          url: 'http://localhost/uploads/equipamentos/foto.jpg',
-          largura: 100,
-          altura: 100,
-          tamanhoMb: 0.1,
-        }],
-        equiStatus: 'pendente',
-        equiUsuario: userObjectId,
       };
 
-      EquipamentoService.prototype.criar.mockResolvedValue(equipamentoCriado);
-
-      jest.mock('../../config/multerConfig.js', () => ({
-        __esModule: true,
-        default: {
-          array: () => (req, res, next) => {
-            req.files = [{
-              originalname: 'foto.jpg',
-              mimetype: 'image/jpeg',
-              path: 'Uploads/equipamentos/foto.jpg',
-              size: 102400,
-              filename: 'foto.jpg',
-            }];
-            req.body = {
-              equiNome: 'Parafusadeira',
-              equiDescricao: 'Descrição da parafusadeira',
-              equiValorDiaria: '70',
-              equiQuantidadeDisponivel: '3',
-              equiCategoria: 'Parafusadeira',
-            };
-            next();
-          }
-        }
-      }), { virtual: true });
-
-      const res = await request(app)
+      const res = await request(BASE_URL)
         .post('/equipamentos')
         .set('Authorization', `Bearer ${tokenUser}`)
-        .set('Content-Type', 'multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW')
-        .field('equiNome', 'Parafusadeira')
-        .field('equiDescricao', 'Descrição da parafusadeira')
-        .field('equiValorDiaria', '70')
-        .field('equiQuantidadeDisponivel', '3')
-        .field('equiCategoria', 'Parafusadeira')
-        .attach('files', Buffer.from('fake image content'), 'foto.jpg');
+        .set('Content-Type', 'multipart/form-data')
+        .field('equiNome', dados.equiNome)
+        .field('equiDescricao', dados.equiDescricao)
+        .field('equiValorDiaria', dados.equiValorDiaria)
+        .field('equiQuantidadeDisponivel', dados.equiQuantidadeDisponivel)
+        .field('equiCategoria', dados.equiCategoria);
 
-      expect(res.statusCode).toBe(201);
-      expect(res.body.data.equipamento.equiNome).toBe('Parafusadeira');
-      expect(EquipamentoService.prototype.criar).toHaveBeenCalled();
+      expect(res.status).toBe(201);
+      expect(res.body.data).toHaveProperty('_id');
+      expect(res.body.data.equiNome).toBe(dados.equiNome);
     });
 
-    it('Retorna 400 se dados obrigatórios estiverem ausentes (validação falhar)', async () => {
-      mockUsuario('comum');
-
-      //reesetar todos os mocks para evitar interferência
-      EquipamentoService.prototype.criar.mockImplementation(() => {
-        throw new Error('Não deveria chegar aqui devido à validação');
-      });
-
-      jest.mock('../../config/multerConfig.js', () => ({
-        __esModule: true,
-        default: {
-          array: () => (req, res, next) => {
-            req.files = [{
-              originalname: 'foto.jpg',
-              mimetype: 'image/jpeg',
-              path: 'Uploads/equipamentos/foto.jpg',
-              size: 102400,
-              filename: 'foto.jpg',
-            }];
-            req.body = {};
-            next();
-          }
-        }
-      }), { virtual: true });
-
-      const res = await request(app)
+    it('deve retornar 400 com dados obrigatórios ausentes', async () => {
+      const res = await request(BASE_URL)
         .post('/equipamentos')
         .set('Authorization', `Bearer ${tokenUser}`)
-        .set('Content-Type', 'multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW')
-        .attach('files', Buffer.from('fake image content'), 'foto.jpg');
+        .set('Content-Type', 'multipart/form-data');
 
-      expect(res.statusCode).toBe(400);
+      expect(res.status).toBe(400);
       expect(res.body.message).toMatch(/obrigatórios|validação/i);
+    });
+
+    it('deve retornar 401 sem token', async () => {
+      const res = await request(BASE_URL)
+        .post('/equipamentos')
+        .set('Content-Type', 'multipart/form-data');
+
+      expect(res.status).toBe(401);
+      expect(res.body.message).toMatch(/não autorizado|token/i);
     });
   });
 
   describe('PATCH /equipamentos/:id', () => {
-    it('Atualiza equipamento com dados válidos', async () => {
-      mockUsuario('comum');
+    it('deve atualizar equipamento com dados válidos', async () => {
+      const equipamento = await criarEquipamentoValido(tokenUser);
+      expect(equipamento).toHaveProperty('_id');
 
-      EquipamentoService.prototype.atualizar.mockResolvedValue({
-        _id: validId,
-        equiNome: 'Parafusadeira Atualizada',
-        equiValorDiaria: 80,
-        equiQuantidadeDisponivel: 4,
-      });
+      const dadosAtualizados = {
+        equiNome: `${equipamento.equiNome} Atualizado`,
+        equiValorDiaria: '80',
+      };
 
-      const res = await request(app)
-        .patch(`/equipamentos/${validId}`)
+      const res = await request(BASE_URL)
+        .patch(`/equipamentos/${equipamento._id}`)
         .set('Authorization', `Bearer ${tokenUser}`)
-        .send({ equiValorDiaria: 80, equiQuantidadeDisponivel: 4 });
+        .send(dadosAtualizados);
 
-      expect(res.statusCode).toBe(200);
-      expect(res.body.data.equiNome).toBe('Parafusadeira Atualizada');
+      expect(res.status).toBe(200);
+      expect(res.body.data.equiNome).toBe(dadosAtualizados.equiNome);
+      expect(res.body.data.equiValorDiaria).toBe(80);
     });
 
-    it('Retorna 404 se equipamento não existir para atualizar', async () => {
-      mockUsuario('comum');
-
-      EquipamentoService.prototype.atualizar.mockImplementation(() => {
-        throw new CustomError({
-          statusCode: 404,
-          customMessage: 'Equipamento não encontrado',
-        });
-      });
-
-      const res = await request(app)
-        .patch(`/equipamentos/${invalidId}`)
+    it('deve retornar 404 para ID inexistente', async () => {
+      const id = new mongoose.Types.ObjectId().toString();
+      const res = await request(BASE_URL)
+        .patch(`/equipamentos/${id}`)
         .set('Authorization', `Bearer ${tokenUser}`)
-        .send({ equiValorDiaria: 80 });
+        .send({ equiNome: 'Parafusadeira' });
 
-      expect(res.statusCode).toBe(404);
+      expect(res.status).toBe(404);
       expect(res.body.message).toMatch(/não encontrado/i);
+    });
+
+    it('deve retornar 401 sem token', async () => {
+      const equipamento = await criarEquipamentoValido(tokenUser);
+      expect(equipamento).toHaveProperty('_id');
+
+      const res = await request(BASE_URL)
+        .patch(`/equipamentos/${equipamento._id}`)
+        .send({ equiNome: 'Parafusadeira' });
+
+      expect(res.status).toBe(401);
+      expect(res.body.message).toMatch(/não autorizado|token/i);
     });
   });
 
   describe('PATCH /equipamentos/:id/aprovar', () => {
-    it('Admin aprova equipamento com sucesso', async () => {
-      mockUsuario('admin');
+    it('deve aprovar equipamento como admin', async () => {
+      const equipamento = await criarEquipamentoValido(tokenUser);
+      expect(equipamento).toHaveProperty('_id');
 
-      EquipamentoService.prototype.aprovar.mockResolvedValue({
-        _id: validId,
-        equiStatus: 'ativo',
-      });
-
-      const res = await request(app)
-        .patch(`/equipamentos/${validId}/aprovar`)
+      const res = await request(BASE_URL)
+        .patch(`/equipamentos/${equipamento._id}/aprovar`)
         .set('Authorization', `Bearer ${tokenAdmin}`);
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
       expect(res.body.message).toMatch(/aprovado/i);
     });
 
-    it('Usuário comum recebe 403 ao tentar aprovar', async () => {
-      mockUsuario('comum');
+    it('deve retornar 403 para usuário comum', async () => {
+      const equipamento = await criarEquipamentoValido(tokenUser);
+      expect(equipamento).toHaveProperty('_id');
 
-      const res = await request(app)
-        .patch(`/equipamentos/${validId}/aprovar`)
+      const res = await request(BASE_URL)
+        .patch(`/equipamentos/${equipamento._id}/aprovar`)
         .set('Authorization', `Bearer ${tokenUser}`);
 
-      expect(res.statusCode).toBe(403);
+      expect(res.status).toBe(403);
+      expect(res.body.message).toMatch(/restrito a administradores/i);
     });
 
-    it('Retorna 404 se equipamento não existir para aprovar', async () => {
-      mockUsuario('admin');
-
-      EquipamentoService.prototype.aprovar.mockImplementation(() => {
-        throw new CustomError({
-          statusCode: 404,
-          customMessage: 'Equipamento não encontrado',
-        });
-      });
-
-      const res = await request(app)
-        .patch(`/equipamentos/${invalidId}/aprovar`)
+    it('deve retornar 404 para ID inexistente', async () => {
+      const id = new mongoose.Types.ObjectId().toString();
+      const res = await request(BASE_URL)
+        .patch(`/equipamentos/${id}/aprovar`)
         .set('Authorization', `Bearer ${tokenAdmin}`);
 
-      expect(res.statusCode).toBe(404);
+      expect(res.status).toBe(404);
       expect(res.body.message).toMatch(/não encontrado/i);
     });
   });
 
   describe('PATCH /equipamentos/:id/reprovar', () => {
-    it('Admin reprova (exclui) equipamento com sucesso', async () => {
-      mockUsuario('admin');
+    it('deve reprovar equipamento como admin', async () => {
+      const equipamento = await criarEquipamentoValido(tokenUser);
+      expect(equipamento).toHaveProperty('_id');
 
-      EquipamentoService.prototype.reprovar.mockResolvedValue({
-        id: validId,
-        mensagem: 'Equipamento excluído com sucesso.',
-      });
-
-      const res = await request(app)
-        .patch(`/equipamentos/${validId}/reprovar`)
+      const res = await request(BASE_URL)
+        .patch(`/equipamentos/${equipamento._id}/reprovar`)
         .set('Authorization', `Bearer ${tokenAdmin}`);
 
-      expect(res.statusCode).toBe(200);
+      expect(res.status).toBe(200);
       expect(res.body.message).toMatch(/reprovado|excluído/i);
     });
 
-    it('Usuário comum recebe 403 ao tentar reprovar', async () => {
-      mockUsuario('comum');
+    it('deve retornar 403 para usuário comum', async () => {
+      const equipamento = await criarEquipamentoValido(tokenUser);
+      expect(equipamento).toHaveProperty('_id');
 
-      const res = await request(app)
-        .patch(`/equipamentos/${validId}/reprovar`)
+      const res = await request(BASE_URL)
+        .patch(`/equipamentos/${equipamento._id}/reprovar`)
         .set('Authorization', `Bearer ${tokenUser}`);
 
-      expect(res.statusCode).toBe(403);
+      expect(res.status).toBe(403);
+      expect(res.body.message).toMatch(/restrito a administradores/i);
     });
 
-    it('Retorna 404 se equipamento não existir para reprovar', async () => {
-      mockUsuario('admin');
-
-      EquipamentoService.prototype.reprovar.mockImplementation(() => {
-        throw new CustomError({
-          statusCode: 404,
-          customMessage: 'Equipamento não encontrado',
-        });
-      });
-
-      const res = await request(app)
-        .patch(`/equipamentos/${invalidId}/reprovar`)
+    it('deve retornar 404 para ID inexistente', async () => {
+      const id = new mongoose.Types.ObjectId().toString();
+      const res = await request(BASE_URL)
+        .patch(`/equipamentos/${id}/reprovar`)
         .set('Authorization', `Bearer ${tokenAdmin}`);
 
-      expect(res.statusCode).toBe(404);
+      expect(res.status).toBe(404);
       expect(res.body.message).toMatch(/não encontrado/i);
     });
 
-    it('Retorna 403 ao tentar reprovar equipamento que já foi aprovado', async () => {
-      mockUsuario('admin');
+    it('deve retornar 403 para equipamento já aprovado', async () => {
+      const equipamento = await criarEquipamentoValido(tokenUser);
+      expect(equipamento).toHaveProperty('_id');
 
-      EquipamentoService.prototype.reprovar.mockImplementation(() => {
-        throw new CustomError({
-          statusCode: 403,
-          customMessage: 'Apenas equipamentos pendentes podem ser reprovados.',
-        });
-      });
-
-      const res = await request(app)
-        .patch(`/equipamentos/${validId}/reprovar`)
+      // Aprovar primeiro
+      await request(BASE_URL)
+        .patch(`/equipamentos/${equipamento._id}/aprovar`)
         .set('Authorization', `Bearer ${tokenAdmin}`);
 
-      expect(res.statusCode).toBe(403);
+      // Tentar reprovar
+      const res = await request(BASE_URL)
+        .patch(`/equipamentos/${equipamento._id}/reprovar`)
+        .set('Authorization', `Bearer ${tokenAdmin}`);
+
+      expect(res.status).toBe(403);
       expect(res.body.message).toMatch(/pendentes/i);
-    });
-  });
-
-  describe('Autenticação - Token', () => {
-    it('Retorna 401 ao tentar acessar rota sem token', async () => {
-      const res = await request(app)
-        .get('/equipamentos');
-
-      expect(res.statusCode).toBe(401);
-      expect(res.body.message).toMatch(/não autorizado|token/i);
     });
   });
 });
