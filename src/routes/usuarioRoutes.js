@@ -17,4 +17,5 @@ router
     .post("/usuarios", AuthMiddleware, AuthPermission, asyncWrapper(usuarioController.cadastrarUsuario.bind(usuarioController)))
     .post("/usuarios/:id/foto", AuthMiddleware, AuthPermission, uploadUsuario.single('file'), asyncWrapper(usuarioController.fotoUpload.bind(usuarioController)))
     .get("/usuarios/:id/foto", AuthMiddleware, asyncWrapper(usuarioController.getFoto.bind(usuarioController)))
+    .delete("/usuarios/:id", AuthMiddleware, AuthPermission, asyncWrapper(usuarioController.deletarUsuario.bind(usuarioController)))
 export default router

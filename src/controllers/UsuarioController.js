@@ -219,7 +219,14 @@ class UsuarioController {
             root: caminhoPasta
         });
     }
+    async deletarUsuario(req, res){
+        const {id} = req.params || {}
+        UsuarioIdSchema.parse(id)
 
+        const data = await this.service.deletarUsuario(id)
+
+        return CommonResponse.success(res, data, 200, 'Usuário excluído com sucesso.');
+    }
 
 }
 

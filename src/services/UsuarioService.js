@@ -155,7 +155,14 @@ class UsuarioService {
       })
 
   }
+  async deletarUsuario(id){
+    console.log('Estou no deletar em UsuarioService');
+    await this.repository.buscarPorId(id)
+    const data = await this.repository.deletarUsuario(id);
+    return data;
+  
 
+  }
 
 }
 export default UsuarioService

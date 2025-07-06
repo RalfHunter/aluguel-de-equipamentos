@@ -181,5 +181,10 @@ class UsuarioRepository {
         })
         return novoUsuario
     }
+    async deletarUsuario(id) {
+        const usuario = await this.model.findByIdAndDelete(id);
+        return usuario;
+    }
+
 }
 export default UsuarioRepository
