@@ -18,8 +18,8 @@ import Usuario from '../models/Usuario.js';
 import { dirname } from 'path';
 
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = dirname(__filename);
 
 class UsuarioController {
     constructor() {
@@ -205,7 +205,7 @@ class UsuarioController {
         const data = await this.service.getFoto(id)
         const partes = data.split("/")
         const nomeArquivo = partes.pop()
-        const caminhoPasta = path.join(__dirname, '..', '..', ...partes)
+        const caminhoPasta = path.resolve(...partes)
         const extensao = nomeArquivo.split(".")
         const mimeTypes = {
             jpg: 'image/jpeg',

@@ -14,8 +14,7 @@ import { UsuarioUpdateSchema } from '../utils/validators/schemas/zod/UsuarioSche
 import sizeOf from 'image-size';
 import HttpStatusCodes from '../utils/helpers/HttpStatusCodes.js';
 // Configuração para ES6 modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+
 
 const diretorio = 'uploads/usuarios';
 
