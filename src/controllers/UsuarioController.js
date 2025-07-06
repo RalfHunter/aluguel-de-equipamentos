@@ -2,6 +2,16 @@ import { CommonResponse } from '../utils/helpers/index.js';
 import UsuarioService from '../services/UsuarioService.js';
 import { UsuarioIdSchema, UsuarioQuerySchema } from '../utils/validators/schemas/zod/querys/UsuarioQuerySchema.js';
 import { UsuarioSchema, UsuarioUpdateSchema } from '../utils/validators/schemas/zod/UsuarioSchema.js';
+import fileUpload from 'express-fileupload';
+import { CustomError } from '../utils/helpers/index.js';
+import { HttpStatusCodes } from '../utils/helpers/index.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
+import sharp from 'sharp';
+import TokenUtil from '../utils/TokenUtil.js';
+import multer from 'multer';
 
 class UsuarioController {
     constructor(){
@@ -75,6 +85,76 @@ class UsuarioController {
         return CommonResponse.created(res, usuarioLimpo);
 
     }
+        async fotoUpload(req, res, next) {
+        try {
+            console.log('Estou no fotoUpload em UsuarioController');
+
+            const { id } = req.params;
+            const file = req.files?.file;
+            if (!file) {
+                throw new CustomError({
+                    statusCode: HttpStatusCodes.BAD_REQUEST.code,
+                    errorType: 'validationError',
+                    field: 'file',
+                    details: [],
+                    customMessage: 'Nenhum arquivo foi enviado.'
+                });
+            }
+            console.log("CHEGAMOS")
+            // delega toda a lógica de validação e processamento ao service
+            const { fileName, metadata } = await this.service.processarFoto(id, file);
+
+            return CommonResponse.success(res, {
+                message: 'Arquivo recebido e usuário atualizado com sucesso.',
+                dados: { link_foto: fileName },
+                metadados: metadata
+            });
+        } catch (error) {
+            console.error('Erro no fotoUpload:', error);
+            return next(error);
+        }
+    }
+     async getFoto(req, res, next) {
+        try {
+            console.log('Estou no getFoto em UsuarioController');
+
+            const { id } = req.params || {};
+            UsuarioIdSchema.parse(id);
+
+            const usuario = await this.service.listar(req);
+            const { link_foto } = usuario;
+
+            if (!link_foto) {
+                throw new CustomError({
+                    statusCode: HttpStatusCodes.NOT_FOUND.code,
+                    errorType: 'notFound',
+                    field: 'link_foto',
+                    details: [],
+                    customMessage: 'Foto do usuário não encontrada.'
+                });
+            }
+
+            const filename = link_foto;
+            const uploadsDir = path.join(getDirname(), '..', '../uploads/users');
+            const filePath = path.join(uploadsDir, filename);
+
+            const extensao = path.extname(filename).slice(1).toLowerCase();
+            const mimeTypes = {
+                jpg: 'image/jpeg',
+                jpeg: 'image/jpeg',
+                png: 'image/png',
+                svg: 'image/svg+xml'
+            };
+            const contentType = mimeTypes[extensao] || 'application/octet-stream';
+
+            res.setHeader('Content-Type', contentType);
+            return res.sendFile(filePath);
+        } catch (error) {
+            console.error('Erro no getFoto:', error);
+            return next(error);
+        }
+    }
+
 }
 
 export default UsuarioController;
