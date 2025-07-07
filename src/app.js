@@ -8,8 +8,15 @@ import errorHandler from './utils/helpers/errorHandler.js';
 import logger from './utils/logger.js';
 import CommonResponse from './utils/helpers/CommonResponse.js';
 // import fileUpload from 'express-fileupload';
+import swaggerUi from 'swagger-ui-express';
+import getSwaggerOptions from "./docs/config/head.js";
+import swaggerJsdoc from 'swagger-jsdoc';
+
 
 const app = express();
+const specs = swaggerJsdoc(getSwaggerOptions());
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 // Configura o middleware express-fileupload
 // app.use(fileUpload({
