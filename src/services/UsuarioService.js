@@ -140,9 +140,32 @@ class UsuarioService {
       })
 
   }
-  async deletarUsuario(id){
-    console.log('Estou no deletar em UsuarioService');
-    await this.repository.buscarPorId(id)
+  async deletarUsuario(req, id){
+    if (req.user_id == id) {
+      throw new CustomError({
+        statusCode: 403,
+        errorType: "unauthorized",
+        details: [],
+        customMessage: "Não pode alterar o status de si mesmo."
+      })
+    }
+    const user = await this.repository.buscarPorId(id)
+    let permissao = false
+    for (const grupo of user.grupos) {
+      permissao = grupo.nivelPermissao <= req.nivelPermissao
+      if (permissao) {
+        break
+      }
+    }
+    console.log(permissao)
+    if (permissao) {
+      throw new CustomError({
+        statusCode: 403,
+        errorType: "unauthorized",
+        details: [],
+        customMessage: messages.error.unauthorized("Permissão")
+      })
+    }
     const data = await this.repository.deletarUsuario(id);
     return data;
   

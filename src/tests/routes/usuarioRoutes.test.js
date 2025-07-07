@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { includes } from 'zod/v4';
 import Usuario from '../../models/Usuario';
 import sharp from 'sharp';
+import bcrypt from 'bcrypt'
 
 describe('usuarioRoute', () => {
     // Admin que está fazendo a requição
@@ -276,11 +277,23 @@ describe('usuarioRoute', () => {
     });
     describe('patch /usuarios/', () =>{
        it('deve alterar todos dados (nome, email, telefone) com sucesso', async()=>{
+        const body ={nome: "Usuario Alterado", email:"usuario@gmail.com", telefone:"(11) 91334-5678"}
             const res = await request(app)
                 .patch(`/usuarios/`)
                 .set('Authorization', `Bearer ${userLogado.accessToken}`)
-                .send({nome: "Usuario Alterado", email:"usuario@gmail.com", telefone:"(11) 91334-5678"})
+                .send(body)
                 .expect(200)
+                expect(res.body?.message).toEqual('Usuário atualizado com sucesso!')
+                expect(res.body?.data?._id).toEqual(userLogado?._id)
+                expect(res.body?.data?.nome).toEqual(body.nome)
+                expect(res.body?.data?.email).toEqual(body.email)
+                expect(res.body?.data?.telefone).toEqual(body.telefone)
+                expect(res.body?.data?.dataNascimento).toEqual(userLogado?.dataNascimento)
+                expect(res.body?.data?.CPF).toEqual(userLogado?.CPF)
+                expect(res.body?.data?.ativo).toEqual(userLogado?.ativo)
+                expect(res.body?.data?.fotoUsuario).toEqual(userLogado?.fotoUsuario)
+                expect(res.body?.errors).toHaveLength(0)
+                
             
         });
        it('deve retornar erro ter campos unicos duplicados no banco, neste caso, email', async()=>{
@@ -312,7 +325,7 @@ describe('usuarioRoute', () => {
             .set('Authorization', `Bearer ${moderador.accessToken}`)
             .send({ativo: statusUser})
             .expect(200)
-            console.log(res.body)
+            // console.log(res.body)
             expect(res.body?.message).toEqual(`Status alterado com sucesso para ${statusUser}`)
             expect(res.body?.errors).toHaveLength(0)
             expect(res.body?.data).not.toEqual(null)
@@ -346,15 +359,93 @@ describe('usuarioRoute', () => {
             .set('Authorization', `Bearer ${userLogado.accessToken}`)
             .attach('file', img, 'imagem-pequena.png')
             .expect(200)
+            expect(res.body?.message).toEqual('Requisição bem-sucedida'),
+            expect(res.body?.data?.message).toEqual('Foto atualizada com sucesso.')
+            expect(res.body?.data?.dados?.id).toEqual(userLogado?._id)
+            expect(res.body?.data?.dados?.nome).toEqual(userLogado?.nome)
+            expect(res.body?.data?.dados?.email).toEqual(userLogado?.email)
+            expect(res.body?.data?.metadados).toHaveProperty("url")
+            expect(res.body?.data?.metadados).toHaveProperty("largura")
+            expect(res.body?.data?.metadados).toHaveProperty("altura")
+            expect(res.body?.data?.metadados).toHaveProperty("tamanhoMb")
+            expect(res.body?.data?.metadados).toHaveProperty("nomeOriginal")
+            
+            
         });
-        it('deve falhar ao tentar foto com o nome campo diferente de "file" grande demais ', async ()=>{
-            const img = await criarImagem(6000, 6000)
+        it('deve falhar ao enviar foto com o nome campo diferente de "file" grande demais ', async ()=>{
+            const img = await criarImagem()
             const res = await request(app)
             .post(`/usuarios/${userLogado?._id}/foto`)
             .set('Authorization', `Bearer ${userLogado.accessToken}`)
             .attach('imagem', img, 'imagem-pequena.png')
-            .expect(200)
+            .expect(400)
+            // console.log(res.body)
+            expect(res.body?.message).toEqual('Arquivo inesperado. Use o campo "file" para enviar o arquivo.')
+            expect(res.body?.data).toEqual(null)
+            expect(res.body?.errors).toHaveLength(0)
         });
+        it('deve falhar ao tentar enviar foto com formato diferente de .png, .jpeg, .jpg', async ()=>{
+            const img = await criarImagem()
+            const res = await request(app)
+            .post(`/usuarios/${userLogado?._id}/foto`)
+            .set('Authorization', `Bearer ${userLogado.accessToken}`)
+            .attach('file', img, 'imagem-pequena.gif')
+            .expect(400)
+            // console.log(res.body)
+            expect(res.body?.message).toEqual("Formato de arquivo inválido. Apenas arquivos JPG, JPEG e PNG são permitidos.")
+            expect(res.body?.data).toEqual(null)
+            expect(res.body?.errors).toHaveLength(0)
+        });
+    });
+    describe('get getFoto', ()=>{
+        it('deve ter sucesso ao buscar foto', async()=>{
+            const res = await request(app)
+            .get(`/usuarios/${userLogado?._id}/foto`)
+            .set('Authorization', `Bearer ${userLogado.accessToken}`)
+            expect(res.body).toBeInstanceOf(Buffer)
+        });
+        it('deve falhar ao buscar foto sem id persistente no banco', async()=>{
+            const res = await request(app)
+            .get(`/usuarios/ffffffffffffffffffffffff/foto`)
+            .set('Authorization', `Bearer ${userLogado.accessToken}`)
+            .expect(404)
+            expect(res.body?.message).toEqual('Recurso não encontrado em Usuário.')
+            expect(res.body?.data).toBeNull()
+            expect(res.body?.errors).toHaveLength(0)
+            // console.log(res.body)
+        });
+        it('deve falhar ao buscar foto com id inválido persistente no banco', async()=>{
+            const res = await request(app)
+            .get(`/usuarios/invalido/foto`)
+            .set('Authorization', `Bearer ${userLogado.accessToken}`)
+            .expect(400)
+            console.log(res.body)
+            expect(res.body?.message).toEqual("Erro de validação. 1 campo(s) inválido(s).")
+            expect(res.body?.data).toBeNull()
+            expect(res.body?.errors[0]).toEqual({ path: '', message: 'ID inválido' } )
+        });
+    });
+    describe('post /usuarios/', ()=>{
+        it('deve ciar um usuário com sucesso', async ()=>{
+            const body = {
+                nome:"Usuario Novo",
+                email:"usuarionovo@gmail.com",
+                telefone:"99 6666-4444",
+                senha:"Senha@1234",
+                dataNascimento:"2001-01-01",
+                CPF:"72643266080"
+            }
+            const res = await request(app)
+            .post('/usuarios/')
+            .set('Authorization', `Bearer ${userLogado.accessToken}`)
+            .send(body)
+            .expect(201)
+            console.log(res.body)
+            expect(res.body?.data?.nome).toEqual(body.nome)
+            expect(res.body?.data?.email).toEqual(body.email)
+            const senhaIgual = await bcrypt.compare(body.senha, res.body?.data?.senha,)
+            expect(senhaIgual).toBe(true)
+        })
     })
 })
 

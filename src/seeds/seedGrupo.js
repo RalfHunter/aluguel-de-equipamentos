@@ -75,11 +75,11 @@ const grupoUsuario = {
         rota: 'usuarios-id-foto',
         dominio: 'localhost',
         ativo: true,
-        buscar: false,
+        buscar: true,
         enviar: true,
         substituir: true,
         modificar: true,
-        excluir: false
+        excluir: true
     }]
 }
 

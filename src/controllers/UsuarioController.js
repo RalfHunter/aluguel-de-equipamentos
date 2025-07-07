@@ -224,7 +224,7 @@ class UsuarioController {
         const {id} = req.params || {}
         UsuarioIdSchema.parse(id)
 
-        const data = await this.service.deletarUsuario(id)
+        const data = await this.service.deletarUsuario(req, id)
 
         return CommonResponse.success(res, data, 200, 'Usuário excluído com sucesso.');
     }
