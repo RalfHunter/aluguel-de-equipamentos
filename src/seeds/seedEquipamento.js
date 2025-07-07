@@ -1,7 +1,7 @@
 import Equipamento from "../models/Equipamento.js";
 import getGlobalFakeMapping from "./globalFakeMapping.js";
 
-async function SeedEquipamentos(usuarios, enderecos) {
+async function SeedEquipamentos(usuarios) {
   await Equipamento.deleteMany();
 
   const fake = await getGlobalFakeMapping();

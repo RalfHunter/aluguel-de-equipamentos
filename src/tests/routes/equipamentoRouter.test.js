@@ -2,7 +2,7 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import http from 'http';
-import app from '../../app.js';
+//import  app  from '../../app.js';
 import '../../routes/equipamentoRoutes.js'; 
 
 dotenv.config();
@@ -10,11 +10,11 @@ dotenv.config();
 const PORT = process.env.PORT || 5011;
 const BASE_URL = `http://localhost:${PORT}`;
 
-let server;
+let server;                             
 let tokenAdmin;
 let tokenUser;
 
-jest.setTimeout(30000);
+//jest.setTimeout(5011);
 
 describe('Rotas de Equipamentos - Integração', () => {
   beforeAll(async () => {
