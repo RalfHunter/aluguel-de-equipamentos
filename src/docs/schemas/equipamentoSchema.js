@@ -10,7 +10,7 @@ const equipamentoJsonSchema = Equipamento.schema.jsonSchema();
 
 delete equipamentoJsonSchema.properties.__v;
 
-const equipamentosSchemas = {
+const equipamentoSchemas = {
   EquipamentoFiltro: {
     type: "object",
     properties: {
@@ -69,16 +69,16 @@ const removalMapping = {
 };
 
 Object.entries(removalMapping).forEach(([schemaKey, fields]) => {
-  if (equipamentosSchemas[schemaKey]) {
-    removeFieldsRecursively(equipamentosSchemas[schemaKey], fields);
+  if (equipamentoSchemas[schemaKey]) {
+    removeFieldsRecursively(equipamentoSchemas[schemaKey], fields);
   }
 });
 
 const equipamentoMongooseSchema = Equipamento.schema;
 
-equipamentosSchemas.EquipamentoItem.example = await generateExample(equipamentosSchemas.EquipamentoItem, null, equipamentoMongooseSchema);
-equipamentosSchemas.EquipamentoDetalhes.example = await generateExample(equipamentosSchemas.EquipamentoDetalhes, null, equipamentoMongooseSchema);
-equipamentosSchemas.EquipamentoPost.example = {
+equipamentoSchemas.EquipamentoItem.example = await generateExample(equipamentoSchemas.EquipamentoItem, null, equipamentoMongooseSchema);
+equipamentoSchemas.EquipamentoDetalhes.example = await generateExample(equipamentoSchemas.EquipamentoDetalhes, null, equipamentoMongooseSchema);
+equipamentoSchemas.EquipamentoPost.example = {
   equiNome: "Furadeira Bosch",
   equiDescricao: "Furadeira elétrica de alta potência",
   equiValorDiaria: 50,
@@ -91,9 +91,9 @@ equipamentosSchemas.EquipamentoPost.example = {
     tamanhoMb: 0.2
   }]
 };
-equipamentosSchemas.EquipamentoPutPatch.example = {
+equipamentoSchemas.EquipamentoPutPatch.example = {
   equiValorDiaria: 60,
   equiQuantidadeDisponivel: 10
 };
 
-export default equipamentosSchemas;
+export default equipamentoSchemas;

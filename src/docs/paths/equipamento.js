@@ -1,4 +1,4 @@
-const equipamentosPaths = {
+const equipamentoPaths = {
   "/equipamentos": {
     get: {
       tags: ["Equipamentos"],
@@ -119,4 +119,4 @@ const equipamentosPaths = {
   }
 };
 
-export default equipamentosPaths;
+export default equipamentoPaths;
