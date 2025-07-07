@@ -39,13 +39,14 @@ Criar um novo equipamento para locação.
 #### Regras de Negócio
 - Todos os campos são obrigatórios.
 - Apenas locador autenticado pode cadastrar.
-- Valor diária deve ser número maior que 0.
-- Quantidade deve ser número inteiro.
-- Fotos: mínimo uma, formato JPEG, PNG ou RIFF.
+- `equiValorDiaria` deve ser um número maior que 0.
+- `equiQuantidadeDisponivel` deve ser um número inteiro não negativo.
+- `equiFotos` deve conter pelo menos uma foto, enviada como arquivo com formato válido (JPEG, PNG ou RIFF).
 - Equipamento criado com status pendente.
 
 #### Resultado Esperado
-Equipamento criado, aguardando aprovação.
+- Equipamento criado, aguardando aprovação.
+- Em caso de erro, ex.: campos inválidos, falta de fotos, ou formato inválido, retorna erro e o equipamento não será cadastrado.
 
 ### 2.2 GET /equipamentos
 
@@ -87,7 +88,7 @@ Atualizar equipamento.
 #### Resultado Esperado
 Equipamento atualizado.
 
-### 2.6 PATCH /equipamentos/:id/aprovar
+### 2.5 PATCH /equipamentos/:id/aprovar
 
 #### Caso de Uso
 Aprovar equipamento pendente.
@@ -100,7 +101,7 @@ Aprovar equipamento pendente.
 #### Resultado Esperado
 Equipamento aprovado.
 
-### 2.7 PATCH /equipamentos/:id/reprovar
+### 2.6 PATCH /equipamentos/:id/reprovar
 
 #### Caso de Uso
 Reprovar equipamento pendente.
@@ -113,19 +114,6 @@ Reprovar equipamento pendente.
 
 #### Resultado Esperado
 Equipamento reprovado e excluído.
-
-### 2.8 POST /equipamentos/:id/fotos
-
-#### Caso de Uso
-Adicionar foto a equipamento.
-
-#### Regras de Negócio
-- ID deve ser válido.
-- Apenas locador pode adicionar.
-- Foto: JPEG, PNG ou RIFF.
-
-#### Resultado Esperado
-Foto adicionada ao equipamento.
 
 ## 3. Reservas
 
