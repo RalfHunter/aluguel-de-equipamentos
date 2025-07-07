@@ -181,6 +181,7 @@ class UsuarioController {
             }
 
             // Processar a imagem e obter metadados
+            
             const fotoProcessada = this._processarImagemParaFoto(file, req);
 
             // Atualizar usuário no banco com a nova foto

@@ -61,7 +61,7 @@ class UsuarioService {
         break
       }
     }
-    // console.log(permissao)
+    console.log(permissao)
     if (permissao) {
       throw new CustomError({
         statusCode: 403,
@@ -102,6 +102,7 @@ class UsuarioService {
       };
 
       // Validar dados com schema
+      
       UsuarioUpdateSchema.parse(dadosAtualizacao);
 
       // Atualizar no banco de dados

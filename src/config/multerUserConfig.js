@@ -1,8 +1,6 @@
 import multer from "multer";
 import path from "path";
-import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
-// import { glob } from "glob"; ← Não precisa mais!
 
 const diretorio = 'uploads/usuarios';
 
@@ -16,17 +14,17 @@ const removerFotoExistente = (userId) => {
   try {
     const extensoesPossiveis = ['.jpg', '.jpeg', '.png'];
     let arquivoRemovido = false;
-    
+
     extensoesPossiveis.forEach(extensao => {
       const caminhoArquivo = path.join(diretorio, `${userId}${extensao}`);
-      
+
       if (fs.existsSync(caminhoArquivo)) {
         fs.unlinkSync(caminhoArquivo);
         console.log(`Foto anterior removida: ${caminhoArquivo}`);
         arquivoRemovido = true;
       }
     });
-    
+
     return arquivoRemovido;
   } catch (error) {
     console.warn('Erro ao remover foto existente:', error.message);
@@ -42,14 +40,14 @@ const storage = multer.diskStorage({
     try {
       // Usar o ID dos parâmetros da URL
       const userId = req.params.id;
-      
+
       if (!userId) {
         return cb(new Error('ID do usuário não encontrado nos parâmetros.'), null);
       }
 
       // Remover foto existente antes de salvar a nova
       const fotoRemovidaExistia = removerFotoExistente(userId);
-      
+
       if (fotoRemovidaExistia) {
         console.log(`Foto anterior do usuário ${userId} foi substituída`);
       }
@@ -57,10 +55,10 @@ const storage = multer.diskStorage({
       // Gerar nome do arquivo com ID dos parâmetros
       const extensao = path.extname(file.originalname).toLowerCase();
       const nomeArquivo = `${userId}${extensao}`;
-      
+
       console.log(`Salvando nova foto: ${nomeArquivo}`);
       cb(null, nomeArquivo);
-      
+
     } catch (error) {
       console.error('Erro no processamento do filename:', error);
       cb(error, null);
