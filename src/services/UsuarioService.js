@@ -122,21 +122,6 @@ class UsuarioService {
   }
 
   // Função auxiliar para remover foto antiga (opcional)
-  async removerFotoAnterior(userId) {
-    try {
-      const usuario = await this.repository.buscarPorId(userId);
-      if (usuario && usuario.fotoUsuario) {
-        const caminhoFotoAntiga = path.join(process.cwd(), usuario.fotoUsuario);
-        if (fs.existsSync(caminhoFotoAntiga)) {
-          fs.unlinkSync(caminhoFotoAntiga);
-          console.log('Foto anterior removida:', caminhoFotoAntiga);
-        }
-      }
-    } catch (error) {
-      console.warn('Erro ao remover foto anterior:', error.message);
-      // Não propagar o erro, apenas logar
-    }
-  }
 
   async getFoto(id){
     const data = await this.repository.buscarPorId(id)
@@ -162,6 +147,24 @@ class UsuarioService {
   
 
   }
-
+  async removerFoto(id){
+    const data = await this.repository.buscarPorId(id)
+    const foto = data.fotoUsuario
+    if(!fs.existsSync(foto)){
+      throw new CustomError({
+          statusCode: HttpStatusCodes.NOT_FOUND.code,
+          errorType: 'resourceNotFound',
+          field: 'Foto',
+          details: [],
+          customMessage: 'Foto não encontrada.'
+      })
+    }
+    const Foto = {
+      fotoUsuario: null
+    }
+    fs.unlinkSync(foto)
+    const dataUpdate = await this.repository.updateUsuario(id, Foto)
+    return dataUpdate
+  }
 }
 export default UsuarioService

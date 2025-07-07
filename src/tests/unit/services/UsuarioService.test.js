@@ -241,4 +241,461 @@ describe('UsuarioService', () => {
             // await expect(usuarioService.updateUsuario(req.params, mockData)).rejects.toThrowErrorMatchingInlineSnapshot(`"Conflito de recurso em Usuário contém Telefone."`)
         });
     });
-})
+    describe('alterarStatus', () => {
+        it('deve alterar status com sucesso quando usuário tem permissão', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const parseData = { ativo: false };
+            const reqData = { 
+                user_id: '67959501ea0999e0a0fa9f59', // ID diferente do usuário a ser alterado
+                nivelPermissao: 1 
+            };
+            
+            const mockUser = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                grupos: [
+                    { nivelPermissao: 2 } // Nível maior que o usuário solicitante (menor permissão)
+                ]
+            };
+            
+            const mockUpdatedUser = { ...mockUser, ativo: false };
+            
+            usuarioService.repository.buscarPorId.mockResolvedValue(mockUser);
+            usuarioService.repository.alterarStatus.mockResolvedValue(mockUpdatedUser);
+            
+            const resultado = await usuarioService.alterarStatus(userId, parseData, reqData);
+            
+            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.repository.alterarStatus).toHaveBeenCalledWith(userId, parseData);
+            expect(resultado).toEqual(mockUpdatedUser);
+        });
+
+        it('deve lançar erro quando usuário tenta alterar próprio status', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const parseData = { ativo: false };
+            const reqData = { 
+                user_id: userId, // Mesmo ID do usuário a ser alterado
+                nivelPermissao: 1 
+            };
+            
+            await expect(usuarioService.alterarStatus(userId, parseData, reqData))
+                .rejects.toThrow(CustomError);
+            
+            await expect(usuarioService.alterarStatus(userId, parseData, reqData))
+                .rejects.toThrow('Não pode alterar o status de si mesmo.');
+        });
+
+        it('deve lançar erro quando usuário não tem permissão suficiente', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const parseData = { ativo: false };
+            const reqData = { 
+                user_id: '67959501ea0999e0a0fa9f59',
+                nivelPermissao: 3 // Nível maior (menor permissão)
+            };
+            
+            const mockUser = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                grupos: [
+                    { nivelPermissao: 1 } // Nível menor ou igual ao solicitante (maior permissão)
+                ]
+            };
+            
+            usuarioService.repository.buscarPorId.mockResolvedValue(mockUser);
+            
+            await expect(usuarioService.alterarStatus(userId, parseData, reqData))
+                .rejects.toThrow(CustomError);
+            
+            await expect(usuarioService.alterarStatus(userId, parseData, reqData))
+                .rejects.toThrow(messages.error.unauthorized("Permissão"));
+        });
+
+        it('deve permitir alteração quando todos os grupos têm nível maior que o solicitante', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const parseData = { ativo: false };
+            const reqData = { 
+                user_id: '67959501ea0999e0a0fa9f59',
+                nivelPermissao: 1 
+            };
+            
+            const mockUser = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                grupos: [
+                    { nivelPermissao: 2 }, // Nível maior que o solicitante (menor permissão)
+                    { nivelPermissao: 3 }  // Nível maior que o solicitante (menor permissão)
+                ]
+            };
+            
+            const mockUpdatedUser = { ...mockUser, ativo: false };
+            
+            usuarioService.repository.buscarPorId.mockResolvedValue(mockUser);
+            usuarioService.repository.alterarStatus.mockResolvedValue(mockUpdatedUser);
+            
+            const resultado = await usuarioService.alterarStatus(userId, parseData, reqData);
+            
+            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.repository.alterarStatus).toHaveBeenCalledWith(userId, parseData);
+            expect(resultado).toEqual(mockUpdatedUser);
+        });
+
+        it('deve lançar erro quando nenhum grupo tem permissão', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const parseData = { ativo: false };
+            const reqData = { 
+                user_id: '67959501ea0999e0a0fa9f59',
+                nivelPermissao: 3 
+            };
+            
+            const mockUser = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                grupos: [
+                    { nivelPermissao: 1 }, // Menor ou igual ao solicitante (sem permissão)
+                    { nivelPermissao: 2 }  // Menor ou igual ao solicitante (sem permissão)
+                ]
+            };
+            
+            usuarioService.repository.buscarPorId.mockResolvedValue(mockUser);
+            
+            await expect(usuarioService.alterarStatus(userId, parseData, reqData))
+                .rejects.toThrow(CustomError);
+        });
+
+        it('deve propagar erro do repository.buscarPorId', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const parseData = { ativo: false };
+            const reqData = { 
+                user_id: '67959501ea0999e0a0fa9f59',
+                nivelPermissao: 1 
+            };
+            
+            usuarioService.repository.buscarPorId.mockRejectedValue(new Error('Usuário não encontrado'));
+            
+            await expect(usuarioService.alterarStatus(userId, parseData, reqData))
+                .rejects.toThrow('Usuário não encontrado');
+        });
+
+        it('deve propagar erro do repository.alterarStatus', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const parseData = { ativo: false };
+            const reqData = { 
+                user_id: '67959501ea0999e0a0fa9f59',
+                nivelPermissao: 1 
+            };
+            
+            const mockUser = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                grupos: [
+                    { nivelPermissao: 2 }
+                ]
+            };
+            
+            usuarioService.repository.buscarPorId.mockResolvedValue(mockUser);
+            usuarioService.repository.alterarStatus.mockRejectedValue(new Error('Erro ao alterar status'));
+            
+            await expect(usuarioService.alterarStatus(userId, parseData, reqData))
+                .rejects.toThrow('Erro ao alterar status');
+        });
+    });
+    describe('getFoto', () => {
+        it('deve retornar caminho da foto quando usuário existe e foto está presente', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const mockUser = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                fotoUsuario: 'uploads/usuarios/foto123.jpg'
+            };
+            
+            usuarioService.repository.buscarPorId.mockResolvedValue(mockUser);
+            
+            // Mock do fs.existsSync para retornar true
+            const fs = require('fs');
+            jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+            
+            const resultado = await usuarioService.getFoto(userId);
+            
+            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(fs.existsSync).toHaveBeenCalledWith(mockUser.fotoUsuario);
+            expect(resultado).toBe(mockUser.fotoUsuario);
+            
+            // Limpar o mock
+            fs.existsSync.mockRestore();
+        });
+
+        it('deve lançar erro quando foto não existe no sistema de arquivos', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const mockUser = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                fotoUsuario: 'uploads/usuarios/foto_inexistente.jpg'
+            };
+            
+            usuarioService.repository.buscarPorId.mockResolvedValue(mockUser);
+            
+            // Mock do fs.existsSync para retornar false
+            const fs = require('fs');
+            jest.spyOn(fs, 'existsSync').mockReturnValue(false);
+            
+            await expect(usuarioService.getFoto(userId))
+                .rejects.toThrow(CustomError);
+            
+            await expect(usuarioService.getFoto(userId))
+                .rejects.toThrow('Foto não encontrada.');
+            
+            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(fs.existsSync).toHaveBeenCalledWith(mockUser.fotoUsuario);
+            
+            // Limpar o mock
+            fs.existsSync.mockRestore();
+        });
+
+        it('deve propagar erro quando usuário não é encontrado', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            
+            usuarioService.repository.buscarPorId.mockRejectedValue(new CustomError({
+                statusCode: 404,
+                errorType: "resourceNotFound",
+                field: "Usuário",
+                details: [],
+                customMessage: "Usuário não encontrado"
+            }));
+            
+            await expect(usuarioService.getFoto(userId))
+                .rejects.toThrow(CustomError);
+            
+            await expect(usuarioService.getFoto(userId))
+                .rejects.toThrow('Usuário não encontrado');
+            
+            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
+        });
+    });
+    describe('deletarUsuario', () => {
+        it('deve deletar usuário com sucesso quando usuário existe', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const mockUser = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                email: 'teste@email.com',
+                ativo: true
+            };
+            
+            const mockDeletedUser = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                email: 'teste@email.com',
+                ativo: true,
+                deletedCount: 1
+            };
+            
+            usuarioService.repository.buscarPorId.mockResolvedValue(mockUser);
+            usuarioService.repository.deletarUsuario.mockResolvedValue(mockDeletedUser);
+            
+            const resultado = await usuarioService.deletarUsuario(userId);
+            
+            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.repository.deletarUsuario).toHaveBeenCalledWith(userId);
+            expect(resultado).toEqual(mockDeletedUser);
+        });
+
+        it('deve propagar erro quando usuário não é encontrado', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            
+            usuarioService.repository.buscarPorId.mockRejectedValue(new CustomError({
+                statusCode: 404,
+                errorType: "resourceNotFound",
+                field: "Usuário",
+                details: [],
+                customMessage: "Usuário não encontrado"
+            }));
+            
+            await expect(usuarioService.deletarUsuario(userId))
+                .rejects.toThrow(CustomError);
+            
+            await expect(usuarioService.deletarUsuario(userId))
+                .rejects.toThrow('Usuário não encontrado');
+            
+            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.repository.deletarUsuario).not.toHaveBeenCalled();
+        });
+
+        it('deve propagar erro do repository.deletarUsuario', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const mockUser = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                email: 'teste@email.com'
+            };
+            
+            usuarioService.repository.buscarPorId.mockResolvedValue(mockUser);
+            usuarioService.repository.deletarUsuario.mockRejectedValue(new Error('Erro ao deletar usuário'));
+            
+            await expect(usuarioService.deletarUsuario(userId))
+                .rejects.toThrow('Erro ao deletar usuário');
+            
+            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.repository.deletarUsuario).toHaveBeenCalledWith(userId);
+        });
+    });
+    describe('atualizarFotoUsuario', () => {
+        it('deve atualizar foto do usuário com sucesso', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const nomeArquivo = 'foto123.jpg';
+            const metadadosFoto = {
+                url: 'http://localhost:3000/uploads/usuarios/foto123.jpg',
+                largura: 640,
+                altura: 480,
+                tamanhoMb: 1.5
+            };
+            
+            const mockUsuarioExistente = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                email: 'teste@email.com'
+            };
+            
+            const mockUsuarioAtualizado = {
+                ...mockUsuarioExistente,
+                fotoUsuario: 'uploads/usuarios/foto123.jpg'
+            };
+            
+            usuarioService.repository.buscarPorId.mockResolvedValue(mockUsuarioExistente);
+            usuarioService.repository.atualizar.mockResolvedValue(mockUsuarioAtualizado);
+            
+            const resultado = await usuarioService.atualizarFotoUsuario(userId, nomeArquivo, metadadosFoto);
+            
+            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.repository.atualizar).toHaveBeenCalledWith(userId, {
+                fotoUsuario: 'uploads/usuarios/foto123.jpg'
+            });
+            expect(resultado).toHaveProperty('id', mockUsuarioAtualizado._id);
+            expect(resultado).toHaveProperty('metadados', metadadosFoto);
+        });
+
+        it('deve lançar erro quando usuário não é encontrado', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const nomeArquivo = 'foto123.jpg';
+            const metadadosFoto = { url: 'test.jpg' };
+            
+            usuarioService.repository.buscarPorId.mockResolvedValue(null);
+            
+            await expect(usuarioService.atualizarFotoUsuario(userId, nomeArquivo, metadadosFoto))
+                .rejects.toThrow(CustomError);
+            
+            await expect(usuarioService.atualizarFotoUsuario(userId, nomeArquivo, metadadosFoto))
+                .rejects.toThrow('Usuário não encontrado.');
+            
+            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.repository.atualizar).not.toHaveBeenCalled();
+        });
+    });
+    describe('removerFoto', () => {
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('deve remover foto do usuário com sucesso', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const fotoPath = 'uploads/usuarios/foto.jpg';
+            const usuario = {
+                _id: userId,
+                nome: 'João Silva',
+                email: 'joao@teste.com',
+                fotoUsuario: fotoPath
+            };
+            const usuarioAtualizado = {
+                ...usuario,
+                fotoUsuario: null
+            };
+
+            // Mock para verificar se arquivo existe
+            jest.spyOn(require('fs'), 'existsSync').mockReturnValue(true);
+            // Mock para remover arquivo
+            jest.spyOn(require('fs'), 'unlinkSync').mockImplementation(() => {});
+            
+            usuarioService.repository.buscarPorId.mockResolvedValue(usuario);
+            usuarioService.repository.updateUsuario.mockResolvedValue(usuarioAtualizado);
+
+            const resultado = await usuarioService.removerFoto(userId);
+
+            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(require('fs').existsSync).toHaveBeenCalledWith(fotoPath);
+            expect(require('fs').unlinkSync).toHaveBeenCalledWith(fotoPath);
+            expect(usuarioService.repository.updateUsuario).toHaveBeenCalledWith(userId, { fotoUsuario: null });
+            expect(resultado).toEqual(usuarioAtualizado);
+        });
+
+        it('deve lançar erro quando usuário não é encontrado', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            
+            usuarioService.repository.buscarPorId.mockRejectedValue(new CustomError({
+                statusCode: 404,
+                errorType: 'resourceNotFound',
+                field: 'Usuario',
+                details: [],
+                customMessage: 'Usuário não encontrado.'
+            }));
+
+            await expect(usuarioService.removerFoto(userId))
+                .rejects.toThrow(CustomError);
+            
+            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.repository.updateUsuario).not.toHaveBeenCalled();
+        });
+
+        it('deve lançar erro quando foto não existe no sistema de arquivos', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const fotoPath = 'uploads/usuarios/foto_inexistente.jpg';
+            const usuario = {
+                _id: userId,
+                nome: 'João Silva',
+                email: 'joao@teste.com',
+                fotoUsuario: fotoPath
+            };
+
+            // Mock para verificar se arquivo não existe
+            jest.spyOn(require('fs'), 'existsSync').mockReturnValue(false);
+            
+            usuarioService.repository.buscarPorId.mockResolvedValue(usuario);
+
+            await expect(usuarioService.removerFoto(userId))
+                .rejects.toThrow(CustomError);
+            
+            await expect(usuarioService.removerFoto(userId))
+                .rejects.toThrow('Foto não encontrada.');
+
+            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(require('fs').existsSync).toHaveBeenCalledWith(fotoPath);
+            expect(usuarioService.repository.updateUsuario).not.toHaveBeenCalled();
+        });
+
+        it('deve lançar erro quando falha ao remover arquivo do sistema', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const fotoPath = 'uploads/usuarios/foto.jpg';
+            const usuario = {
+                _id: userId,
+                nome: 'João Silva',
+                email: 'joao@teste.com',
+                fotoUsuario: fotoPath
+            };
+
+            // Mock para verificar se arquivo existe
+            jest.spyOn(require('fs'), 'existsSync').mockReturnValue(true);
+            // Mock para simular erro ao remover arquivo
+            jest.spyOn(require('fs'), 'unlinkSync').mockImplementation(() => {
+                throw new Error('Erro ao remover arquivo');
+            });
+            
+            usuarioService.repository.buscarPorId.mockResolvedValue(usuario);
+
+            await expect(usuarioService.removerFoto(userId))
+                .rejects.toThrow('Erro ao remover arquivo');
+
+            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(require('fs').existsSync).toHaveBeenCalledWith(fotoPath);
+            expect(require('fs').unlinkSync).toHaveBeenCalledWith(fotoPath);
+            expect(usuarioService.repository.updateUsuario).not.toHaveBeenCalled();
+        });
+    });
+});
