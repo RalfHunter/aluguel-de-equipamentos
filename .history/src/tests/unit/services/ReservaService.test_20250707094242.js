@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, jest } from '@jest/globals';
 import ReservaService from '../../../services/ReservaService.js';
-import ReservaRepository from '../../../repositories/ReservaRepository.js'
-import Equipamento from '../../../models/Equipamento.js'
-import Usuario from '../../../models/Usuario.js'
+import ReservaRepository from '../../../repositories/ReservaRepository.js
+import Equipamento from '../../../models/Equipamento.js
+import Usuario from '../../../models/Usuario.js
 import mongoose from 'mongoose';
 import { CustomError } from '../../../utils/helpers/index.js';
 
