@@ -92,73 +92,58 @@ class EquipamentoService {
       });
     }
 
-    const reservasAtivas = await this.reservaModel.countDocuments({
-      equipamentos: new mongoose.Types.ObjectId(id),
-      statusReserva: { $in: ['pendente', 'confirmada'] },
-      $or: [
-        { dataInicial: { $lte: new Date() }, dataFinal: { $gte: new Date() } },
-        { dataInicial: { $gte: new Date() } }
-      ]
-    });
-
-    if (reservasAtivas > 0) {
-      throw new CustomError({
-        statusCode: HttpStatusCodes.CONFLICT.code,
-        customMessage: 'Não é possível excluir equipamento com reservas ativas.',
-      });
-    }
-
     await this.repository.excluir(id);
     return { id, mensagem: 'Equipamento excluído com sucesso.' };
   }
 
-  async inativar(id, usuarioId) {
-    const equipamento = await this._buscarEquipamentoExistente(id);
-    console.log('Inativar - Equipamento:', { id, equiUsuario: equipamento.equiUsuario?.toString(), equiStatus: equipamento.equiStatus, usuarioId });
+async inativar(id, usuarioId) {
+  const equipamento = await this.repository.listarPorId(id); 
 
-    if (!equipamento.equiUsuario || equipamento.equiUsuario.toString() !== usuarioId) {
-      throw new CustomError({
-        statusCode: HttpStatusCodes.FORBIDDEN.code,
-        customMessage: 'Apenas o dono do equipamento pode inativá-lo.',
-      });
-    }
+  const donoId = equipamento.equiUsuario?._id?.toString() || equipamento.equiUsuario?.toString();
+  console.log('DonoId:', donoId, 'Usuario logado:', usuarioId);
 
-    if (equipamento.equiStatus === 'inativo') {
-      throw new CustomError({
-        statusCode: HttpStatusCodes.CONFLICT.code,
-        customMessage: 'O equipamento já está inativo.',
-      });
-    }
-
-    if (equipamento.equiStatus === 'pendente') {
-      throw new CustomError({
-        statusCode: HttpStatusCodes.FORBIDDEN.code,
-        customMessage: 'Não é possível inativar um equipamento pendente.',
-      });
-    }
-
-    const reservasAtivas = await this.reservaModel.countDocuments({
-      equipamentos: new mongoose.Types.ObjectId(id),
-      statusReserva: { $in: ['pendente', 'confirmada'] },
-      $or: [
-        { dataInicial: { $lte: new Date() }, dataFinal: { $gte: new Date() } },
-        { dataInicial: { $gte: new Date() } }
-      ]
+  if (!donoId || donoId !== usuarioId) {
+    throw new CustomError({
+      statusCode: HttpStatusCodes.FORBIDDEN.code,
+      customMessage: 'Apenas o dono do equipamento pode inativá-lo.',
     });
-    console.log('Reservas ativas encontradas:', reservasAtivas);
-
-    if (reservasAtivas > 0) {
-      throw new CustomError({
-        statusCode: HttpStatusCodes.CONFLICT.code,
-        customMessage: 'Não é possível inativar equipamento com reservas ativas.',
-      });
-    }
-
-    equipamento.equiStatus = 'inativo';
-    await equipamento.save();
-    console.log('Equipamento inativado com sucesso:', { id, newStatus: equipamento.equiStatus });
-    return equipamento;
   }
+
+  if (equipamento.equiStatus === 'inativo') {
+    throw new CustomError({
+      statusCode: HttpStatusCodes.CONFLICT.code,
+      customMessage: 'O equipamento já está inativo.',
+    });
+  }
+
+  if (equipamento.equiStatus === 'pendente') {
+    throw new CustomError({
+      statusCode: HttpStatusCodes.FORBIDDEN.code,
+      customMessage: 'Não é possível inativar um equipamento pendente.',
+    });
+  }
+
+  const reservasAtivas = await this.reservaModel.countDocuments({
+    equipamentos: new mongoose.Types.ObjectId(id),
+    statusReserva: { $in: ['pendente', 'confirmada'] },
+    $or: [
+      { dataInicial: { $lte: new Date() }, dataFinal: { $gte: new Date() } },
+      { dataInicial: { $gte: new Date() } }
+    ]
+  });
+
+  if (reservasAtivas > 0) {
+    throw new CustomError({
+      statusCode: HttpStatusCodes.CONFLICT.code,
+      customMessage: 'Não é possível inativar equipamento com reservas ativas.',
+    });
+  }
+
+  equipamento.equiStatus = 'inativo';
+  await equipamento.save();
+  return equipamento;
+}
+
   
   async adicionarFoto(id, novaFoto) {
     const equipamento = await this._buscarEquipamentoExistente(id);
