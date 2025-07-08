@@ -20,6 +20,8 @@ export default  {
     // testMatch:['**/UsuarioController.test.js']
     // testMatch:['**/UsuarioService.test.js']
     // testMatch:['**/UsuarioRepository.test.js']
+    // testMatch:['**/GrupoFilterBuilder.test.js']
+    testMatch:['**/UsuarioRepository.test.js']
     // testMatch:['**/AuthMiddleware.test.js']
     // testMatch:['**/usuarioRoutes.test.js']
     // testMatch:['**/authRoutes.test.js']
