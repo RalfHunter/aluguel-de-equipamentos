@@ -141,7 +141,9 @@ class UsuarioRepository {
     async cadastrarUsuario(body) {
         body.senha = await bcrypt.hash(body.senha, 8)
         const data = await this.model.create(body)
-        return data
+        const dataObjeto = data.toObject()
+        delete dataObjeto.senha
+        return dataObjeto
     }
     async alterarStatus(id, parseData) {
 

@@ -12,9 +12,11 @@ describe('usuarioRoute', () => {
     // URL da requisição
     let app = 'http://localhost:5011'
     // Usuário alvo da requisição
-   
-    let id;
+//    Usuario criado durante os teste e deletano nos mesmos
+
+    let userTemp;
     let statusUser;
+
     let user;
     let moderador
     // Admin alvo para testes
@@ -426,7 +428,7 @@ describe('usuarioRoute', () => {
         });
     });
     describe('post /usuarios/', ()=>{
-        it('deve ciar um usuário com sucesso', async ()=>{
+        it('deve criar um usuário com sucesso', async ()=>{
             const body = {
                 nome:"Usuario Novo",
                 email:"usuarionovo@gmail.com",
@@ -440,12 +442,100 @@ describe('usuarioRoute', () => {
             .set('Authorization', `Bearer ${userLogado.accessToken}`)
             .send(body)
             .expect(201)
-            console.log(res.body)
+            // console.log(res.body)
             expect(res.body?.data?.nome).toEqual(body.nome)
             expect(res.body?.data?.email).toEqual(body.email)
-            const senhaIgual = await bcrypt.compare(body.senha, res.body?.data?.senha,)
-            expect(senhaIgual).toBe(true)
-        })
+            userTemp = res.body?.data
+        });
+        it('deve falhar ao criar um usuário, campos unicos repitidos', async ()=>{
+            const body = {
+                nome:"Usuario Novo",
+                email:"usuarionovo@gmail.com",
+                telefone:"99 6666-4444",
+                senha:"Senha@1234",
+                dataNascimento:"2001-01-01",
+                CPF:"72643266080"
+            }
+            const res = await request(app)
+            .post('/usuarios/')
+            .set('Authorization', `Bearer ${userLogado.accessToken}`)
+            .send(body)
+            .expect(409)
+            expect(res.body?.message).toEqual("Conflito de recurso em Usuário contém CPF.")
+            expect(res.body?.data).toEqual(null)
+            expect(res.body?.errors).toHaveLength(0)
+            /*
+            Eu sei que o primeiro campo a entrar em conflito é o CPF, já que ele 
+            é o primeiro a ser procurado no service no cadastarUsuario
+            se o código acha ele, imediatamente lança um erro.
+            */
+            
+        });
+        it('deve falhar ao criar um usuário, campo(s) inváldo(s)', async ()=>{
+        //    campo inválido escolhido é o email
+            const body = {
+                nome:"Usuario Novo",
+                email:"email invalido",
+                telefone:"99 6666-4444",
+                senha:"Senha@1234",
+                dataNascimento:"2001-01-01",
+                CPF:"72643266080"
+            }
+            const res = await request(app)
+            .post('/usuarios/')
+            .set('Authorization', `Bearer ${userLogado.accessToken}`)
+            .send(body)
+            .expect(400)
+            console.log(res.body)
+            expect(res.body?.message).toEqual("Erro de validação. 1 campo(s) inválido(s).")
+            expect(res.body?.data).toEqual(null)
+            expect(res.body?.errors[0]).toEqual( { path: 'email', message: 'Formato de email inválido.' } )
+        });
+        it('deve falhar ao criar um usuário, faltando campos', async ()=>{
+        //    campo inválido escolhido é o email
+            const body = {
+                nome:"Usuario Novo",
+            }
+            const res = await request(app)
+            .post('/usuarios/')
+            .set('Authorization', `Bearer ${userLogado.accessToken}`)
+            .send(body)
+            .expect(400)
+            expect(res.body?.message).toEqual('Erro de validação. 5 campo(s) inválido(s).')
+            expect(res.body?.data).toEqual(null)
+            expect([...res.body?.errors]).toEqual([
+        { path: 'email', message: 'O email deve ser do tipo string' },
+        { path: 'telefone', message: 'O telefone deve ser do tipo string' },
+        { path: 'senha', message: 'A senha deve ser do tipo string' },
+        {
+          path: 'dataNascimento',
+          message: 'A data de nascimento deve ser do tipo string'
+        },
+        { path: 'CPF', message: 'O CPF deve ser do tipo string' }
+      ]);
+            
+        });
+    });
+    describe('delete usuarios/:id', ()=> {
+        it('deve deletar um usuário com sucesso', async ()=>{
+            const res = await request(app)
+            .delete(`/usuarios/${userTemp?._id}`)
+            .set('Authorization', `Bearer ${moderador?.accessToken}`)
+            .expect(200)
+            expect(res.body?.message).toEqual('Usuário excluído com sucesso.')
+            expect(res.body?.data).toMatchObject(userTemp)
+            // console.log(userTemp)
+        });
+        it('deve falhar ao tentar deletar um usuário que não existe', async ()=>{
+            const res = await request(app)
+            .delete(`/usuarios/${userTemp?._id}`)
+            .set('Authorization', `Bearer ${moderador?.accessToken}`)
+            .expect(404)
+            expect(res.body?.message).toEqual("Recurso não encontrado em Usuário.")
+            expect(res.body?.data).toEqual(null)
+            expect(res.body?.errors).toHaveLength(0)
+            // console.log(userTemp)
+        });
     })
 })
 
