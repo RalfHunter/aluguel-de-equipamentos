@@ -85,140 +85,211 @@ class EquipamentoController {
   }
 
   async listar(req, res) {
-    try {
-      const query = req.query || {};
+    const query = req.query || {};
+    const usuarioId = req.user_id;
 
-      if (Object.keys(query).length !== 0) {
-        await EquipamentoQuerySchema.parseAsync(query);
-      }
-
-      if (query.status === 'pendente') {
-        const usuario = await Usuario.findById(req.user_id);
-        if (!usuario || usuario.tipoUsuario !== 'admin') {
-          return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito a administradores para filtrar equipamentos pendentes.');
-        }
-      }
-
-      const data = await this.service.listar(query);
-      return CommonResponse.success(res, data);
-    } catch (error) {
-      return CommonResponse.error(res, HttpStatusCodes.BAD_REQUEST.code, error.message);
+    if (Object.keys(query).length !== 0) {
+      EquipamentoQuerySchema.parseAsync(query);
     }
+
+    const usuario = usuarioId ? await Usuario.findById(usuarioId).populate('grupos') : null;
+    const isAdminOrMod = usuario && usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao));
+
+    if (query.status === 'pendente') {
+      if (!isAdminOrMod) {
+        return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito a administradores ou moderadores para filtrar equipamentos pendentes.');
+      }
+      query.equiStatus = 'pendente';
+    } else if (query.status === 'inativo') {
+      if (!usuarioId) {
+        return CommonResponse.error(res, HttpStatusCodes.UNAUTHORIZED.code, 'Usuário não autenticado.');
+      }
+      query.equiUsuario = usuarioId;  
+      query.equiStatus = 'inativo';
+    } else {
+      if (usuarioId && !isAdminOrMod) {
+        query.$or = [
+          { equiStatus: 'ativo' },
+          { equiStatus: 'pendente', equiUsuario: usuarioId },
+          { equiStatus: 'inativo', equiUsuario: usuarioId }
+        ];
+      } else if (isAdminOrMod) {
+        query.equiStatus = { $in: ['ativo', 'pendente'] };
+      } else {
+        query.equiStatus = 'ativo'; 
+      }
+    }
+
+    const data = await this.service.listar({ ...query, usuarioId });
+    return CommonResponse.success(res, data);
   }
 
   async listarPorId(req, res) {
-    try {
-      const { id } = req.params;
-      EquipamentoIdSchema.parse(id);
+    const { id } = req.params;
+    const usuarioId = req.user_id?.toString();
 
-      const usuarioId = req.user_id?.toString();
+    EquipamentoIdSchema.parse(id);
+
+    if (!usuarioId) {
       const equipamento = await this.service.listarPorId(id, usuarioId);
-
+      if (!equipamento || equipamento.equiStatus !== 'ativo') {
+        return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito a equipamentos ativos para usuários não autenticados.');
+      }
       return CommonResponse.success(res, equipamento);
-    } catch (error) {
-      return CommonResponse.error(res, HttpStatusCodes.BAD_REQUEST.code, error.message);
     }
+
+    const usuario = await Usuario.findById(usuarioId).populate('grupos');
+    const isAdminOrMod = usuario && usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao));
+
+    const equipamento = await this.service.listarPorId(id, usuarioId);
+    if (!equipamento) {
+      return CommonResponse.error(res, HttpStatusCodes.NOT_FOUND.code, 'Equipamento não encontrado.');
+    }
+
+    const isOwner = equipamento.equiUsuario?.toString() === usuarioId;
+    if (!isOwner && !isAdminOrMod && equipamento.equiStatus !== 'ativo') {
+      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito a equipamentos ativos ou próprios.');
+    }
+
+    return CommonResponse.success(res, equipamento);
   }
 
   async criar(req, res) {
-    try {
-      const usuarioLogado = req.user_id;
-      const files = req.files || [];
-      const equiFotos = [];
-
-      for (const file of files) {
-        const foto = this._processarImagemParaFoto(file, req);
-        equiFotos.push(foto);
-      }
-
-      const dadosProcessados = this._processarDadosFormulario(req.body);
-
-      const dadosEquipamento = {
-        ...dadosProcessados,
-        equiUsuario: usuarioLogado,
-        equiFotos,
-      };
-
-      const dados = equipamentoSchema.parse(dadosEquipamento);
-      const equipamento = await this.service.criar(dados);
-
-      return CommonResponse.created(res, {
-        mensagem: 'Equipamento cadastrado. Aguardando aprovação.',
-        equipamento,
-      });
-    } catch (error) {
-      return CommonResponse.error(res, HttpStatusCodes.BAD_REQUEST.code, error.message);
+    const usuarioLogado = req.user_id;
+    if (!usuarioLogado) {
+      return CommonResponse.error(res, HttpStatusCodes.UNAUTHORIZED.code, 'Usuário não autenticado.');
     }
+
+    const files = req.files || [];
+    const equiFotos = [];
+
+    for (const file of files) {
+      const foto = this._processarImagemParaFoto(file, req);
+      equiFotos.push(foto);
+    }
+
+    const dadosProcessados = this._processarDadosFormulario(req.body);
+
+    const dadosEquipamento = {
+      ...dadosProcessados,
+      equiUsuario: usuarioLogado,
+      equiFotos,
+      equiStatus: 'pendente'  
+    };
+
+    const dados = equipamentoSchema.parse(dadosEquipamento);
+    const equipamento = await this.service.criar(dados);
+
+    return CommonResponse.created(res, {
+      mensagem: 'Equipamento cadastrado. Aguardando aprovação.',
+      equipamento,
+    });
   }
 
   async atualizar(req, res) {
-    try {
-      const { id } = req.params;
-      EquipamentoIdSchema.parse(id);
+    const { id } = req.params;
+    const usuarioId = req.user_id?.toString();
 
-      const dadosAtualizados = equipamentoUpdateSchema.parse(req.body);
-      const equipamento = await this.service.atualizar(id, dadosAtualizados);
+    EquipamentoIdSchema.parse(id);
 
-      return CommonResponse.success(res, equipamento, 200, 'Equipamento atualizado com sucesso.');
-    } catch (error) {
-      return CommonResponse.error(res, HttpStatusCodes.BAD_REQUEST.code, error.message);
+    if (!usuarioId) {
+      return CommonResponse.error(res, HttpStatusCodes.UNAUTHORIZED.code, 'Usuário não autenticado.');
     }
+
+    const equipamento = await this.service.listarPorId(id, usuarioId);
+    if (!equipamento) {
+      return CommonResponse.error(res, HttpStatusCodes.NOT_FOUND.code, 'Equipamento não encontrado.');
+    }
+    if (equipamento.equiUsuario?.toString() !== usuarioId) {
+      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Apenas o dono do equipamento pode atualizá-lo.');
+    }
+
+    const dadosAtualizados = equipamentoUpdateSchema.parse(req.body);
+    const equipamentoAtualizado = await this.service.atualizar(id, dadosAtualizados);
+
+    return CommonResponse.success(res, equipamentoAtualizado, 200, 'Equipamento atualizado com sucesso.');
   }
 
   async aprovar(req, res) {
-    try {
-      const usuario = await Usuario.findById(req.user_id);
-
-      if (!usuario || usuario.tipoUsuario !== 'admin') {
-        return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito a administradores.');
-      }
-
-      const { id } = req.params;
-      EquipamentoIdSchema.parse(id);
-
-      const equipamento = await this.service.aprovar(id);
-      return CommonResponse.success(res, equipamento, 200, 'Equipamento aprovado com sucesso.');
-    } catch (error) {
-      return CommonResponse.error(res, HttpStatusCodes.BAD_REQUEST.code, error.message);
+    const usuario = await Usuario.findById(req.user_id).populate('grupos');
+    if (!usuario || !usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao))) {
+      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito a administradores ou moderadores.');
     }
+
+    const { id } = req.params;
+    EquipamentoIdSchema.parse(id);
+
+    const equipamento = await this.service.aprovar(id, req.user_id);
+    return CommonResponse.success(res, equipamento, 200, 'Equipamento aprovado com sucesso.');
   }
 
   async reprovar(req, res) {
-    try {
-      const usuario = await Usuario.findById(req.user_id);
-
-      if (!usuario || usuario.tipoUsuario !== 'admin') {
-        return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito a administradores.');
-      }
-
-      const { id } = req.params;
-      EquipamentoIdSchema.parse(id);
-
-      const resultado = await this.service.reprovar(id);
-      return CommonResponse.success(res, resultado, 200, 'Equipamento reprovado e excluído com sucesso.');
-    } catch (error) {
-      return CommonResponse.error(res, HttpStatusCodes.BAD_REQUEST.code, error.message);
+    const usuario = await Usuario.findById(req.user_id).populate('grupos');
+    if (!usuario || !usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao))) {
+      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito a administradores ou moderadores.');
     }
+
+    const { id } = req.params;
+    EquipamentoIdSchema.parse(id);
+
+    const resultado = await this.service.reprovar(id, req.user_id);
+    return CommonResponse.success(res, resultado, 200, 'Equipamento reprovado e excluído com sucesso.');
+  }
+
+  async inativar(req, res) {
+    const { id } = req.params;
+    const usuarioId = req.user_id?.toString();
+    console.log('Tentando inativar:', { id, usuarioId });
+
+    EquipamentoIdSchema.parse(id);
+
+    if (!usuarioId) {
+      return CommonResponse.error(res, HttpStatusCodes.UNAUTHORIZED.code, 'Usuário não autenticado.');
+    }
+
+    const equipamento = await this.service.listarPorId(id, usuarioId);
+    if (!equipamento) {
+      return CommonResponse.error(res, HttpStatusCodes.NOT_FOUND.code, 'Equipamento não encontrado.');
+    }
+    if (equipamento.equiUsuario?.toString() !== usuarioId) {
+      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Apenas o dono do equipamento pode inativá-lo.', {
+        equipamentoId: id,
+        usuarioId,
+        dono: equipamento.equiUsuario?.toString()
+      });
+    }
+
+    const resultado = await this.service.inativar(id, usuarioId);
+    return CommonResponse.success(res, resultado, 200, 'Equipamento inativado com sucesso.');
   }
 
   async adicionarFoto(req, res) {
-    try {
-      const { id } = req.params;
-      const file = req.file;
+    const { id } = req.params;
+    const file = req.file;
+    const usuarioId = req.user_id?.toString();
 
-      EquipamentoIdSchema.parse(id);
+    EquipamentoIdSchema.parse(id);
 
-      if (!file) {
-        return CommonResponse.error(res, HttpStatusCodes.BAD_REQUEST.code, 'Nenhuma foto foi enviada.');
-      }
-
-      const novaFoto = this._processarImagemParaFoto(file, req);
-      const equipamento = await this.service.adicionarFoto(id, novaFoto);
-
-      return CommonResponse.success(res, equipamento, 200, 'Foto adicionada com sucesso.');
-    } catch (error) {
-      return CommonResponse.error(res, HttpStatusCodes.BAD_REQUEST.code, error.message);
+    if (!usuarioId) {
+      return CommonResponse.error(res, HttpStatusCodes.UNAUTHORIZED.code, 'Usuário não autenticado.');
     }
+
+    if (!file) {
+      return CommonResponse.error(res, HttpStatusCodes.BAD_REQUEST.code, 'Nenhuma foto foi enviada.');
+    }
+
+    const equipamento = await this.service.listarPorId(id, usuarioId);
+    if (!equipamento) {
+      return CommonResponse.error(res, HttpStatusCodes.NOT_FOUND.code, 'Equipamento não encontrado.');
+    }
+    if (equipamento.equiUsuario?.toString() !== usuarioId) {
+      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Apenas o dono do equipamento pode adicionar fotos.');
+    }
+
+    const novaFoto = this._processarImagemParaFoto(file, req);
+    const equipamentoAtualizado = await this.service.adicionarFoto(id, novaFoto);
+
+    return CommonResponse.success(res, equipamentoAtualizado, 200, 'Foto adicionada com sucesso.');
   }
 }
 
