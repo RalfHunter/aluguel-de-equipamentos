@@ -234,7 +234,19 @@ class UsuarioController {
             const data = await this.service.removerFoto(id)
             return CommonResponse.success(res, data, 200, 'Foto deletada com sucesso.')
         }
-    
+    async getPerfil(req, res){
+        const id = req.user_id
+        UsuarioIdSchema.parse(id)
+        const data = await this.service.getPerfil(id)
+        return CommonResponse.success(res, data, 200)
+    }
+    async updatePerfil(req, res){
+        const id = req.user_id
+        UsuarioIdSchema.parse(id)
+        UsuarioUpdateSchema.parse(req.body)
+        const data = await this.service.updateUsuario(id, req.body)
+        return CommonResponse.success(res, data, 200)
+    }
 }
 
 export default UsuarioController;

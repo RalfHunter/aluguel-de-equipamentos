@@ -190,5 +190,42 @@ class UsuarioService {
     const dataUpdate = await this.repository.updateUsuario(id, Foto)
     return dataUpdate
   }
+  async getPerfil(id){
+    const data = await this.repository.buscarPorId(id)
+    const dataObject =  data.toObject()
+    delete dataObject.accessToken
+    delete dataObject.refreshToken
+    const {nome, email, CPF, telefone, dataNascimento, fotoUsuario, notaMedia, grupos} = dataObject
+    const nomesGrupos = grupos.map(grupo => grupo.nome);
+    return{
+      nome,
+      email,
+      telefone,
+      CPF,
+      dataNascimento,
+      fotoUsuario,
+      notaMedia,
+      grupos:nomesGrupos
+    }
+  }
+  async updatePerfil(id, parsedData){
+    const {nome, telefone} = parsedData
+    const data = await this.repository.updateUsuario(id, {nome, telefone})
+    const usuarioAtualizado = data.toObject()
+    delete usuarioAtualizado.accessToken
+    delete usuarioAtualizado.refreshToken
+    const {email, CPF, dataNascimento, fotoUsuario, notaMedia, grupos} = usuarioAtualizado
+    const nomesGrupos = grupos.map(grupo => grupo.nome);
+    return{
+      nome,
+      email,
+      telefone,
+      CPF,
+      dataNascimento,
+      fotoUsuario,
+      notaMedia,
+      grupos:nomesGrupos
+    }
+  }
 }
 export default UsuarioService

@@ -536,7 +536,7 @@ describe('usuarioRoute', () => {
             expect(res.body?.errors).toHaveLength(0)
             // console.log(userTemp)
         });
-    })
+    });
 })
 
 async function pegarUsuario(users) {

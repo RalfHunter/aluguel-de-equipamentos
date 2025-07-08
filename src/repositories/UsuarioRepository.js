@@ -68,13 +68,13 @@ class UsuarioRepository {
 
     }
     async buscarPorId(id, includeTokens = false) {
+        console.log("SERVICE",id)
         // console.log("Estou no bucarPorId no UsuarioRepository")
         let query = this.model.findById(id).populate('grupos')
         if (includeTokens) {
             console.log(includeTokens)
             query.select('+refreshToken +accessToken')
         }
-
         const user = await query
         if (!user) {
             throw new CustomError({

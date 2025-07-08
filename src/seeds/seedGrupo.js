@@ -35,6 +35,16 @@ const grupoAdmin = {
         substituir: true,
         modificar: true,
         excluir: true
+    },
+    {
+        rota: 'perfil',
+        dominio: 'localhost',
+        ativo: true,
+        buscar: true,
+        enviar: true,
+        substituir: true,
+        modificar: true,
+        excluir: false
     }
     ]
 }
@@ -52,6 +62,16 @@ const grupoModerador = {
         substituir: true,
         modificar: true,
         excluir: true
+    },
+    {
+        rota: 'perfil',
+        dominio: 'localhost',
+        ativo: true,
+        buscar: false,
+        enviar: true,
+        substituir: true,
+        modificar: true,
+        excluir: false
     }
     ]
 }
@@ -66,6 +86,16 @@ const grupoUsuario = {
         dominio: 'localhost',
         ativo: true,
         buscar: false,
+        enviar: true,
+        substituir: true,
+        modificar: true,
+        excluir: false
+    },
+    {
+        rota: 'perfil',
+        dominio: 'localhost',
+        ativo: true,
+        buscar: true,
         enviar: true,
         substituir: true,
         modificar: true,

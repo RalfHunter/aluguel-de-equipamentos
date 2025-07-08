@@ -7,6 +7,7 @@ import upload from "../config/multerConfig.js"
 import uploadUsuario from "../config/multerUserConfig.js"
 import FileMiddleware from "../middlewares/FileMiddleware.js"
 import MulterErrorHandler from "../middlewares/MulterErrorHandler.js"
+import { accessSync } from "fs"
 const router = express.Router()
 
 const usuarioController = new UsuarioController()
@@ -21,4 +22,6 @@ router
     .get("/usuarios/:id/foto", AuthMiddleware, asyncWrapper(usuarioController.getFoto.bind(usuarioController)))
     .delete("/usuarios/:id/foto", AuthMiddleware, asyncWrapper(usuarioController.removerFoto.bind(usuarioController)))
     .delete("/usuarios/:id", AuthMiddleware, AuthPermission, asyncWrapper(usuarioController.deletarUsuario.bind(usuarioController)))
+    .get("/perfil/", AuthMiddleware, asyncWrapper(usuarioController.getPerfil.bind(usuarioController)))
+    .post("/perfil/", AuthMiddleware, asyncWrapper(usuarioController.updatePerfil.bind(usuarioController)))
 export default router
