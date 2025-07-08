@@ -3,6 +3,7 @@ import EquipamentoRepository from '../repositories/EquipamentoRepository.js';
 import EquipamentoFilterBuilder from '../repositories/filters/EquipamentoFilterBuilder.js';
 import { CustomError, HttpStatusCodes, messages } from '../utils/helpers/index.js';
 import Reserva from '../models/Reserva.js';
+import Usuario from '../models/Usuario.js';
 
 class EquipamentoService {
   constructor() {
@@ -23,7 +24,7 @@ class EquipamentoService {
     return await this.repository.listarPendentes();
   }
 
-  async listarPorId(id) {
+  async listarPorId(id, usuarioId) {
     const equipamento = await this._buscarEquipamentoExistente(id);
     return equipamento;
   }
@@ -42,8 +43,17 @@ class EquipamentoService {
     return await this.repository.atualizar(id, dadosAtualizados);
   }
 
-  async aprovar(id) {
+  async aprovar(id, usuarioId) {
     const equipamento = await this._buscarEquipamentoExistente(id);
+    const usuario = await Usuario.findById(usuarioId).populate('grupos');
+    console.log('Usuário e Grupos (aprovar no service):', usuario);
+
+    if (!usuario || !usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao))) {
+      throw new CustomError({
+        statusCode: HttpStatusCodes.FORBIDDEN.code,
+        customMessage: 'Acesso restrito a administradores ou moderadores.',
+      });
+    }
 
     if (equipamento.equiStatus !== 'pendente') {
       throw new CustomError({
@@ -57,8 +67,17 @@ class EquipamentoService {
     return equipamento;
   }
 
-  async reprovar(id) {
+  async reprovar(id, usuarioId) {
     const equipamento = await this._buscarEquipamentoExistente(id);
+    const usuario = await Usuario.findById(usuarioId).populate('grupos');
+    console.log('Usuário e Grupos (reprovar no service):', usuario);
+
+    if (!usuario || !usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao))) {
+      throw new CustomError({
+        statusCode: HttpStatusCodes.FORBIDDEN.code,
+        customMessage: 'Acesso restrito a administradores ou moderadores.',
+      });
+    }
 
     if (equipamento.equiStatus !== 'pendente') {
       throw new CustomError({
