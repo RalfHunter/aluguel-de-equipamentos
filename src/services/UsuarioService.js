@@ -20,28 +20,28 @@ const diretorio = 'uploads/usuarios';
 
 class UsuarioService {
   constructor() {
-    this.repository = new UsuarioRepository()
+    this.model = new UsuarioRepository()
   }
   async listar(req) {
     // console.log("Estou no listar em Usuario")
-    const data = await this.repository.listar(req)
+    const data = await this.model.listar(req)
     // console.log("Estou retornando os dados em UsuarioService")
     return data
   }
   async updateUsuario(id, parseData) {
     // console.log("Estou no updateUsuario Service")
-    await this.repository.buscarPorEmail(parseData.email, id)
-    await this.repository.buscarPorTelefone(parseData.telefone, id)
-    const data = await this.repository.updateUsuario(id, parseData)
+    await this.model.buscarPorEmail(parseData.email, id)
+    await this.model.buscarPorTelefone(parseData.telefone, id)
+    const data = await this.model.updateUsuario(id, parseData)
     return data
   }
 
   async cadastrarUsuario(body) {
-    await this.repository.buscarPorCpf(body.CPF)
-    await this.repository.buscarPorEmail(body.email)
-    await this.repository.buscarPorTelefone(body.telefone)
-    const user = await this.repository.verificaGrupos(body)
-    const data = await this.repository.cadastrarUsuario(user)
+    await this.model.buscarPorCpf(body.CPF)
+    await this.model.buscarPorEmail(body.email)
+    await this.model.buscarPorTelefone(body.telefone)
+    const user = await this.model.verificaGrupos(body)
+    const data = await this.model.cadastrarUsuario(user)
     return data
   }
   async alterarStatus(id, parseData, req) {
@@ -53,7 +53,7 @@ class UsuarioService {
         customMessage: "Não pode alterar o status de si mesmo."
       })
     }
-    const user = await this.repository.buscarPorId(id)
+    const user = await this.model.buscarPorId(id)
     let permissao = false
     for (const grupo of user.grupos) {
       permissao = grupo.nivelPermissao <= req.nivelPermissao
@@ -70,7 +70,7 @@ class UsuarioService {
         customMessage: messages.error.unauthorized("Permissão")
       })
     }
-    const data = await this.repository.alterarStatus(id, parseData)
+    const data = await this.model.alterarStatus(id, parseData)
     return data
   }
 
@@ -82,7 +82,7 @@ class UsuarioService {
   async atualizarFotoUsuario(userId, nomeArquivo, metadadosFoto) {
     try {
       // Verificar se o usuário existe
-      const usuarioExistente = await this.repository.buscarPorId(userId);
+      const usuarioExistente = await this.model.buscarPorId(userId);
       if (!usuarioExistente) {
         throw new CustomError({
           statusCode: HttpStatusCodes.NOT_FOUND.code,
@@ -106,7 +106,7 @@ class UsuarioService {
       UsuarioUpdateSchema.parse(dadosAtualizacao);
 
       // Atualizar no banco de dados
-      const usuarioAtualizado = await this.repository.atualizar(userId, dadosAtualizacao);
+      const usuarioAtualizado = await this.model.atualizar(userId, dadosAtualizacao);
 
       return {
         id: usuarioAtualizado._id,
@@ -125,7 +125,7 @@ class UsuarioService {
   // Função auxiliar para remover foto antiga (opcional)
 
   async getFoto(id){
-    const data = await this.repository.buscarPorId(id)
+    const data = await this.model.buscarPorId(id)
     // const objetoJs = await data.toObject()
     const foto  = data.fotoUsuario
     if(fs.existsSync(foto)){
@@ -149,7 +149,7 @@ class UsuarioService {
         customMessage: "Não pode alterar o status de si mesmo."
       })
     }
-    const user = await this.repository.buscarPorId(id)
+    const user = await this.model.buscarPorId(id)
     let permissao = false
     for (const grupo of user.grupos) {
       permissao = grupo.nivelPermissao <= req.nivelPermissao
@@ -166,13 +166,13 @@ class UsuarioService {
         customMessage: messages.error.unauthorized("Permissão")
       })
     }
-    const data = await this.repository.deletarUsuario(id);
+    const data = await this.model.deletarUsuario(id);
     return data;
   
 
   }
   async removerFoto(id){
-    const data = await this.repository.buscarPorId(id)
+    const data = await this.model.buscarPorId(id)
     const foto = data.fotoUsuario
     if(!fs.existsSync(foto)){
       throw new CustomError({
@@ -187,11 +187,11 @@ class UsuarioService {
       fotoUsuario: null
     }
     fs.unlinkSync(foto)
-    const dataUpdate = await this.repository.updateUsuario(id, Foto)
+    const dataUpdate = await this.model.updateUsuario(id, Foto)
     return dataUpdate
   }
   async getPerfil(id){
-    const data = await this.repository.buscarPorId(id)
+    const data = await this.model.buscarPorId(id)
     const dataObject =  data.toObject()
     delete dataObject.accessToken
     delete dataObject.refreshToken
@@ -210,7 +210,7 @@ class UsuarioService {
   }
   async updatePerfil(id, parsedData){
     const {nome, telefone} = parsedData
-    const data = await this.repository.updateUsuario(id, {nome, telefone})
+    const data = await this.model.updateUsuario(id, {nome, telefone})
     const usuarioAtualizado = data.toObject()
     delete usuarioAtualizado.accessToken
     delete usuarioAtualizado.refreshToken

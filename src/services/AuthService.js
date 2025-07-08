@@ -8,14 +8,12 @@ import { v4 as uuid } from 'uuid';
 import SendMail from '../utils/SendMail.js';
 
 import UsuarioRepository from '../repositories/UsuarioRepository.js';
-import AuthRepository from '../repositories/AuthRepository.js';
 
 class AuthService {
     constructor({ tokenUtil: injectedTokenUtil, usuarioRepository, authRepository } = {}) {
         // Se nada for injetado, usa a instância importada
         this.TokenUtil = injectedTokenUtil || tokenUtil;
         this.usuarioRepository = usuarioRepository || new UsuarioRepository();
-        this.repository = authRepository || new AuthRepository();
     }
 
     async carregatokens(id, token) {
@@ -24,12 +22,12 @@ class AuthService {
     }
 
     async revoke(id) {
-        const data = await this.repository.removeToken(id);
+        const data = await this.usuarioRepository.removeToken(id);
         return { data };
     }
 
     async logout(id, token) {
-        const data = await this.repository.removeToken(id);
+        const data = await this.usuarioRepository.removeToken(id);
         return { data };
     }
 
@@ -101,7 +99,7 @@ class AuthService {
         console.log("refresh token gerado", refreshToken);
 
         // Armazenar os tokens atualizados
-        await this.repository.armazenarTokens(userEncontrado._id, accessToken, refreshToken);
+        await this.usuarioRepository.armazenarTokens(userEncontrado._id, accessToken, refreshToken);
 
         // Buscar novamente o usuário e remover a senha
         const userLogado = await this.usuarioRepository.buscarPorEmailCadastrado(body.email);
@@ -280,7 +278,7 @@ class AuthService {
         }
 
         // Atualiza o usuário com os novos tokens
-        await this.repository.armazenarTokens(id, accesstoken, refreshtoken);
+        await this.usuarioRepository.armazenarTokens(id, accesstoken, refreshtoken);
 
         // monta o objeto de usuário com os tokens para resposta
         const userLogado = await this.usuarioRepository.buscarPorId(id, { includeTokens: true });

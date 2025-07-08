@@ -71,7 +71,7 @@ async function SeedUsuario(){
         
     }
     const Moderador2 = {
-        nome: "Moderador2",
+        nome: "Moderador Dois",
         email: "moderador2@gmail.com",
         telefone: "69 98191-0000",
         senha:  await bcrypt.hash('Moderador@1234', 8),
