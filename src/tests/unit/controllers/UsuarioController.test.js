@@ -477,7 +477,7 @@ describe('UsuarioController', () => {
 
       await usuarioController.deletarUsuario(req, res);
 
-      expect(usuarioController.service.deletarUsuario).toHaveBeenCalledWith(req.params.id);
+      expect(usuarioController.service.deletarUsuario).toHaveBeenCalledWith(req, req.params.id);
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         data: mockData,
@@ -885,6 +885,167 @@ describe('UsuarioController', () => {
       await expect(usuarioController.removerFoto(req, res)).rejects.toThrow('Foto não encontrada');
       
       expect(usuarioController.service.removerFoto).toHaveBeenCalledWith(req.params.id);
+    });
+  });
+
+  describe('getPerfil', () => {
+    it('deve buscar perfil do usuário com sucesso', async () => {
+      const mockData = {
+        _id: '67959501ea0999e0a0fa9f58',
+        nome: 'Usuario Teste',
+        email: 'teste@email.com',
+        telefone: '(69) 99999-8888',
+        dataNascimento: '2000-08-08',
+        CPF: '96945788253',
+        ativo: true,
+        fotoUsuario: 'http://example.com/photo.jpg'
+      };
+      
+      req.user_id = '67959501ea0999e0a0fa9f58';
+      
+      usuarioController.service.getPerfil.mockResolvedValue(mockData);
+      
+      await usuarioController.getPerfil(req, res);
+      
+      expect(usuarioController.service.getPerfil).toHaveBeenCalledWith(req.user_id);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        data: mockData,
+        errors: [],
+        message: 'Requisição bem-sucedida'
+      });
+    });
+
+    it('deve falhar ao validar id inválido', async () => {
+      req.user_id = null;
+      
+      await expect(usuarioController.getPerfil(req, res)).rejects.toThrow();
+    });
+
+    it('deve falhar quando user_id não existe', async () => {
+      req.user_id = undefined;
+      
+      await expect(usuarioController.getPerfil(req, res)).rejects.toThrow();
+    });
+
+    it('deve propagar erro do serviço', async () => {
+      req.user_id = '67959501ea0999e0a0fa9f58';
+      
+      usuarioController.service.getPerfil.mockRejectedValue(new Error('Usuário não encontrado'));
+      
+      await expect(usuarioController.getPerfil(req, res)).rejects.toThrow('Usuário não encontrado');
+      
+      expect(usuarioController.service.getPerfil).toHaveBeenCalledWith(req.user_id);
+    });
+  });
+
+  describe('updatePerfil', () => {
+    it('deve atualizar perfil do usuário com sucesso', async () => {
+      const updatedData = {
+        _id: '67959501ea0999e0a0fa9f58',
+        nome: 'Nome Atualizado',
+        email: 'novo@email.com',
+        telefone: '(69) 98888-7777',
+        dataNascimento: '2000-08-08',
+        CPF: '96945788253',
+        ativo: true,
+        fotoUsuario: 'http://example.com/photo.jpg'
+      };
+      
+      req.user_id = '67959501ea0999e0a0fa9f58';
+      req.body = {
+        nome: 'Nome Atualizado',
+        email: 'novo@email.com',
+        telefone: '(69) 98888-7777'
+      };
+      
+      usuarioController.service.updateUsuario.mockResolvedValue(updatedData);
+      
+      await usuarioController.updatePerfil(req, res);
+      
+      expect(usuarioController.service.updateUsuario).toHaveBeenCalledWith(req.user_id, req.body);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        data: updatedData,
+        errors: [],
+        message: 'Requisição bem-sucedida'
+      });
+    });
+
+    it('deve falhar ao validar id inválido', async () => {
+      req.user_id = null;
+      req.body = {
+        nome: 'Nome Atualizado',
+        email: 'novo@email.com'
+      };
+      
+      await expect(usuarioController.updatePerfil(req, res)).rejects.toThrow();
+    });
+
+    it('deve falhar ao validar body inválido', async () => {
+      req.user_id = '67959501ea0999e0a0fa9f58';
+      req.body = {
+        nome: '',
+        email: 'email-invalido',
+        telefone: '123'
+      };
+      
+      await expect(usuarioController.updatePerfil(req, res)).rejects.toThrow();
+    });
+
+    it('deve falhar quando user_id não existe', async () => {
+      req.user_id = undefined;
+      req.body = {
+        nome: 'Nome Atualizado',
+        email: 'novo@email.com'
+      };
+      
+      await expect(usuarioController.updatePerfil(req, res)).rejects.toThrow();
+    });
+
+    it('deve propagar erro do serviço', async () => {
+      req.user_id = '67959501ea0999e0a0fa9f58';
+      req.body = {
+        nome: 'Nome Atualizado',
+        email: 'novo@email.com',
+        telefone: '(69) 98888-7777'
+      };
+      
+      usuarioController.service.updateUsuario.mockRejectedValue(new Error('Erro ao atualizar perfil'));
+      
+      await expect(usuarioController.updatePerfil(req, res)).rejects.toThrow('Erro ao atualizar perfil');
+      
+      expect(usuarioController.service.updateUsuario).toHaveBeenCalledWith(req.user_id, req.body);
+    });
+
+    it('deve atualizar perfil com dados parciais', async () => {
+      const updatedData = {
+        _id: '67959501ea0999e0a0fa9f58',
+        nome: 'Nome Atualizado',
+        email: 'teste@email.com',
+        telefone: '(69) 99999-8888',
+        dataNascimento: '2000-08-08',
+        CPF: '96945788253',
+        ativo: true,
+        fotoUsuario: 'http://example.com/photo.jpg'
+      };
+      
+      req.user_id = '67959501ea0999e0a0fa9f58';
+      req.body = {
+        nome: 'Nome Atualizado'
+      };
+      
+      usuarioController.service.updateUsuario.mockResolvedValue(updatedData);
+      
+      await usuarioController.updatePerfil(req, res);
+      
+      expect(usuarioController.service.updateUsuario).toHaveBeenCalledWith(req.user_id, req.body);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        data: updatedData,
+        errors: [],
+        message: 'Requisição bem-sucedida'
+      });
     });
   });
 });

@@ -28,9 +28,9 @@ describe('UsuarioService', () => {
                 id: '67959501ea0999e0a0fa9f58',
                 nome: 'Usuario'
             }]
-            usuarioService.repository.listar.mockResolvedValue(mockData);
+            usuarioService.model.listar.mockResolvedValue(mockData);
             const resultado = await usuarioService.listar(req)
-            expect(usuarioService.repository.listar).toHaveBeenCalled();
+            expect(usuarioService.model.listar).toHaveBeenCalled();
             expect(resultado).toEqual(mockData)
         });
         it('deve listar por id', async () => {
@@ -39,9 +39,9 @@ describe('UsuarioService', () => {
                 nome: 'Usuario'
             }
             req.params = { id: '67959501ea0999e0a0fa9f58' }
-            usuarioService.repository.listar.mockResolvedValue(mockData)
+            usuarioService.model.listar.mockResolvedValue(mockData)
             const resultado = await usuarioService.listar(req)
-            expect(usuarioService.repository.listar).toHaveBeenCalledWith(req);
+            expect(usuarioService.model.listar).toHaveBeenCalledWith(req);
             expect(resultado).toEqual(mockData)
         });
         it('deve listar por params', async () => {
@@ -55,9 +55,9 @@ describe('UsuarioService', () => {
             req.query = {
                 nome: 'Usuario'
             }
-            usuarioService.repository.listar.mockResolvedValue(mockData)
+            usuarioService.model.listar.mockResolvedValue(mockData)
             const resultado = await usuarioService.listar(req)
-            expect(usuarioService.repository.listar).toHaveBeenCalledWith(req)
+            expect(usuarioService.model.listar).toHaveBeenCalledWith(req)
             expect(resultado).toEqual(mockData)
         });
     });
@@ -78,20 +78,20 @@ describe('UsuarioService', () => {
             const verificaGrupos = { ...mockData, grupos: [] }; // Mock do resultado de verificaGrupos
             
             req.body = mockData
-            usuarioService.repository.buscarPorCpf.mockResolvedValue(null)
-            usuarioService.repository.buscarPorEmail.mockResolvedValue(null)
-            usuarioService.repository.buscarPorTelefone.mockResolvedValue(null)
-            usuarioService.repository.verificaGrupos.mockResolvedValue(verificaGrupos)
-            usuarioService.repository.cadastrarUsuario.mockResolvedValue({ id: '67959501ea0999e0a0fa9f58', ...verificaGrupos })
+            usuarioService.model.buscarPorCpf.mockResolvedValue(null)
+            usuarioService.model.buscarPorEmail.mockResolvedValue(null)
+            usuarioService.model.buscarPorTelefone.mockResolvedValue(null)
+            usuarioService.model.verificaGrupos.mockResolvedValue(verificaGrupos)
+            usuarioService.model.cadastrarUsuario.mockResolvedValue({ id: '67959501ea0999e0a0fa9f58', ...verificaGrupos })
             
             const resultado = await usuarioService.cadastrarUsuario(mockData)
             
             expect(resultado).toHaveProperty('id')
-            expect(usuarioService.repository.buscarPorCpf).toHaveBeenCalledWith(mockData.CPF)
-            expect(usuarioService.repository.buscarPorEmail).toHaveBeenCalledWith(mockData.email)
-            expect(usuarioService.repository.buscarPorTelefone).toHaveBeenCalledWith(mockData.telefone)
-            expect(usuarioService.repository.verificaGrupos).toHaveBeenCalledWith(mockData)
-            expect(usuarioService.repository.cadastrarUsuario).toHaveBeenCalledWith(verificaGrupos)
+            expect(usuarioService.model.buscarPorCpf).toHaveBeenCalledWith(mockData.CPF)
+            expect(usuarioService.model.buscarPorEmail).toHaveBeenCalledWith(mockData.email)
+            expect(usuarioService.model.buscarPorTelefone).toHaveBeenCalledWith(mockData.telefone)
+            expect(usuarioService.model.verificaGrupos).toHaveBeenCalledWith(mockData)
+            expect(usuarioService.model.cadastrarUsuario).toHaveBeenCalledWith(verificaGrupos)
         });
         it("deve lançar um erro se o CPF já estiver em uso", async () => {
             const mockData = {
@@ -108,17 +108,17 @@ describe('UsuarioService', () => {
 
             req.body = mockData;
 
-            usuarioService.repository.buscarPorCpf.mockRejectedValue(new CustomError({
+            usuarioService.model.buscarPorCpf.mockRejectedValue(new CustomError({
                 statusCode: 409,
                 errorType: "Conflict",
                 details: [],
                 customMessage: messages.error.resourceConflict("Usuário", "CPF")
             })); // Simulando usuário existente
-            usuarioService.repository.buscarPorEmail.mockResolvedValue(null);
-            usuarioService.repository.buscarPorTelefone.mockResolvedValue(null);
+            usuarioService.model.buscarPorEmail.mockResolvedValue(null);
+            usuarioService.model.buscarPorTelefone.mockResolvedValue(null);
 
             await expect(usuarioService.cadastrarUsuario(mockData)).rejects.toThrowErrorMatchingInlineSnapshot(`"Conflito de recurso em Usuário contém CPF."`)
-            expect(usuarioService.repository.buscarPorCpf).toHaveBeenCalledWith(mockData.CPF)
+            expect(usuarioService.model.buscarPorCpf).toHaveBeenCalledWith(mockData.CPF)
         })
         it('deve lançar um erro se o E-mail já estiver em uso', async () => {
             const dataMock = {
@@ -134,14 +134,14 @@ describe('UsuarioService', () => {
             }
 
             req.body = dataMock
-            usuarioService.repository.buscarPorCpf.mockResolvedValue(null)
-            usuarioService.repository.buscarPorEmail.mockRejectedValue(new CustomError({
+            usuarioService.model.buscarPorCpf.mockResolvedValue(null)
+            usuarioService.model.buscarPorEmail.mockRejectedValue(new CustomError({
                 statusCode: 409,
                 errorType: "Conflict",
                 details: [],
                 customMessage: messages.error.resourceConflict("Usuário", "E-mail")
             }))
-            usuarioService.repository.buscarPorTelefone.mockResolvedValue(null)
+            usuarioService.model.buscarPorTelefone.mockResolvedValue(null)
             await expect(usuarioService.cadastrarUsuario(dataMock)).rejects.toThrowErrorMatchingInlineSnapshot(`"Conflito de recurso em Usuário contém E-mail."`)
         });
         it('deve lançar um erro se o telefone já estiver em uso', async () => {
@@ -157,9 +157,9 @@ describe('UsuarioService', () => {
                 fotoUsuario: "http://lorempixel.com/640/480"
             }
             req.body = mockData
-            usuarioService.repository.buscarPorCpf.mockResolvedValue(null)
-            usuarioService.repository.buscarPorEmail.mockResolvedValue(null)
-            usuarioService.repository.buscarPorTelefone.mockRejectedValue(new CustomError({
+            usuarioService.model.buscarPorCpf.mockResolvedValue(null)
+            usuarioService.model.buscarPorEmail.mockResolvedValue(null)
+            usuarioService.model.buscarPorTelefone.mockRejectedValue(new CustomError({
                 statusCode: 409,
                 errorType: "Conflict",
                 details: [],
@@ -181,9 +181,9 @@ describe('UsuarioService', () => {
             }
             req.body = mockData
             req.params = { id: '67959501ea0999e0a0fa9f58' }
-            usuarioService.repository.buscarPorEmail.mockResolvedValue(null)
-            usuarioService.repository.buscarPorTelefone.mockResolvedValue(null)
-            usuarioService.repository.updateUsuario.mockResolvedValue({ ...req.params, ...mockData })
+            usuarioService.model.buscarPorEmail.mockResolvedValue(null)
+            usuarioService.model.buscarPorTelefone.mockResolvedValue(null)
+            usuarioService.model.updateUsuario.mockResolvedValue({ ...req.params, ...mockData })
             const resultado = await usuarioService.updateUsuario({ ...req.params }, { mockData })
             expect(resultado).toEqual({ ...req.params, ...mockData })
         });
@@ -198,9 +198,9 @@ describe('UsuarioService', () => {
             mockDataAtualazido.nome = "Novo Nome"
             req.body = mockDataAtualazido
             req.params = { id: '67959501ea0999e0a0fa9f58' }
-            usuarioService.repository.buscarPorEmail.mockResolvedValue(null)
-            usuarioService.repository.buscarPorTelefone.mockResolvedValue(null)
-            usuarioService.repository.updateUsuario.mockResolvedValue({ ...req.params, ...mockDataAtualazido })
+            usuarioService.model.buscarPorEmail.mockResolvedValue(null)
+            usuarioService.model.buscarPorTelefone.mockResolvedValue(null)
+            usuarioService.model.updateUsuario.mockResolvedValue({ ...req.params, ...mockDataAtualazido })
             const resultado = await usuarioService.updateUsuario({ ...req.params }, mockDataAtualazido.nome)
             expect(resultado).toEqual({ ...req.params, ...mockDataAtualazido })
         });
@@ -212,13 +212,13 @@ describe('UsuarioService', () => {
                 fotoUsuario: "http://lorempixel.com/780/560"
             }
             req.params = { id: '67959501ea0999e0a0fa9f58' }
-            usuarioService.repository.buscarPorEmail.mockRejectedValue(new CustomError({
+            usuarioService.model.buscarPorEmail.mockRejectedValue(new CustomError({
                 statusCode: 409,
                 errorType: "Conflict",
                 details: [],
                 customMessage: messages.error.resourceConflict("Usuário", "E-mail")
             }))
-            usuarioService.repository.buscarPorTelefone.mockResolvedValue(null)
+            usuarioService.model.buscarPorTelefone.mockResolvedValue(null)
             await expect(usuarioService.updateUsuario(req.params, mockData)).rejects.toThrow(CustomError)
             // await expect(usuarioService.updateUsuario(req.params, mockData)).rejects.toThrowErrorMatchingInlineSnapshot(`"Conflito de recurso em Usuário contém E-mail."`)
         });
@@ -230,8 +230,8 @@ describe('UsuarioService', () => {
                 fotoUsuario: "http://lorempixel.com/780/560"
             }
             req.params = { id: '67959501ea0999e0a0fa9f58' }
-            usuarioService.repository.buscarPorEmail.mockResolvedValue(null)
-            usuarioService.repository.buscarPorTelefone.mockRejectedValue(new CustomError({
+            usuarioService.model.buscarPorEmail.mockResolvedValue(null)
+            usuarioService.model.buscarPorTelefone.mockRejectedValue(new CustomError({
                 statusCode: 409,
                 errorType: "Conflict",
                 details: [],
@@ -260,13 +260,13 @@ describe('UsuarioService', () => {
             
             const mockUpdatedUser = { ...mockUser, ativo: false };
             
-            usuarioService.repository.buscarPorId.mockResolvedValue(mockUser);
-            usuarioService.repository.alterarStatus.mockResolvedValue(mockUpdatedUser);
+            usuarioService.model.buscarPorId.mockResolvedValue(mockUser);
+            usuarioService.model.alterarStatus.mockResolvedValue(mockUpdatedUser);
             
             const resultado = await usuarioService.alterarStatus(userId, parseData, reqData);
             
-            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
-            expect(usuarioService.repository.alterarStatus).toHaveBeenCalledWith(userId, parseData);
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.model.alterarStatus).toHaveBeenCalledWith(userId, parseData);
             expect(resultado).toEqual(mockUpdatedUser);
         });
 
@@ -301,7 +301,7 @@ describe('UsuarioService', () => {
                 ]
             };
             
-            usuarioService.repository.buscarPorId.mockResolvedValue(mockUser);
+            usuarioService.model.buscarPorId.mockResolvedValue(mockUser);
             
             await expect(usuarioService.alterarStatus(userId, parseData, reqData))
                 .rejects.toThrow(CustomError);
@@ -329,13 +329,13 @@ describe('UsuarioService', () => {
             
             const mockUpdatedUser = { ...mockUser, ativo: false };
             
-            usuarioService.repository.buscarPorId.mockResolvedValue(mockUser);
-            usuarioService.repository.alterarStatus.mockResolvedValue(mockUpdatedUser);
+            usuarioService.model.buscarPorId.mockResolvedValue(mockUser);
+            usuarioService.model.alterarStatus.mockResolvedValue(mockUpdatedUser);
             
             const resultado = await usuarioService.alterarStatus(userId, parseData, reqData);
             
-            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
-            expect(usuarioService.repository.alterarStatus).toHaveBeenCalledWith(userId, parseData);
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.model.alterarStatus).toHaveBeenCalledWith(userId, parseData);
             expect(resultado).toEqual(mockUpdatedUser);
         });
 
@@ -356,7 +356,7 @@ describe('UsuarioService', () => {
                 ]
             };
             
-            usuarioService.repository.buscarPorId.mockResolvedValue(mockUser);
+            usuarioService.model.buscarPorId.mockResolvedValue(mockUser);
             
             await expect(usuarioService.alterarStatus(userId, parseData, reqData))
                 .rejects.toThrow(CustomError);
@@ -370,7 +370,7 @@ describe('UsuarioService', () => {
                 nivelPermissao: 1 
             };
             
-            usuarioService.repository.buscarPorId.mockRejectedValue(new Error('Usuário não encontrado'));
+            usuarioService.model.buscarPorId.mockRejectedValue(new Error('Usuário não encontrado'));
             
             await expect(usuarioService.alterarStatus(userId, parseData, reqData))
                 .rejects.toThrow('Usuário não encontrado');
@@ -392,8 +392,8 @@ describe('UsuarioService', () => {
                 ]
             };
             
-            usuarioService.repository.buscarPorId.mockResolvedValue(mockUser);
-            usuarioService.repository.alterarStatus.mockRejectedValue(new Error('Erro ao alterar status'));
+            usuarioService.model.buscarPorId.mockResolvedValue(mockUser);
+            usuarioService.model.alterarStatus.mockRejectedValue(new Error('Erro ao alterar status'));
             
             await expect(usuarioService.alterarStatus(userId, parseData, reqData))
                 .rejects.toThrow('Erro ao alterar status');
@@ -408,7 +408,7 @@ describe('UsuarioService', () => {
                 fotoUsuario: 'uploads/usuarios/foto123.jpg'
             };
             
-            usuarioService.repository.buscarPorId.mockResolvedValue(mockUser);
+            usuarioService.model.buscarPorId.mockResolvedValue(mockUser);
             
             // Mock do fs.existsSync para retornar true
             const fs = require('fs');
@@ -416,7 +416,7 @@ describe('UsuarioService', () => {
             
             const resultado = await usuarioService.getFoto(userId);
             
-            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
             expect(fs.existsSync).toHaveBeenCalledWith(mockUser.fotoUsuario);
             expect(resultado).toBe(mockUser.fotoUsuario);
             
@@ -432,7 +432,7 @@ describe('UsuarioService', () => {
                 fotoUsuario: 'uploads/usuarios/foto_inexistente.jpg'
             };
             
-            usuarioService.repository.buscarPorId.mockResolvedValue(mockUser);
+            usuarioService.model.buscarPorId.mockResolvedValue(mockUser);
             
             // Mock do fs.existsSync para retornar false
             const fs = require('fs');
@@ -444,7 +444,7 @@ describe('UsuarioService', () => {
             await expect(usuarioService.getFoto(userId))
                 .rejects.toThrow('Foto não encontrada.');
             
-            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
             expect(fs.existsSync).toHaveBeenCalledWith(mockUser.fotoUsuario);
             
             // Limpar o mock
@@ -454,7 +454,7 @@ describe('UsuarioService', () => {
         it('deve propagar erro quando usuário não é encontrado', async () => {
             const userId = '67959501ea0999e0a0fa9f58';
             
-            usuarioService.repository.buscarPorId.mockRejectedValue(new CustomError({
+            usuarioService.model.buscarPorId.mockRejectedValue(new CustomError({
                 statusCode: 404,
                 errorType: "resourceNotFound",
                 field: "Usuário",
@@ -468,74 +468,380 @@ describe('UsuarioService', () => {
             await expect(usuarioService.getFoto(userId))
                 .rejects.toThrow('Usuário não encontrado');
             
-            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
+        });
+    });
+    describe('getPerfil', () => {
+        it('deve retornar perfil do usuário com sucesso', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const mockUser = {
+                _id: userId,
+                nome: 'João Silva',
+                email: 'joao@teste.com',
+                CPF: '123.456.789-00',
+                telefone: '(69) 99999-9999',
+                dataNascimento: '1990-01-01',
+                fotoUsuario: 'uploads/usuarios/foto.jpg',
+                notaMedia: 4.5,
+                accessToken: 'token123',
+                refreshToken: 'refreshToken123',
+                grupos: [
+                    { nome: 'Administrador' },
+                    { nome: 'Usuario' }
+                ],
+                toObject: jest.fn().mockReturnValue({
+                    _id: userId,
+                    nome: 'João Silva',
+                    email: 'joao@teste.com',
+                    CPF: '123.456.789-00',
+                    telefone: '(69) 99999-9999',
+                    dataNascimento: '1990-01-01',
+                    fotoUsuario: 'uploads/usuarios/foto.jpg',
+                    notaMedia: 4.5,
+                    accessToken: 'token123',
+                    refreshToken: 'refreshToken123',
+                    grupos: [
+                        { nome: 'Administrador' },
+                        { nome: 'Usuario' }
+                    ]
+                })
+            };
+
+            usuarioService.model.buscarPorId.mockResolvedValue(mockUser);
+
+            const resultado = await usuarioService.getPerfil(userId);
+
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(resultado).toEqual({
+                nome: 'João Silva',
+                email: 'joao@teste.com',
+                CPF: '123.456.789-00',
+                telefone: '(69) 99999-9999',
+                dataNascimento: '1990-01-01',
+                fotoUsuario: 'uploads/usuarios/foto.jpg',
+                notaMedia: 4.5,
+                grupos: ['Administrador', 'Usuario']
+            });
+            expect(resultado).not.toHaveProperty('accessToken');
+            expect(resultado).not.toHaveProperty('refreshToken');
+        });
+
+        it('deve propagar erro quando usuário não é encontrado', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+
+            usuarioService.model.buscarPorId.mockRejectedValue(new CustomError({
+                statusCode: 404,
+                errorType: "resourceNotFound",
+                field: "Usuário",
+                details: [],
+                customMessage: "Usuário não encontrado"
+            }));
+
+            await expect(usuarioService.getPerfil(userId))
+                .rejects.toThrow(CustomError);
+
+            await expect(usuarioService.getPerfil(userId))
+                .rejects.toThrow('Usuário não encontrado');
+
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
+        });
+    });
+    describe('updatePerfil', () => {
+        it('deve atualizar perfil do usuário com sucesso', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const parsedData = {
+                nome: 'João Silva Atualizado',
+                telefone: '(69) 88888-8888'
+            };
+
+            const mockUpdatedUser = {
+                _id: userId,
+                nome: 'João Silva Atualizado',
+                email: 'joao@teste.com',
+                CPF: '123.456.789-00',
+                telefone: '(69) 88888-8888',
+                dataNascimento: '1990-01-01',
+                fotoUsuario: 'uploads/usuarios/foto.jpg',
+                notaMedia: 4.5,
+                accessToken: 'token123',
+                refreshToken: 'refreshToken123',
+                grupos: [
+                    { nome: 'Administrador' },
+                    { nome: 'Usuario' }
+                ],
+                toObject: jest.fn().mockReturnValue({
+                    _id: userId,
+                    nome: 'João Silva Atualizado',
+                    email: 'joao@teste.com',
+                    CPF: '123.456.789-00',
+                    telefone: '(69) 88888-8888',
+                    dataNascimento: '1990-01-01',
+                    fotoUsuario: 'uploads/usuarios/foto.jpg',
+                    notaMedia: 4.5,
+                    accessToken: 'token123',
+                    refreshToken: 'refreshToken123',
+                    grupos: [
+                        { nome: 'Administrador' },
+                        { nome: 'Usuario' }
+                    ]
+                })
+            };
+
+            usuarioService.model.updateUsuario.mockResolvedValue(mockUpdatedUser);
+
+            const resultado = await usuarioService.updatePerfil(userId, parsedData);
+
+            expect(usuarioService.model.updateUsuario).toHaveBeenCalledWith(userId, {
+                nome: 'João Silva Atualizado',
+                telefone: '(69) 88888-8888'
+            });
+            expect(resultado).toEqual({
+                nome: 'João Silva Atualizado',
+                email: 'joao@teste.com',
+                CPF: '123.456.789-00',
+                telefone: '(69) 88888-8888',
+                dataNascimento: '1990-01-01',
+                fotoUsuario: 'uploads/usuarios/foto.jpg',
+                notaMedia: 4.5,
+                grupos: ['Administrador', 'Usuario']
+            });
+            expect(resultado).not.toHaveProperty('accessToken');
+            expect(resultado).not.toHaveProperty('refreshToken');
+        });
+
+        it('deve atualizar apenas nome quando só nome é fornecido', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const parsedData = {
+                nome: 'João Silva Novo Nome'
+            };
+
+            const mockUpdatedUser = {
+                _id: userId,
+                nome: 'João Silva Novo Nome',
+                email: 'joao@teste.com',
+                CPF: '123.456.789-00',
+                telefone: '(69) 99999-9999',
+                dataNascimento: '1990-01-01',
+                fotoUsuario: 'uploads/usuarios/foto.jpg',
+                notaMedia: 4.5,
+                accessToken: 'token123',
+                refreshToken: 'refreshToken123',
+                grupos: [
+                    { nome: 'Usuario' }
+                ],
+                toObject: jest.fn().mockReturnValue({
+                    _id: userId,
+                    nome: 'João Silva Novo Nome',
+                    email: 'joao@teste.com',
+                    CPF: '123.456.789-00',
+                    telefone: '(69) 99999-9999',
+                    dataNascimento: '1990-01-01',
+                    fotoUsuario: 'uploads/usuarios/foto.jpg',
+                    notaMedia: 4.5,
+                    accessToken: 'token123',
+                    refreshToken: 'refreshToken123',
+                    grupos: [
+                        { nome: 'Usuario' }
+                    ]
+                })
+            };
+
+            usuarioService.model.updateUsuario.mockResolvedValue(mockUpdatedUser);
+
+            const resultado = await usuarioService.updatePerfil(userId, parsedData);
+
+            expect(usuarioService.model.updateUsuario).toHaveBeenCalledWith(userId, {
+                nome: 'João Silva Novo Nome',
+                telefone: undefined
+            });
+            expect(resultado).toEqual({
+                nome: 'João Silva Novo Nome',
+                email: 'joao@teste.com',
+                CPF: '123.456.789-00',
+                telefone: undefined,
+                dataNascimento: '1990-01-01',
+                fotoUsuario: 'uploads/usuarios/foto.jpg',
+                notaMedia: 4.5,
+                grupos: ['Usuario']
+            });
+        });
+
+        it('deve propagar erro do repository.updateUsuario', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const parsedData = {
+                nome: 'João Silva Atualizado',
+                telefone: '(69) 88888-8888'
+            };
+
+            usuarioService.model.updateUsuario.mockRejectedValue(new Error('Erro ao atualizar usuário'));
+
+            await expect(usuarioService.updatePerfil(userId, parsedData))
+                .rejects.toThrow('Erro ao atualizar usuário');
+
+            expect(usuarioService.model.updateUsuario).toHaveBeenCalledWith(userId, {
+                nome: 'João Silva Atualizado',
+                telefone: '(69) 88888-8888'
+            });
         });
     });
     describe('deletarUsuario', () => {
-        it('deve deletar usuário com sucesso quando usuário existe', async () => {
+        it('deve deletar usuário com sucesso quando usuário tem permissão', async () => {
             const userId = '67959501ea0999e0a0fa9f58';
+            const reqData = {
+                user_id: '67959501ea0999e0a0fa9f59', // ID diferente do usuário a ser deletado
+                nivelPermissao: 1
+            };
+
             const mockUser = {
                 _id: userId,
                 nome: 'Usuario Teste',
                 email: 'teste@email.com',
-                ativo: true
+                grupos: [
+                    { nivelPermissao: 2 } // Nível maior que o usuário solicitante (menor permissão)
+                ]
             };
-            
+
             const mockDeletedUser = {
                 _id: userId,
                 nome: 'Usuario Teste',
                 email: 'teste@email.com',
-                ativo: true,
                 deletedCount: 1
             };
-            
-            usuarioService.repository.buscarPorId.mockResolvedValue(mockUser);
-            usuarioService.repository.deletarUsuario.mockResolvedValue(mockDeletedUser);
-            
-            const resultado = await usuarioService.deletarUsuario(userId);
-            
-            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
-            expect(usuarioService.repository.deletarUsuario).toHaveBeenCalledWith(userId);
+
+            usuarioService.model.buscarPorId.mockResolvedValue(mockUser);
+            usuarioService.model.deletarUsuario.mockResolvedValue(mockDeletedUser);
+
+            const resultado = await usuarioService.deletarUsuario(reqData, userId);
+
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.model.deletarUsuario).toHaveBeenCalledWith(userId);
+            expect(resultado).toEqual(mockDeletedUser);
+        });
+
+        it('deve lançar erro quando usuário tenta deletar a si mesmo', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const reqData = {
+                user_id: userId, // Mesmo ID do usuário a ser deletado
+                nivelPermissao: 1
+            };
+
+            await expect(usuarioService.deletarUsuario(reqData, userId))
+                .rejects.toThrow(CustomError);
+
+            await expect(usuarioService.deletarUsuario(reqData, userId))
+                .rejects.toThrow('Não pode alterar o status de si mesmo.');
+
+            expect(usuarioService.model.buscarPorId).not.toHaveBeenCalled();
+            expect(usuarioService.model.deletarUsuario).not.toHaveBeenCalled();
+        });
+
+        it('deve lançar erro quando usuário não tem permissão suficiente', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const reqData = {
+                user_id: '67959501ea0999e0a0fa9f59',
+                nivelPermissao: 3 // Nível maior (menor permissão)
+            };
+
+            const mockUser = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                grupos: [
+                    { nivelPermissao: 1 } // Nível menor ou igual ao solicitante (maior permissão)
+                ]
+            };
+
+            usuarioService.model.buscarPorId.mockResolvedValue(mockUser);
+
+            await expect(usuarioService.deletarUsuario(reqData, userId))
+                .rejects.toThrow(CustomError);
+
+            await expect(usuarioService.deletarUsuario(reqData, userId))
+                .rejects.toThrow(messages.error.unauthorized("Permissão"));
+
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.model.deletarUsuario).not.toHaveBeenCalled();
+        });
+
+        it('deve permitir deleção quando todos os grupos têm nível maior que o solicitante', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const reqData = {
+                user_id: '67959501ea0999e0a0fa9f59',
+                nivelPermissao: 1
+            };
+
+            const mockUser = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                grupos: [
+                    { nivelPermissao: 2 }, // Nível maior que o solicitante (menor permissão)
+                    { nivelPermissao: 3 }  // Nível maior que o solicitante (menor permissão)
+                ]
+            };
+
+            const mockDeletedUser = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                deletedCount: 1
+            };
+
+            usuarioService.model.buscarPorId.mockResolvedValue(mockUser);
+            usuarioService.model.deletarUsuario.mockResolvedValue(mockDeletedUser);
+
+            const resultado = await usuarioService.deletarUsuario(reqData, userId);
+
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.model.deletarUsuario).toHaveBeenCalledWith(userId);
             expect(resultado).toEqual(mockDeletedUser);
         });
 
         it('deve propagar erro quando usuário não é encontrado', async () => {
             const userId = '67959501ea0999e0a0fa9f58';
-            
-            usuarioService.repository.buscarPorId.mockRejectedValue(new CustomError({
+            const reqData = {
+                user_id: '67959501ea0999e0a0fa9f59',
+                nivelPermissao: 1
+            };
+
+            usuarioService.model.buscarPorId.mockRejectedValue(new CustomError({
                 statusCode: 404,
                 errorType: "resourceNotFound",
                 field: "Usuário",
                 details: [],
                 customMessage: "Usuário não encontrado"
             }));
-            
-            await expect(usuarioService.deletarUsuario(userId))
+
+            await expect(usuarioService.deletarUsuario(reqData, userId))
                 .rejects.toThrow(CustomError);
-            
-            await expect(usuarioService.deletarUsuario(userId))
+
+            await expect(usuarioService.deletarUsuario(reqData, userId))
                 .rejects.toThrow('Usuário não encontrado');
-            
-            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
-            expect(usuarioService.repository.deletarUsuario).not.toHaveBeenCalled();
+
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.model.deletarUsuario).not.toHaveBeenCalled();
         });
 
         it('deve propagar erro do repository.deletarUsuario', async () => {
             const userId = '67959501ea0999e0a0fa9f58';
+            const reqData = {
+                user_id: '67959501ea0999e0a0fa9f59',
+                nivelPermissao: 1
+            };
+
             const mockUser = {
                 _id: userId,
                 nome: 'Usuario Teste',
-                email: 'teste@email.com'
+                grupos: [
+                    { nivelPermissao: 2 }
+                ]
             };
-            
-            usuarioService.repository.buscarPorId.mockResolvedValue(mockUser);
-            usuarioService.repository.deletarUsuario.mockRejectedValue(new Error('Erro ao deletar usuário'));
-            
-            await expect(usuarioService.deletarUsuario(userId))
+
+            usuarioService.model.buscarPorId.mockResolvedValue(mockUser);
+            usuarioService.model.deletarUsuario.mockRejectedValue(new Error('Erro ao deletar usuário'));
+
+            await expect(usuarioService.deletarUsuario(reqData, userId))
                 .rejects.toThrow('Erro ao deletar usuário');
-            
-            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
-            expect(usuarioService.repository.deletarUsuario).toHaveBeenCalledWith(userId);
+
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.model.deletarUsuario).toHaveBeenCalledWith(userId);
         });
     });
     describe('atualizarFotoUsuario', () => {
@@ -560,13 +866,13 @@ describe('UsuarioService', () => {
                 fotoUsuario: 'uploads/usuarios/foto123.jpg'
             };
             
-            usuarioService.repository.buscarPorId.mockResolvedValue(mockUsuarioExistente);
-            usuarioService.repository.atualizar.mockResolvedValue(mockUsuarioAtualizado);
+            usuarioService.model.buscarPorId.mockResolvedValue(mockUsuarioExistente);
+            usuarioService.model.atualizar.mockResolvedValue(mockUsuarioAtualizado);
             
             const resultado = await usuarioService.atualizarFotoUsuario(userId, nomeArquivo, metadadosFoto);
             
-            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
-            expect(usuarioService.repository.atualizar).toHaveBeenCalledWith(userId, {
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.model.atualizar).toHaveBeenCalledWith(userId, {
                 fotoUsuario: 'uploads/usuarios/foto123.jpg'
             });
             expect(resultado).toHaveProperty('id', mockUsuarioAtualizado._id);
@@ -578,7 +884,7 @@ describe('UsuarioService', () => {
             const nomeArquivo = 'foto123.jpg';
             const metadadosFoto = { url: 'test.jpg' };
             
-            usuarioService.repository.buscarPorId.mockResolvedValue(null);
+            usuarioService.model.buscarPorId.mockResolvedValue(null);
             
             await expect(usuarioService.atualizarFotoUsuario(userId, nomeArquivo, metadadosFoto))
                 .rejects.toThrow(CustomError);
@@ -586,8 +892,8 @@ describe('UsuarioService', () => {
             await expect(usuarioService.atualizarFotoUsuario(userId, nomeArquivo, metadadosFoto))
                 .rejects.toThrow('Usuário não encontrado.');
             
-            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
-            expect(usuarioService.repository.atualizar).not.toHaveBeenCalled();
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.model.atualizar).not.toHaveBeenCalled();
         });
     });
     describe('removerFoto', () => {
@@ -614,22 +920,22 @@ describe('UsuarioService', () => {
             // Mock para remover arquivo
             jest.spyOn(require('fs'), 'unlinkSync').mockImplementation(() => {});
             
-            usuarioService.repository.buscarPorId.mockResolvedValue(usuario);
-            usuarioService.repository.updateUsuario.mockResolvedValue(usuarioAtualizado);
+            usuarioService.model.buscarPorId.mockResolvedValue(usuario);
+            usuarioService.model.updateUsuario.mockResolvedValue(usuarioAtualizado);
 
             const resultado = await usuarioService.removerFoto(userId);
 
-            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
             expect(require('fs').existsSync).toHaveBeenCalledWith(fotoPath);
             expect(require('fs').unlinkSync).toHaveBeenCalledWith(fotoPath);
-            expect(usuarioService.repository.updateUsuario).toHaveBeenCalledWith(userId, { fotoUsuario: null });
+            expect(usuarioService.model.updateUsuario).toHaveBeenCalledWith(userId, { fotoUsuario: null });
             expect(resultado).toEqual(usuarioAtualizado);
         });
 
         it('deve lançar erro quando usuário não é encontrado', async () => {
             const userId = '67959501ea0999e0a0fa9f58';
             
-            usuarioService.repository.buscarPorId.mockRejectedValue(new CustomError({
+            usuarioService.model.buscarPorId.mockRejectedValue(new CustomError({
                 statusCode: 404,
                 errorType: 'resourceNotFound',
                 field: 'Usuario',
@@ -640,8 +946,8 @@ describe('UsuarioService', () => {
             await expect(usuarioService.removerFoto(userId))
                 .rejects.toThrow(CustomError);
             
-            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
-            expect(usuarioService.repository.updateUsuario).not.toHaveBeenCalled();
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.model.updateUsuario).not.toHaveBeenCalled();
         });
 
         it('deve lançar erro quando foto não existe no sistema de arquivos', async () => {
@@ -657,7 +963,7 @@ describe('UsuarioService', () => {
             // Mock para verificar se arquivo não existe
             jest.spyOn(require('fs'), 'existsSync').mockReturnValue(false);
             
-            usuarioService.repository.buscarPorId.mockResolvedValue(usuario);
+            usuarioService.model.buscarPorId.mockResolvedValue(usuario);
 
             await expect(usuarioService.removerFoto(userId))
                 .rejects.toThrow(CustomError);
@@ -665,9 +971,9 @@ describe('UsuarioService', () => {
             await expect(usuarioService.removerFoto(userId))
                 .rejects.toThrow('Foto não encontrada.');
 
-            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
             expect(require('fs').existsSync).toHaveBeenCalledWith(fotoPath);
-            expect(usuarioService.repository.updateUsuario).not.toHaveBeenCalled();
+            expect(usuarioService.model.updateUsuario).not.toHaveBeenCalled();
         });
 
         it('deve lançar erro quando falha ao remover arquivo do sistema', async () => {
@@ -687,15 +993,15 @@ describe('UsuarioService', () => {
                 throw new Error('Erro ao remover arquivo');
             });
             
-            usuarioService.repository.buscarPorId.mockResolvedValue(usuario);
+            usuarioService.model.buscarPorId.mockResolvedValue(usuario);
 
             await expect(usuarioService.removerFoto(userId))
                 .rejects.toThrow('Erro ao remover arquivo');
 
-            expect(usuarioService.repository.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
             expect(require('fs').existsSync).toHaveBeenCalledWith(fotoPath);
             expect(require('fs').unlinkSync).toHaveBeenCalledWith(fotoPath);
-            expect(usuarioService.repository.updateUsuario).not.toHaveBeenCalled();
+            expect(usuarioService.model.updateUsuario).not.toHaveBeenCalled();
         });
     });
 });
