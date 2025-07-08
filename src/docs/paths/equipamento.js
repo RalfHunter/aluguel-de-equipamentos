@@ -18,7 +18,7 @@ const equipamentoPaths = {
           description: "Lista paginada de equipamentos",
           content: {
             "application/json": {
-              schema: { $ref: "#/components/schemas/EquipamentoList" }
+              schema: { $ref: "#/components/schemas/EquipamentoListagem" }
             }
           }
         }
@@ -33,7 +33,7 @@ const equipamentoPaths = {
         required: true,
         content: {
           "application/json": {
-            schema: { $ref: "#/components/schemas/EquipamentoCreate" }
+            schema: { $ref: "#/components/schemas/EquipamentoPost" } 
           }
         }
       },
@@ -42,7 +42,7 @@ const equipamentoPaths = {
           description: "Equipamento criado",
           content: {
             "application/json": {
-              schema: { $ref: "#/components/schemas/Equipamento" }
+              schema: { $ref: "#/components/schemas/EquipamentoDetalhes" } 
             }
           }
         },
@@ -55,11 +55,18 @@ const equipamentoPaths = {
       tags: ["Equipamentos"],
       summary: "Buscar equipamento por ID",
       parameters: [
-        { name: "id", in: "path", required: true, schema: { $ref: "#/components/schemas/EquipamentoId" } }
+        { name: "id", in: "path", required: true, schema: { type: "string" } } 
       ],
       security: [{ bearerAuth: [] }],
       responses: {
-        200: { description: "Equipamento encontrado", content: { "application/json": { schema: { $ref: "#/components/schemas/Equipamento" } } } },
+        200: {
+          description: "Equipamento encontrado",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/EquipamentoDetalhes" } 
+            }
+          }
+        },
         400: { description: "ID inválido ou não encontrado" }
       }
     },
@@ -69,18 +76,25 @@ const equipamentoPaths = {
       description: "Atualiza valor da diária ou quantidade (somente locador).",
       security: [{ bearerAuth: [] }],
       parameters: [
-        { name: "id", in: "path", required: true, schema: { $ref: "#/components/schemas/EquipamentoId" } }
+        { name: "id", in: "path", required: true, schema: { type: "string" } } 
       ],
       requestBody: {
         required: true,
         content: {
           "application/json": {
-            schema: { $ref: "#/components/schemas/EquipamentoUpdate" }
+            schema: { $ref: "#/components/schemas/EquipamentoPutPatch" } 
           }
         }
       },
       responses: {
-        200: { description: "Equipamento atualizado" },
+        200: {
+          description: "Equipamento atualizado",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/EquipamentoDetalhes" } 
+            }
+          }
+        },
         400: { description: "Erro de validação ou campos inválidos" }
       }
     }
@@ -92,10 +106,17 @@ const equipamentoPaths = {
       description: "Aprovação de equipamento pendente (somente admin).",
       security: [{ bearerAuth: [] }],
       parameters: [
-        { name: "id", in: "path", required: true, schema: { $ref: "#/components/schemas/EquipamentoId" } }
+        { name: "id", in: "path", required: true, schema: { type: "string" } } 
       ],
       responses: {
-        200: { description: "Equipamento aprovado" },
+        200: {
+          description: "Equipamento aprovado",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/EquipamentoDetalhes" } 
+            }
+          }
+        },
         400: { description: "ID inválido ou status não pendente" },
         403: { description: "Acesso restrito a admin" }
       }
@@ -108,10 +129,17 @@ const equipamentoPaths = {
       description: "Reprovação e exclusão de equipamento pendente (somente admin).",
       security: [{ bearerAuth: [] }],
       parameters: [
-        { name: "id", in: "path", required: true, schema: { $ref: "#/components/schemas/EquipamentoId" } }
+        { name: "id", in: "path", required: true, schema: { type: "string" } } 
       ],
       responses: {
-        200: { description: "Equipamento reprovado e excluído" },
+        200: {
+          description: "Equipamento reprovado e excluído",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/EquipamentoDetalhes" } 
+            }
+          }
+        },
         400: { description: "ID inválido ou status não pendente" },
         403: { description: "Acesso restrito a admin" }
       }
