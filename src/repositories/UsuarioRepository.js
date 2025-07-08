@@ -68,7 +68,7 @@ class UsuarioRepository {
 
     }
     async buscarPorId(id, includeTokens = false) {
-        console.log("SERVICE",id)
+        console.log("SERVICE", id)
         // console.log("Estou no bucarPorId no UsuarioRepository")
         let query = this.model.findById(id).populate('grupos')
         if (includeTokens) {
@@ -188,45 +188,138 @@ class UsuarioRepository {
         const usuario = await this.model.findByIdAndDelete(id);
         return usuario;
     }
-          async armazenarTokens(id, accesstoken, refreshtoken) {
-              const documento = await this.model.findById(id);
-              if (!documento) {
-                  throw new CustomError({
-                      statusCode: 404,
-                      errorType: 'resourceNotFound',
-                      field: 'Usuário',
-                      details: [],
-                      customMessage: messages.error.resourceNotFound('Usuário')
-                  });
-              }
-              documento.accessToken = accesstoken;
-              documento.refreshToken = refreshtoken;
-              const data = await documento.save();
-              return data;
-          }
-      
-          /**
-           * Atualizar usuário removendo accesstoken e refreshtoken
-           */
-          async removeToken(id) {
-              // Criar objeto com os campos a serem atualizados
-              const parsedData = {
-                  accessToken: null,
-                  refreshToken: null
-              };
-              const usuario = await this.model.findByIdAndUpdate(id, parsedData, { new: true }).exec();
-      
-              // Validar se o usuário atualizado foi retornado
-              if (!usuario) {
-                  throw new CustomError({
-                      statusCode: 404,
-                      errorType: 'resourceNotFound',
-                      field: 'Usuário',
-                      details: [],
-                      customMessage: messages.error.resourceNotFound('Usuário')
-                  });
-              }
-              return usuario;
-          }
+    async armazenarTokens(id, accesstoken, refreshtoken) {
+        const documento = await this.model.findById(id);
+        if (!documento) {
+            throw new CustomError({
+                statusCode: 404,
+                errorType: 'resourceNotFound',
+                field: 'Usuário',
+                details: [],
+                customMessage: messages.error.resourceNotFound('Usuário')
+            });
+        }
+        documento.accessToken = accesstoken;
+        documento.refreshToken = refreshtoken;
+        const data = await documento.save();
+        return data;
+    }
+
+    /**
+     * Atualizar usuário removendo accesstoken e refreshtoken
+     */
+    async removeToken(id) {
+        // Criar objeto com os campos a serem atualizados
+        const parsedData = {
+            accessToken: null,
+            refreshToken: null
+        };
+        const usuario = await this.model.findByIdAndUpdate(id, parsedData, { new: true }).exec();
+
+        // Validar se o usuário atualizado foi retornado
+        if (!usuario) {
+            throw new CustomError({
+                statusCode: 404,
+                errorType: 'resourceNotFound',
+                field: 'Usuário',
+                details: [],
+                customMessage: messages.error.resourceNotFound('Usuário')
+            });
+        }
+        return usuario;
+    }
+    async atualizarSenha(id, senha) {
+        const usuario = await this.model.findByIdAndUpdate(
+            id,
+            {
+                // atualiza a senha
+                $set: { senha: senha },
+                // remove os campos de código de recuperação e token único
+                $unset: {
+                    tokenUnico: "",
+                    exp_tokenUnico_recuperacao: ""
+                }
+            },
+            { new: true } // Retorna o documento atualizado
+        ).exec();
+
+        if (!usuario) {
+            throw new CustomError({
+                statusCode: 404,
+                errorType: 'resourceNotFound',
+                field: 'Usuário',
+                details: [],
+                customMessage: messages.error.resourceNotFound('Usuário')
+            });
+        }
+
+        return usuario;
+    }
+    async alterar(id, parsedData) {
+        const usuario = await this.model.findByIdAndUpdate(id, parsedData, { new: true })
+
+        if (!usuario) {
+            throw new CustomError({
+                statusCode: HttpStatusCodes.NOT_FOUND.code,
+                errorType: 'resourceNotFound',
+                field: 'Usuário',
+                details: [],
+                customMessage: messages.error.resourceNotFound('Usuário')
+            });
+        }
+        return usuario;
+    }
+    async atualizarSenha(id, senha) {
+        const usuario = await this.model.findByIdAndUpdate(
+            id,
+            {
+                // atualiza a senha
+                $set: { senha: senha },
+                // remove os campos de código de recuperação e token único
+                $unset: {
+                    tokenUnico: "",
+                    exp_tokenUnico_recuperacao: ""
+                }
+            },
+            { new: true } // Retorna o documento atualizado
+        ).exec();
+
+        if (!usuario) {
+            throw new CustomError({
+                statusCode: 404,
+                errorType: 'resourceNotFound',
+                field: 'Usuário',
+                details: [],
+                customMessage: messages.error.resourceNotFound('Usuário')
+            });
+        }
+
+        return usuario;
+    }
+    async buscarPorTokenUnico(tokenUnico) {
+        const filtro = { tokenUnico };
+        const documento = await this.model.findOne(filtro, ['+senha', '+tokenUnico', '+exp_tokenUnico_recuperacao']);
+        return documento;
+    }
+
+    // PATCH /usuarios/:id
+    async alterar(id, parsedData) {
+        const usuario = await this.model.findByIdAndUpdate(id, parsedData, { new: true })
+
+        if (!usuario) {
+            throw new CustomError({
+                statusCode: HttpStatusCodes.NOT_FOUND.code,
+                errorType: 'resourceNotFound',
+                field: 'Usuário',
+                details: [],
+                customMessage: messages.error.resourceNotFound('Usuário')
+            });
+        }
+        return usuario;
+    }
+
+
+
+
 }
 export default UsuarioRepository

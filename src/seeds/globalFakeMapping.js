@@ -22,6 +22,7 @@ const fakeMappings = {
     ativo: () => fakebr.random.arrayElement([true, false]),
     fotoUsuario: () => fakebr.internet.avatar(),
     tokenUnico: () => "",
+    exp_tokenUnico_recuperacao: () =>"",
     accessToken: () => "",
     refreshToken: () => "",
     codigo_recupera_senha: () => "",

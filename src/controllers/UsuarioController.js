@@ -88,9 +88,8 @@ class UsuarioController {
         let data = await this.service.cadastrarUsuario(parsedData);
 
         // Converte o documento Mongoose para um objeto simples
-        let usuarioLimpo = data.toObject();
 
-        return CommonResponse.created(res, usuarioLimpo);
+        return CommonResponse.created(res, data);
 
     }
 
