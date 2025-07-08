@@ -12,11 +12,14 @@ class EquipamentoService {
   }
 
   async listar(filtros) {
+    const usuarioId = filtros.usuarioId;
+    delete filtros.usuarioId;
+
     if (filtros.status === 'pendente') {
       return await this.repository.listarPendentes();
     }
 
-    const { query, pagina, limite } = this._processarFiltros(filtros);
+    const { query, pagina, limite } = this._processarFiltros(filtros, usuarioId);
     return await this.repository.listar(query, pagina, limite);
   }
 
@@ -46,7 +49,6 @@ class EquipamentoService {
   async aprovar(id, usuarioId) {
     const equipamento = await this._buscarEquipamentoExistente(id);
     const usuario = await Usuario.findById(usuarioId).populate('grupos');
-    console.log('Usuário e Grupos (aprovar no service):', usuario);
 
     if (!usuario || !usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao))) {
       throw new CustomError({
@@ -70,7 +72,6 @@ class EquipamentoService {
   async reprovar(id, usuarioId) {
     const equipamento = await this._buscarEquipamentoExistente(id);
     const usuario = await Usuario.findById(usuarioId).populate('grupos');
-    console.log('Usuário e Grupos (reprovar no service):', usuario);
 
     if (!usuario || !usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao))) {
       throw new CustomError({
@@ -113,7 +114,7 @@ class EquipamentoService {
     return equipamento;
   }
 
-  _processarFiltros(filtros) {
+  _processarFiltros(filtros, usuarioId) {
     const pagina = parseInt(filtros.page) || 1;
     const limite = parseInt(filtros.limit) || 10;
     const builder = new EquipamentoFilterBuilder();
@@ -128,8 +129,24 @@ class EquipamentoService {
 
     builder
       .comCategoria(filtros.categoria)
-      .comStatus(status)
       .comFaixaDeValor(filtros.minValor, filtros.maxValor);
+
+    if (status === 'inativo' && usuarioId) {
+      builder.comStatus(status);
+      builder.filtros.equiUsuario = usuarioId; // Apenas o dono pode ver inativos
+    } else if (status === 'pendente') {
+      builder.comStatus(status); // Apenas admins/mods podem ver pendentes
+    } else if (status === 'ativo' || !status) {
+      if (usuarioId) {
+        builder.filtros.$or = [
+          { equiStatus: 'ativo' },
+          { equiStatus: 'pendente', equiUsuario: usuarioId },
+          { equiStatus: 'inativo', equiUsuario: usuarioId }
+        ];
+      } else {
+        builder.comStatus('ativo'); // Padrão para não autenticados
+      }
+    }
 
     const query = builder.build();
     return { query, pagina, limite };

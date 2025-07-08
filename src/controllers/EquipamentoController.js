@@ -86,20 +86,41 @@ class EquipamentoController {
 
   async listar(req, res) {
     const query = req.query || {};
+    const usuarioId = req.user_id;
 
     if (Object.keys(query).length !== 0) {
       await EquipamentoQuerySchema.parseAsync(query);
     }
 
+    const usuario = await Usuario.findById(usuarioId).populate('grupos');
+    const isAdminOrMod = usuario && usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao));
+
     if (query.status === 'pendente') {
-      const usuario = await Usuario.findById(req.user_id).populate('grupos');
-      console.log('Usuário e Grupos (listar):', usuario);
-      if (!usuario || !usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao))) {
+      if (!isAdminOrMod) {
         return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito a administradores ou moderadores para filtrar equipamentos pendentes.');
+      }
+    } else if (query.status === 'inativo') {
+      if (!usuarioId) {
+        return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Usuário não autenticado.');
+      }
+      // Apenas o dono pode listar inativos
+      query.equiUsuario = usuarioId;
+    } else if (!query.status || query.status === 'ativo') {
+      // Usuários comuns veem apenas ativos e os próprios pendentes/inativos
+      if (!isAdminOrMod && usuarioId) {
+        query.$or = [
+          { equiStatus: 'ativo' },
+          { equiStatus: 'pendente', equiUsuario: usuarioId },
+          { equiStatus: 'inativo', equiUsuario: usuarioId }
+        ];
+      } else if (isAdminOrMod) {
+        query.equiStatus = { $in: ['ativo', 'pendente'] }; // Admins/mods veem apenas ativos e pendentes
+      } else {
+        query.equiStatus = 'ativo'; // Padrão para não autenticados
       }
     }
 
-    const data = await this.service.listar(query);
+    const data = await this.service.listar({ ...query, usuarioId });
     return CommonResponse.success(res, data);
   }
 
@@ -108,7 +129,20 @@ class EquipamentoController {
     EquipamentoIdSchema.parse(id);
 
     const usuarioId = req.user_id?.toString();
+    const usuario = await Usuario.findById(usuarioId).populate('grupos');
+    const isAdminOrMod = usuario && usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao));
+
     const equipamento = await this.service.listarPorId(id, usuarioId);
+
+    if (equipamento && usuarioId) {
+      const isOwner = equipamento.equiUsuario?.toString() === usuarioId;
+      if (!isOwner && !isAdminOrMod) {
+        return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito a equipamentos do próprio usuário.');
+      }
+      if (isAdminOrMod && !isOwner && !['ativo', 'pendente'].includes(equipamento.equiStatus)) {
+        return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Administradores e moderadores só podem acessar equipamentos ativos ou pendentes, exceto os próprios.');
+      }
+    }
 
     return CommonResponse.success(res, equipamento);
   }
@@ -116,7 +150,6 @@ class EquipamentoController {
   async criar(req, res) {
     const usuarioLogado = req.user_id;
     const usuario = await Usuario.findById(usuarioLogado).populate('grupos');
-    console.log('Usuário e Grupos (criar):', usuario);
     if (!usuario || !usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao))) {
       return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito para criar equipamentos.');
     }
@@ -151,8 +184,7 @@ class EquipamentoController {
     EquipamentoIdSchema.parse(id);
 
     const usuario = await Usuario.findById(req.user_id).populate('grupos');
-    console.log('Usuário e Grupos (atualizar):', usuario);
-    if (!usuario || !usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao))) { // Ajustado para incluir moderador
+    if (!usuario || !usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao))) {
       return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito para atualizar equipamentos.');
     }
 
@@ -164,8 +196,7 @@ class EquipamentoController {
 
   async aprovar(req, res) {
     const usuario = await Usuario.findById(req.user_id).populate('grupos');
-    console.log('Usuário e Grupos (aprovar):', usuario);
-    if (!usuario || !usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao))) { // Ajustado para incluir moderador
+    if (!usuario || !usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao))) {
       return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito a administradores ou moderadores.');
     }
 
@@ -178,8 +209,7 @@ class EquipamentoController {
 
   async reprovar(req, res) {
     const usuario = await Usuario.findById(req.user_id).populate('grupos');
-    console.log('Usuário e Grupos (reprovar):', usuario);
-    if (!usuario || !usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao))) { // Ajustado para incluir moderador
+    if (!usuario || !usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao))) {
       return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito a administradores ou moderadores.');
     }
 
@@ -201,8 +231,7 @@ class EquipamentoController {
     }
 
     const usuario = await Usuario.findById(req.user_id).populate('grupos');
-    console.log('Usuário e Grupos (adicionarFoto):', usuario);
-    if (!usuario || !usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao))) { // Ajustado para incluir moderador
+    if (!usuario || !usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao))) {
       return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito para adicionar fotos.');
     }
 
