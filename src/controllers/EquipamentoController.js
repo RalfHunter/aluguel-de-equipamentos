@@ -251,15 +251,9 @@ class EquipamentoController {
     if (!equipamento) {
       return CommonResponse.error(res, HttpStatusCodes.NOT_FOUND.code, 'Equipamento não encontrado.');
     }
-    if (equipamento.equiUsuario?.toString() !== usuarioId) {
-      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Apenas o dono do equipamento pode inativá-lo.', {
-        equipamentoId: id,
-        usuarioId,
-        dono: equipamento.equiUsuario?.toString()
-      });
-    }
 
     const resultado = await this.service.inativar(id, usuarioId);
+    console.log('Resultado da inativação:', resultado);
     return CommonResponse.success(res, resultado, 200, 'Equipamento inativado com sucesso.');
   }
 

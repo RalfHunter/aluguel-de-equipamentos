@@ -114,8 +114,9 @@ class EquipamentoService {
 
   async inativar(id, usuarioId) {
     const equipamento = await this._buscarEquipamentoExistente(id);
+    console.log('Inativar - Equipamento:', { id, equiUsuario: equipamento.equiUsuario?.toString(), equiStatus: equipamento.equiStatus, usuarioId });
 
-    if (equipamento.equiUsuario?.toString() !== usuarioId) {
+    if (!equipamento.equiUsuario || equipamento.equiUsuario.toString() !== usuarioId) {
       throw new CustomError({
         statusCode: HttpStatusCodes.FORBIDDEN.code,
         customMessage: 'Apenas o dono do equipamento pode inativá-lo.',
@@ -144,6 +145,7 @@ class EquipamentoService {
         { dataInicial: { $gte: new Date() } }
       ]
     });
+    console.log('Reservas ativas encontradas:', reservasAtivas);
 
     if (reservasAtivas > 0) {
       throw new CustomError({
@@ -154,6 +156,7 @@ class EquipamentoService {
 
     equipamento.equiStatus = 'inativo';
     await equipamento.save();
+    console.log('Equipamento inativado com sucesso:', { id, newStatus: equipamento.equiStatus });
     return equipamento;
   }
   
@@ -200,8 +203,9 @@ class EquipamentoService {
     return { query, pagina, limite };
   }
 
-  _buscarEquipamentoExistente(id) {
-    const equipamento = this.repository.listarPorId(id);
+  async _buscarEquipamentoExistente(id) {
+    const equipamento = await this.repository.listarPorId(id);
+    console.log('Equipamento buscado:', { id, equiUsuario: equipamento?.equiUsuario?.toString(), equiStatus: equipamento?.equiStatus });
     if (!equipamento) {
       throw new CustomError({
         statusCode: HttpStatusCodes.NOT_FOUND.code,
