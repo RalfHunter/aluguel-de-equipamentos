@@ -11,7 +11,7 @@ services:
     container_name: api-aluguel
     build: ./
     environment:
-      - DB_URL=mongodb://mongodb-aluguel:27017/exemplo
+      - DB_URL=mongodb://mongodb-aluguel:27017/aluguel-de-equipamentos  
     ports:
       - 5011:5011
 
