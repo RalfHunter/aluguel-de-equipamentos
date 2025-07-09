@@ -25,6 +25,16 @@ const grupoAdmin = {
         substituir: true,
         modificar: true,
         excluir: true
+    },
+    {
+        rota: "avaliacoes:id",
+        dominio: "locahost",
+        ativo: false,
+        buscar: false,
+        enviar: false,
+        substituir: false,
+        modificar: false,
+        excluir: true
     }
     ]
 }
@@ -51,6 +61,16 @@ const grupoModerador = {
         enviar: true,
         substituir: true,
         modificar: true,
+        excluir: true
+    },
+    {
+        rota: "avaliacoes:id",
+        dominio: "locahost",
+        ativo: false,
+        buscar: false,
+        enviar: false,
+        substituir: false,
+        modificar: false,
         excluir: true
     }
     ]

@@ -15,14 +15,14 @@ class MockObjectId {
   }
 }
 
-jest.mock('../../utils/logger.js', () => ({
+jest.mock('../../../utils/logger.js', () => ({
   info: jest.fn(),
   error: jest.fn(),
 }));
 
-jest.mock('../../models/Reserva.js');
+jest.mock('../../../models/Reserva.js');
 
-jest.mock('../../models/Equipamento.js', () => {
+jest.mock('../../../models/Equipamento.js', () => {
   return {
     find: jest.fn().mockReturnThis(),
     lean: jest.fn().mockReturnThis(),
@@ -30,7 +30,7 @@ jest.mock('../../models/Equipamento.js', () => {
   };
 });
 
-jest.mock('../../models/Usuario.js', () => {
+jest.mock('../../../models/Usuario.js', () => {
   return {
     find: jest.fn().mockReturnThis(),
     lean: jest.fn().mockReturnThis(),
@@ -38,7 +38,7 @@ jest.mock('../../models/Usuario.js', () => {
   };
 });
 
-jest.mock('../../repositories/filters/ReservaFilterBuilder.js', () => {
+jest.mock('../../../repositories/filters/ReservaFilterBuilder.js', () => {
   return jest.fn().mockImplementation(() => ({
     comDataInicial: jest.fn().mockReturnThis(),
     comDataFinal: jest.fn().mockReturnThis(),

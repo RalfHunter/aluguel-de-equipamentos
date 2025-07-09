@@ -27,6 +27,5 @@ export default  {
     // testMatch:['**/GrupoService.test.js']
     // testMatch:['**/GrupoRepository.test.js']
     // testMatch:['**/grupoRoutes.test.js']
-    // testMatch:['**/UsuarioSchema.test.js']
-
+       testMatch:['**/ReservaController.test.js', '**/ReservaService.test.js', '**/ReservaRepository.test.js', '**/ReservaFilterBuilder.test.js']
 };
