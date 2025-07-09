@@ -1,4 +1,4 @@
-import { ReservaSchema } from '../../../utils/validators/schemas/zod/ReservaSchema.js';
+import { ReservaSchema } from '../../../../../../utils/validators/schemas/zod/ReservaSchema.js';
 import { z } from 'zod';
 import mongoose from 'mongoose';
 

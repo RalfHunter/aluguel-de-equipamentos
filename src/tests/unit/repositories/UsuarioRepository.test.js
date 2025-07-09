@@ -575,4 +575,267 @@ describe('UsuarioRepository', () => {
             }
         });
     });
+
+    describe('buscarPorTokenUnico', () => {
+        it('deve retornar usuário quando token único é encontrado', async () => {
+            const tokenUnico = 'token_unico_123';
+            const expectedUser = {
+                ...req.params,
+                ...mockData,
+                tokenUnico: tokenUnico,
+                exp_tokenUnico_recuperacao: new Date(),
+                senha: '$2b$08$aJPQu/6o0B4yCywMX1KAzewhCUkhvVQssUODlw.6ZpLDa79WNAlvS'
+            };
+
+            usuarioRepository.model.findOne.mockResolvedValue(expectedUser);
+
+            const resultado = await usuarioRepository.buscarPorTokenUnico(tokenUnico);
+
+            expect(usuarioRepository.model.findOne).toHaveBeenCalledWith(
+                { tokenUnico: tokenUnico },
+                ['+senha', '+tokenUnico', '+exp_tokenUnico_recuperacao']
+            );
+            expect(resultado).toEqual(expectedUser);
+        });
+
+        it('deve retornar null quando token único não é encontrado', async () => {
+            const tokenUnico = 'token_inexistente';
+
+            usuarioRepository.model.findOne.mockResolvedValue(null);
+
+            const resultado = await usuarioRepository.buscarPorTokenUnico(tokenUnico);
+
+            expect(usuarioRepository.model.findOne).toHaveBeenCalledWith(
+                { tokenUnico: tokenUnico },
+                ['+senha', '+tokenUnico', '+exp_tokenUnico_recuperacao']
+            );
+            expect(resultado).toBeNull();
+        });
+
+        it('deve buscar com filtros corretos', async () => {
+            const tokenUnico = 'abc123token';
+            
+            usuarioRepository.model.findOne.mockResolvedValue(null);
+
+            await usuarioRepository.buscarPorTokenUnico(tokenUnico);
+
+            expect(usuarioRepository.model.findOne).toHaveBeenCalledWith(
+                { tokenUnico: tokenUnico },
+                ['+senha', '+tokenUnico', '+exp_tokenUnico_recuperacao']
+            );
+        });
+    });
+
+    describe('atualizarSenha', () => {
+        it('deve atualizar senha com sucesso', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const novaSenha = 'nova_senha_hash';
+            const expectedResult = {
+                ...mockData,
+                _id: userId,
+                senha: novaSenha
+            };
+
+            const mockExec = jest.fn().mockResolvedValue(expectedResult);
+            usuarioRepository.model.findByIdAndUpdate.mockReturnValue({ exec: mockExec });
+
+            const resultado = await usuarioRepository.atualizarSenha(userId, novaSenha);
+
+            expect(usuarioRepository.model.findByIdAndUpdate).toHaveBeenCalledWith(
+                userId,
+                {
+                    $set: { senha: novaSenha },
+                    $unset: {
+                        tokenUnico: "",
+                        exp_tokenUnico_recuperacao: ""
+                    }
+                },
+                { new: true }
+            );
+            expect(mockExec).toHaveBeenCalled();
+            expect(resultado).toEqual(expectedResult);
+        });
+
+        it('deve lançar erro quando usuário não é encontrado', async () => {
+            const userId = 'id_inexistente';
+            const novaSenha = 'nova_senha_hash';
+
+            const mockExec = jest.fn().mockResolvedValue(null);
+            usuarioRepository.model.findByIdAndUpdate.mockReturnValue({ exec: mockExec });
+
+            await expect(usuarioRepository.atualizarSenha(userId, novaSenha))
+                .rejects.toThrow(CustomError);
+
+            await expect(usuarioRepository.atualizarSenha(userId, novaSenha))
+                .rejects.toThrow('Recurso não encontrado em Usuário.');
+
+            expect(usuarioRepository.model.findByIdAndUpdate).toHaveBeenCalledWith(
+                userId,
+                {
+                    $set: { senha: novaSenha },
+                    $unset: {
+                        tokenUnico: "",
+                        exp_tokenUnico_recuperacao: ""
+                    }
+                },
+                { new: true }
+            );
+            expect(mockExec).toHaveBeenCalled();
+        });
+
+        it('deve propagar erro quando findByIdAndUpdate falha', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const novaSenha = 'nova_senha_hash';
+
+            const mockExec = jest.fn().mockRejectedValue(new Error('Erro no banco de dados'));
+            usuarioRepository.model.findByIdAndUpdate.mockReturnValue({ exec: mockExec });
+
+            await expect(usuarioRepository.atualizarSenha(userId, novaSenha))
+                .rejects.toThrow('Erro no banco de dados');
+
+            expect(usuarioRepository.model.findByIdAndUpdate).toHaveBeenCalledWith(
+                userId,
+                {
+                    $set: { senha: novaSenha },
+                    $unset: {
+                        tokenUnico: "",
+                        exp_tokenUnico_recuperacao: ""
+                    }
+                },
+                { new: true }
+            );
+            expect(mockExec).toHaveBeenCalled();
+        });
+
+        it('deve usar os parâmetros corretos para atualização', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const novaSenha = 'senha_criptografada_123';
+
+            const mockExec = jest.fn().mockResolvedValue({
+                _id: userId,
+                senha: novaSenha
+            });
+            usuarioRepository.model.findByIdAndUpdate.mockReturnValue({ exec: mockExec });
+
+            await usuarioRepository.atualizarSenha(userId, novaSenha);
+
+            expect(usuarioRepository.model.findByIdAndUpdate).toHaveBeenCalledWith(
+                userId,
+                {
+                    $set: { senha: novaSenha },
+                    $unset: {
+                        tokenUnico: "",
+                        exp_tokenUnico_recuperacao: ""
+                    }
+                },
+                { new: true }
+            );
+        });
+    });
+
+    describe('alterar', () => {
+        it('deve alterar usuário com sucesso', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const dadosAtualizacao = { 
+                nome: 'Nome Alterado',
+                email: 'novo_email@test.com',
+                telefone: '(69) 99888-7777'
+            };
+            const expectedResult = {
+                ...mockData,
+                ...dadosAtualizacao,
+                _id: userId
+            };
+
+            usuarioRepository.model.findByIdAndUpdate.mockResolvedValue(expectedResult);
+
+            const resultado = await usuarioRepository.alterar(userId, dadosAtualizacao);
+
+            expect(usuarioRepository.model.findByIdAndUpdate).toHaveBeenCalledWith(
+                userId,
+                dadosAtualizacao,
+                { new: true }
+            );
+            expect(resultado).toEqual(expectedResult);
+        });
+
+        it('deve lançar erro quando usuário não é encontrado', async () => {
+            const userId = 'id_inexistente';
+            const dadosAtualizacao = { nome: 'Nome Alterado' };
+
+            usuarioRepository.model.findByIdAndUpdate.mockResolvedValue(null);
+
+            await expect(usuarioRepository.alterar(userId, dadosAtualizacao))
+                .rejects.toThrow(CustomError);
+
+            await expect(usuarioRepository.alterar(userId, dadosAtualizacao))
+                .rejects.toThrow('Recurso não encontrado em Usuário.');
+
+            expect(usuarioRepository.model.findByIdAndUpdate).toHaveBeenCalledWith(
+                userId,
+                dadosAtualizacao,
+                { new: true }
+            );
+        });
+
+        it('deve propagar erro quando findByIdAndUpdate falha', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const dadosAtualizacao = { nome: 'Nome Alterado' };
+
+            usuarioRepository.model.findByIdAndUpdate.mockRejectedValue(new Error('Erro no banco de dados'));
+
+            await expect(usuarioRepository.alterar(userId, dadosAtualizacao))
+                .rejects.toThrow('Erro no banco de dados');
+
+            expect(usuarioRepository.model.findByIdAndUpdate).toHaveBeenCalledWith(
+                userId,
+                dadosAtualizacao,
+                { new: true }
+            );
+        });
+
+        it('deve usar opções corretas na atualização', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const dadosAtualizacao = { 
+                nome: 'Novo Nome',
+                status: 'ativo'
+            };
+
+            usuarioRepository.model.findByIdAndUpdate.mockResolvedValue({
+                _id: userId,
+                ...dadosAtualizacao
+            });
+
+            await usuarioRepository.alterar(userId, dadosAtualizacao);
+
+            expect(usuarioRepository.model.findByIdAndUpdate).toHaveBeenCalledWith(
+                userId,
+                dadosAtualizacao,
+                { new: true }
+            );
+        });
+
+        it('deve permitir atualização de campos específicos', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const dadosAtualizacao = { 
+                telefone: '(69) 99111-2222'
+            };
+            const expectedResult = {
+                ...mockData,
+                telefone: '(69) 99111-2222',
+                _id: userId
+            };
+
+            usuarioRepository.model.findByIdAndUpdate.mockResolvedValue(expectedResult);
+
+            const resultado = await usuarioRepository.alterar(userId, dadosAtualizacao);
+
+            expect(usuarioRepository.model.findByIdAndUpdate).toHaveBeenCalledWith(
+                userId,
+                dadosAtualizacao,
+                { new: true }
+            );
+            expect(resultado).toEqual(expectedResult);
+        });
+    });
 })
