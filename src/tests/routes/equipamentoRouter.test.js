@@ -5,16 +5,12 @@ import http from 'http';
 //import  app  from '../../app.js';
 import '../../routes/equipamentoRoutes.js'; 
 
-dotenv.config();
-
-const PORT = process.env.PORT || 5011;
-const BASE_URL = `http://localhost:${PORT}`;
+let app = 'http://localhost:5011';
 
 let server;                             
 let tokenAdmin;
 let tokenUser;
 
-//jest.setTimeout(5011);
 
 describe('Rotas de Equipamentos - Integração', () => {
   beforeAll(async () => {
@@ -38,7 +34,7 @@ describe('Rotas de Equipamentos - Integração', () => {
     const userEmail = `user${unique}@teste.com`;
 
     try {
-      await request(BASE_URL)
+      await request(app)
         .post('/usuarios')
         .send({
           nome: 'Admin Teste',
@@ -50,7 +46,7 @@ describe('Rotas de Equipamentos - Integração', () => {
     } catch (err) {}
 
     // faz login como admin
-    const adminLoginRes = await request(BASE_URL)
+    const adminLoginRes = await request(app)
       .post('/login')
       .send({ email: adminEmail, senha: 'Senha@123' });
     tokenAdmin = adminLoginRes.body?.data?.user?.accessToken;
@@ -58,7 +54,7 @@ describe('Rotas de Equipamentos - Integração', () => {
 
     // criando usuário comum para testes
     try {
-      await request(BASE_URL)
+      await request(app)
         .post('/usuarios')
         .send({
           nome: 'User Teste',
@@ -70,7 +66,7 @@ describe('Rotas de Equipamentos - Integração', () => {
     } catch (err) {}
 
     //faz login como usuário comum
-    const userLoginRes = await request(BASE_URL)
+    const userLoginRes = await request(app)
       .post('/login')
       .send({ email: userEmail, senha: 'Senha@123' });
     tokenUser = userLoginRes.body?.data?.user?.accessToken;
@@ -96,7 +92,7 @@ describe('Rotas de Equipamentos - Integração', () => {
       ...override,
     };
 
-    const res = await request(BASE_URL)
+    const res = await request(app)
       .post('/equipamentos')
       .set('Authorization', `Bearer ${token}`)
       .set('Content-Type', 'multipart/form-data')
@@ -113,7 +109,7 @@ describe('Rotas de Equipamentos - Integração', () => {
 
   describe('GET /equipamentos', () => {
     it('deve listar equipamentos para usuário comum com filtro válido', async () => {
-      const res = await request(BASE_URL)
+      const res = await request(app)
         .get('/equipamentos?categoria=Parafusadeira&status=ativo&minValor=10&maxValor=100&page=1&limit=5')
         .set('Authorization', `Bearer ${tokenUser}`);
 
@@ -123,7 +119,7 @@ describe('Rotas de Equipamentos - Integração', () => {
     });
 
     it('deve retornar erro 403 para usuário comum ao filtrar status pendente', async () => {
-      const res = await request(BASE_URL)
+      const res = await request(app)
         .get('/equipamentos?status=pendente')
         .set('Authorization', `Bearer ${tokenUser}`);
 
@@ -132,7 +128,7 @@ describe('Rotas de Equipamentos - Integração', () => {
     });
 
     it('deve permitir admin filtrar status pendente', async () => {
-      const res = await request(BASE_URL)
+      const res = await request(app)
         .get('/equipamentos?status=pendente')
         .set('Authorization', `Bearer ${tokenAdmin}`);
 
@@ -141,7 +137,7 @@ describe('Rotas de Equipamentos - Integração', () => {
     });
 
     it('deve listar equipamentos sem filtros', async () => {
-      const res = await request(BASE_URL)
+      const res = await request(app)
         .get('/equipamentos')
         .set('Authorization', `Bearer ${tokenUser}`);
 
@@ -151,7 +147,7 @@ describe('Rotas de Equipamentos - Integração', () => {
     });
 
     it('deve retornar erro 401 sem token', async () => {
-      const res = await request(BASE_URL).get('/equipamentos');
+      const res = await request(app).get('/equipamentos');
       expect(res.status).toBe(401);
       expect(res.body.message).toMatch(/não autorizado|token/i);
     });
@@ -162,7 +158,7 @@ describe('Rotas de Equipamentos - Integração', () => {
       const equipamento = await criarEquipamentoValido(tokenUser);
       expect(equipamento).toHaveProperty('_id');
 
-      const res = await request(BASE_URL)
+      const res = await request(app)
         .get(`/equipamentos/${equipamento._id}`)
         .set('Authorization', `Bearer ${tokenUser}`);
 
@@ -173,7 +169,7 @@ describe('Rotas de Equipamentos - Integração', () => {
 
     it('deve retornar 404 para ID inexistente', async () => {
       const id = new mongoose.Types.ObjectId().toString();
-      const res = await request(BASE_URL)
+      const res = await request(app)
         .get(`/equipamentos/${id}`)
         .set('Authorization', `Bearer ${tokenUser}`);
 
@@ -193,7 +189,7 @@ describe('Rotas de Equipamentos - Integração', () => {
         equiCategoria: 'Parafusadeira',
       };
 
-      const res = await request(BASE_URL)
+      const res = await request(app)
         .post('/equipamentos')
         .set('Authorization', `Bearer ${tokenUser}`)
         .set('Content-Type', 'multipart/form-data')
@@ -209,7 +205,7 @@ describe('Rotas de Equipamentos - Integração', () => {
     });
 
     it('deve retornar 400 com dados obrigatórios ausentes', async () => {
-      const res = await request(BASE_URL)
+      const res = await request(app)
         .post('/equipamentos')
         .set('Authorization', `Bearer ${tokenUser}`)
         .set('Content-Type', 'multipart/form-data');
@@ -219,7 +215,7 @@ describe('Rotas de Equipamentos - Integração', () => {
     });
 
     it('deve retornar 401 sem token', async () => {
-      const res = await request(BASE_URL)
+      const res = await request(app)
         .post('/equipamentos')
         .set('Content-Type', 'multipart/form-data');
 
@@ -238,7 +234,7 @@ describe('Rotas de Equipamentos - Integração', () => {
         equiValorDiaria: '80',
       };
 
-      const res = await request(BASE_URL)
+      const res = await request(app)
         .patch(`/equipamentos/${equipamento._id}`)
         .set('Authorization', `Bearer ${tokenUser}`)
         .send(dadosAtualizados);
@@ -250,7 +246,7 @@ describe('Rotas de Equipamentos - Integração', () => {
 
     it('deve retornar 404 para ID inexistente', async () => {
       const id = new mongoose.Types.ObjectId().toString();
-      const res = await request(BASE_URL)
+      const res = await request(app)
         .patch(`/equipamentos/${id}`)
         .set('Authorization', `Bearer ${tokenUser}`)
         .send({ equiNome: 'Parafusadeira' });
@@ -263,7 +259,7 @@ describe('Rotas de Equipamentos - Integração', () => {
       const equipamento = await criarEquipamentoValido(tokenUser);
       expect(equipamento).toHaveProperty('_id');
 
-      const res = await request(BASE_URL)
+      const res = await request(app)
         .patch(`/equipamentos/${equipamento._id}`)
         .send({ equiNome: 'Parafusadeira' });
 
@@ -277,7 +273,7 @@ describe('Rotas de Equipamentos - Integração', () => {
       const equipamento = await criarEquipamentoValido(tokenUser);
       expect(equipamento).toHaveProperty('_id');
 
-      const res = await request(BASE_URL)
+      const res = await request(app)
         .patch(`/equipamentos/${equipamento._id}/aprovar`)
         .set('Authorization', `Bearer ${tokenAdmin}`);
 
@@ -289,7 +285,7 @@ describe('Rotas de Equipamentos - Integração', () => {
       const equipamento = await criarEquipamentoValido(tokenUser);
       expect(equipamento).toHaveProperty('_id');
 
-      const res = await request(BASE_URL)
+      const res = await request(app)
         .patch(`/equipamentos/${equipamento._id}/aprovar`)
         .set('Authorization', `Bearer ${tokenUser}`);
 
@@ -299,7 +295,7 @@ describe('Rotas de Equipamentos - Integração', () => {
 
     it('deve retornar 404 para ID inexistente', async () => {
       const id = new mongoose.Types.ObjectId().toString();
-      const res = await request(BASE_URL)
+      const res = await request(app)
         .patch(`/equipamentos/${id}/aprovar`)
         .set('Authorization', `Bearer ${tokenAdmin}`);
 
@@ -313,7 +309,7 @@ describe('Rotas de Equipamentos - Integração', () => {
       const equipamento = await criarEquipamentoValido(tokenUser);
       expect(equipamento).toHaveProperty('_id');
 
-      const res = await request(BASE_URL)
+      const res = await request(app)
         .patch(`/equipamentos/${equipamento._id}/reprovar`)
         .set('Authorization', `Bearer ${tokenAdmin}`);
 
@@ -325,7 +321,7 @@ describe('Rotas de Equipamentos - Integração', () => {
       const equipamento = await criarEquipamentoValido(tokenUser);
       expect(equipamento).toHaveProperty('_id');
 
-      const res = await request(BASE_URL)
+      const res = await request(app)
         .patch(`/equipamentos/${equipamento._id}/reprovar`)
         .set('Authorization', `Bearer ${tokenUser}`);
 
@@ -335,7 +331,7 @@ describe('Rotas de Equipamentos - Integração', () => {
 
     it('deve retornar 404 para ID inexistente', async () => {
       const id = new mongoose.Types.ObjectId().toString();
-      const res = await request(BASE_URL)
+      const res = await request(app)
         .patch(`/equipamentos/${id}/reprovar`)
         .set('Authorization', `Bearer ${tokenAdmin}`);
 
@@ -347,13 +343,11 @@ describe('Rotas de Equipamentos - Integração', () => {
       const equipamento = await criarEquipamentoValido(tokenUser);
       expect(equipamento).toHaveProperty('_id');
 
-      // Aprovar primeiro
-      await request(BASE_URL)
+      await request(app)
         .patch(`/equipamentos/${equipamento._id}/aprovar`)
         .set('Authorization', `Bearer ${tokenAdmin}`);
 
-      // Tentar reprovar
-      const res = await request(BASE_URL)
+      const res = await request(app)
         .patch(`/equipamentos/${equipamento._id}/reprovar`)
         .set('Authorization', `Bearer ${tokenAdmin}`);
 
