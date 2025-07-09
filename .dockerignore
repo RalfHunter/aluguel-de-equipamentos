@@ -2,5 +2,6 @@ node_modules/
 coverage/
 .git
 .env
-logs
-documentacao
+logs/
+documentacao/
+uploads/
