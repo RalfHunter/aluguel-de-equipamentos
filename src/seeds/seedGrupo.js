@@ -45,6 +45,16 @@ const grupoAdmin = {
         substituir: true,
         modificar: true,
         excluir: false
+    },
+    {
+        rota: "avaliacoes:id",
+        dominio: "locahost",
+        ativo: false,
+        buscar: false,
+        enviar: false,
+        substituir: false,
+        modificar: false,
+        excluir: true
     }
     ]
 }
@@ -72,9 +82,20 @@ const grupoModerador = {
         substituir: true,
         modificar: true,
         excluir: false
+    },
+    {
+        rota: "avaliacoes:id",
+        dominio: "locahost",
+        ativo: false,
+        buscar: false,
+        enviar: false,
+        substituir: false,
+        modificar: false,
+        excluir: true
     }
     ]
 }
+
 
 const grupoUsuario = {
     nome: 'usuario',
@@ -101,7 +122,7 @@ const grupoUsuario = {
         modificar: true,
         excluir: false
     },
-{
+    {
         rota: 'usuarios-id-foto',
         dominio: 'localhost',
         ativo: true,

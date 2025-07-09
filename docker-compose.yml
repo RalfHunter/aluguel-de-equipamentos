@@ -11,10 +11,9 @@ services:
     container_name: api-aluguel
     build: ./
     environment:
-      - PORT=3000
       - DB_URL=mongodb://mongodb-aluguel:27017/exemplo
     ports:
-      - 3000:3000
+      - 5011:5011
 
 volumes:
   vol-mongodb-aluguel:
