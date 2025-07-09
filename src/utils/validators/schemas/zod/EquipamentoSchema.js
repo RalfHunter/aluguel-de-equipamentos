@@ -42,6 +42,10 @@ export const equipamentoSchema = z.object({
   }).default('pendente'),
 });
 
+export const equipamentoStatusSchema = z.object({
+  status: z.enum(['ativo', 'inativo'], { errorMap: () => ({ message: 'Status deve ser "ativo" ou "inativo"' }) }),
+});
+
 export const equipamentoUpdateSchema = z.object({
   equiValorDiaria: z.number({
     invalid_type_error: "Valor da diária deve ser um número",

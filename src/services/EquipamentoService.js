@@ -95,56 +95,29 @@ class EquipamentoService {
     await this.repository.excluir(id);
     return { id, mensagem: 'Equipamento excluído com sucesso.' };
   }
-
-async inativar(id, usuarioId) {
-  const equipamento = await this.repository.listarPorId(id); 
-
+async atualizarStatus(id, usuarioId, novoStatus) {
+  const equipamento = await this.repository.listarPorId(id);
+  if (!equipamento) throw new CustomError({ statusCode: HttpStatusCodes.NOT_FOUND.code, customMessage: 'Equipamento não encontrado.' });
   const donoId = equipamento.equiUsuario?._id?.toString() || equipamento.equiUsuario?.toString();
-  console.log('DonoId:', donoId, 'Usuario logado:', usuarioId);
-
-  if (!donoId || donoId !== usuarioId) {
-    throw new CustomError({
-      statusCode: HttpStatusCodes.FORBIDDEN.code,
-      customMessage: 'Apenas o dono do equipamento pode inativá-lo.',
+  if (!donoId || donoId !== usuarioId) throw new CustomError({ statusCode: HttpStatusCodes.FORBIDDEN.code, customMessage: 'Apenas o dono do equipamento pode alterar seu status.' });
+  if (equipamento.equiStatus === 'pendente') throw new CustomError({ statusCode: HttpStatusCodes.FORBIDDEN.code, customMessage: 'Não é possível alterar o status de um equipamento pendente.' });
+  if (equipamento.equiStatus === novoStatus) throw new CustomError({ statusCode: HttpStatusCodes.CONFLICT.code, customMessage: `O equipamento já está ${novoStatus}.` });
+  if (novoStatus === 'inativo') {
+    const reservasAtivas = await this.reservaModel.countDocuments({
+      equipamentos: new mongoose.Types.ObjectId(id),
+      statusReserva: { $in: ['pendente', 'confirmada'] },
+      $or: [{ dataInicial: { $lte: new Date() }, dataFinal: { $gte: new Date() } }, { dataInicial: { $gte: new Date() } }],
     });
+    if (reservasAtivas > 0) throw new CustomError({ statusCode: HttpStatusCodes.CONFLICT.code, customMessage: 'Não é possível inativar equipamento com reservas ativas.' });
   }
-
-  if (equipamento.equiStatus === 'inativo') {
-    throw new CustomError({
-      statusCode: HttpStatusCodes.CONFLICT.code,
-      customMessage: 'O equipamento já está inativo.',
-    });
+  if ((novoStatus === 'ativo' && equipamento.equiStatus !== 'inativo') || (novoStatus === 'inativo' && equipamento.equiStatus !== 'ativo')) {
+    throw new CustomError({ statusCode: HttpStatusCodes.BAD_REQUEST.code, customMessage: `Transição inválida: de ${equipamento.equiStatus} para ${novoStatus}.` });
   }
-
-  if (equipamento.equiStatus === 'pendente') {
-    throw new CustomError({
-      statusCode: HttpStatusCodes.FORBIDDEN.code,
-      customMessage: 'Não é possível inativar um equipamento pendente.',
-    });
-  }
-
-  const reservasAtivas = await this.reservaModel.countDocuments({
-    equipamentos: new mongoose.Types.ObjectId(id),
-    statusReserva: { $in: ['pendente', 'confirmada'] },
-    $or: [
-      { dataInicial: { $lte: new Date() }, dataFinal: { $gte: new Date() } },
-      { dataInicial: { $gte: new Date() } }
-    ]
-  });
-
-  if (reservasAtivas > 0) {
-    throw new CustomError({
-      statusCode: HttpStatusCodes.CONFLICT.code,
-      customMessage: 'Não é possível inativar equipamento com reservas ativas.',
-    });
-  }
-
-  equipamento.equiStatus = 'inativo';
+  equipamento.equiStatus = novoStatus;
   await equipamento.save();
   return equipamento;
 }
 
-  
   async adicionarFoto(id, novaFoto) {
     const equipamento = await this._buscarEquipamentoExistente(id);
     equipamento.equiFotos.push(novaFoto);
