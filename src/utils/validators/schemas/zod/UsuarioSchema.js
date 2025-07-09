@@ -62,7 +62,6 @@ const UsuarioSchema = z.object({
     .default("usuario"),
     fotoUsuario:z
     .string({message: "foto tem que ser do tipo string"})
-    .url({message: "URL inválida"})
     .optional(),
 });
 

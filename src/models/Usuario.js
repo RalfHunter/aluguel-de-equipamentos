@@ -15,6 +15,7 @@ class Usuario {
             ativo: {type: Boolean, required: true, default:true},
             fotoUsuario:{type:String},
             tokenUnico:{type: String, select:false},
+            exp_tokenUnico_recuperacao: { type: Date, select: false },
             accessToken:{type:String, required: false, select:false},
             refreshToken:{type:String, required: false, select:false},
             codigo_recupera_senha:{type:String, select:false},

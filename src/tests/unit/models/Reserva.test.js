@@ -26,11 +26,18 @@ describe("Modelo Reserva", () => {
     const equipamento = await new Equipamento({
       equiNome: "Kensei",
       equiDescricao: "Voluptas fugiat veritatis maiores cum culpa.",
-      equiValorDiaria: 43, 
+      equiValorDiaria: 43,
       equiCategoria: "Soldador",
       equiQuantidadeDisponivel: 2,
       valor: 100,
-      equiFoto: "http://lorempixel.com/640/480"
+      equiFotos: [
+        {
+          url: `https://exemplo.com/fotos/${uuid()}.jpg`,
+          largura: 800,
+          altura: 600,
+          tamanhoMb: 1
+        }
+      ],
     }).save();
     equipamentoId = equipamento._id;
 

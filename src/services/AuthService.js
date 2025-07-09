@@ -6,20 +6,19 @@ import { CommonResponse, CustomError, HttpStatusCodes, errorHandler, messages, S
 import tokenUtil from '../utils/TokenUtil.js';
 import { v4 as uuid } from 'uuid';
 import SendMail from '../utils/SendMail.js';
+import AuthHelper from '../utils/AuthHelper.js';
 
 import UsuarioRepository from '../repositories/UsuarioRepository.js';
-import AuthRepository from '../repositories/AuthRepository.js';
 
 class AuthService {
-    constructor({ tokenUtil: injectedTokenUtil, usuarioRepository, authRepository } = {}) {
+    constructor({ tokenUtil: injectedTokenUtil, usuarioRepository, authusuarioRepository } = {}) {
         // Se nada for injetado, usa a instância importada
         this.TokenUtil = injectedTokenUtil || tokenUtil;
-        this.usuarioRepository = usuarioRepository || new UsuarioRepository();
-        this.repository = authRepository || new AuthRepository();
+        this.repository = usuarioRepository || new UsuarioRepository();
     }
 
     async carregatokens(id, token) {
-        const data = await this.usuarioRepository.buscarPorId(id,  {includeTokens: true });
+        const data = await this.repository.buscarPorId(id, { includeTokens: true });
         return { data };
     }
 
@@ -37,7 +36,7 @@ class AuthService {
         console.log('Estou no logar em AuthService');
 
         // Buscar o usuário pelo email
-        const userEncontrado = await this.usuarioRepository.buscarPorEmailCadastrado(body.email);
+        const userEncontrado = await this.repository.buscarPorEmailCadastrado(body.email);
         if (!userEncontrado) {
             throw new CustomError({
                 statusCode: 401,
@@ -59,12 +58,12 @@ class AuthService {
                 customMessage: messages.error.unauthorized('Senha ou Email')
             });
         }
-        if(!userEncontrado.ativo){
+        if (!userEncontrado.ativo) {
             throw new CustomError({
                 statusCode: 403,
-                errorType:'unauthorized',
-                field:'Status',
-                details:[],
+                errorType: 'unauthorized',
+                field: 'Status',
+                details: [],
                 customMessage: "Está conta foi desativada por um administrador por violação de contrato."
             })
 
@@ -73,7 +72,7 @@ class AuthService {
         const accessToken = await this.TokenUtil.generateAccessToken(userEncontrado._id);
 
         // Buscar o usuário com os tokens já armazenados
-        const userComTokens = await this.usuarioRepository.buscarPorId(userEncontrado._id, true);
+        const userComTokens = await this.repository.buscarPorId(userEncontrado._id, true);
         let refreshToken = userComTokens.refreshToken;
         console.log("refresh token no banco", refreshToken);
 
@@ -104,7 +103,7 @@ class AuthService {
         await this.repository.armazenarTokens(userEncontrado._id, accessToken, refreshToken);
 
         // Buscar novamente o usuário e remover a senha
-        const userLogado = await this.usuarioRepository.buscarPorEmailCadastrado(body.email);
+        const userLogado = await this.repository.buscarPorEmailCadastrado(body.email);
         delete userLogado.senha;
         const userObjeto = userLogado.toObject();
 
@@ -120,26 +119,26 @@ class AuthService {
         // ───────────────────────────────────────────────
         // Passo 1 – Buscar usuário pelo e-mail informado
         // ───────────────────────────────────────────────
-        const userEncontrado = await this.usuarioRepository.buscarPorEmailCadastrado(body.email);
+        const userEncontrado = await this.repository.buscarPorEmailCadastrado(body.email);
 
         // Se não encontrar, lança erro 404
         if (!userEncontrado) {
             throw new CustomError({
                 statusCode: HttpStatusCodes.NOT_FOUND.code,
-                errorType:'notFound',
+                errorType: 'notFound',
                 field: 'Email',
                 details: [],
                 customMessage: HttpStatusCodes.NOT_FOUND.message
             });
         }
 
-         if(!userEncontrado.ativo){
+        if (!userEncontrado.ativo) {
 
             throw new CustomError({
                 statusCode: 403,
-                errorType:'unauthorized',
-                field:'Aprovado',
-                details:[],
+                errorType: 'unauthorized',
+                field: 'Aprovado',
+                details: [],
                 customMessage: "Se sua conta foi desativada, ela não pode mais ser acessada. Para dúvidas, entre em contato com o suporte."
             })
 
@@ -159,14 +158,14 @@ class AuthService {
         // Passo 3 – Garantir unicidade do código gerado 
         // ───────────────────────────────────────────────
         let codigoExistente =
-            await this.usuarioRepository.buscarPorCodigoRecuperacao(codigoRecuperaSenha);
+            await this.repository.buscarPorCodigoRecuperacao(codigoRecuperaSenha);
         console.log('Código existente:', codigoExistente);
 
         while (codigoExistente) {
             console.log('Código já existe, gerando um novo código');
             codigoRecuperaSenha = generateCode();
             codigoExistente =
-                await this.usuarioRepository.buscarPorCodigoRecuperacao(codigoRecuperaSenha);
+                await this.repository.buscarPorCodigoRecuperacao(codigoRecuperaSenha);
         }
         console.log('Código gerado:', codigoRecuperaSenha);
 
@@ -180,7 +179,7 @@ class AuthService {
         // Passo 5 – Persistir token + código no usuário
         // ───────────────────────────────────────────────
         const expMs = Date.now() + 60 * 60 * 1000; // 1 hora de expiração
-        const data = await this.usuarioRepository.atualizar(userEncontrado._id, {
+        const data = await this.repository.atualizar(userEncontrado._id, {
             tokenUnico,
             codigo_recupera_senha: codigoRecuperaSenha,
             exp_codigo_recupera_senha: new Date(expMs).toISOString() // Armazenar expiração como string ISO TMZ0 Ex.: 2023-10-01T12:00:00.000Z
@@ -196,44 +195,58 @@ class AuthService {
             });
         }
 
-        // ───────────────────────────────────────────────
-        // Passo 6 – Enviar e-mail com código + link
-        // ───────────────────────────────────────────────
+        const resetUrl = `http://localhost:5013/auth/?token=${tokenUnico}`;
+        console.log('URL de redefinição de senha:', resetUrl);
+        const emailData = {
+            to: userEncontrado.email,
+            subject: 'Redefinir senha',
+            template: 'password-reset',
+            data: {
+                name: userEncontrado.nome,
+                resetUrl: resetUrl,
+                expirationMinutes: 60, // Expiração em minutos
+                year: new Date().getFullYear(),
+                company: process.env.COMPANY_NAME || 'Auth'
+            }
+        };
+        console.log('Dados do e-mail:', emailData);
 
-        // const baseUrl = `${req.protocol}://${req.get('host')}`;   // endereço do momento da requisição
-        // const resetLink = `${baseUrl}/${tokenUnico}`;
 
+        // Criar função para fazer a chamada para enviar o e-mai
+        // Necessário passar apiKey presente em MAIL_API_KEY
+        const sendMail = async (emailData) => {
+            console.log('Enviando e-mail de recuperação de senha para:', emailData.to);
+            try {
+                const response = await fetch(`${process.env.MAIL_API_URL}/emails/send`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': process.env.MAIL_API_KEY
+                    },
+                    body: JSON.stringify(emailData)
+                });
+                if (!response.ok) {
+                    throw new Error(`Erro ao enviar e-mail: ${response.status} ${response.statusText}`);
+                }
+                const responseData = await response.json();
+                console.log('E-mail enviado com sucesso:', responseData);
+            } catch (error) {
+                console.error('Erro ao enviar e-mail:', error);
+                throw new CustomError({
+                    statusCode: HttpStatusCodes.INTERNAL_SERVER_ERROR.code,
+                    field: 'E-mail',
+                    details: [],
+                    customMessage: 'Erro ao enviar e-mail de recuperação de senha.'
+                });
+            }
+        };
 
-        // SendMail.enviaEmail({
-        //     to: body.email,
-        //     subject: 'Recuperação de Senha',
-        //     text: `
-        //     Olá, ${userEncontrado.nome}!
-        //     Você solicitou a recuperação de senha.
-        //     Seu código de verificação é: ${codigoRecuperaSenha}
+        console.log('Antes de sendMail');
+        await sendMail(emailData);
+        console.log('Depois de sendMail');
 
-        //     Clique no link abaixo para redefinir sua senha:
-        //     ${resetLink}
+        console.log('Enviando e-mail de recuperação de senha');
 
-        //     Atenciosamente,
-        //     Equipe de Suporte
-        // `,
-        //     html: `
-        //     <p>Olá, <strong>${userEncontrado.nome}</strong>!</p>
-        //     <p>Você solicitou a recuperação de senha.</p>
-        //     <p><strong>Seu código de verificação é:</strong>
-        //        <span style="font-size:1.2em;">${codigoRecuperaSenha}</span></p>
-        //     <p>Clique no link abaixo para redefinir sua senha:</p>
-        //     <p><a href="${resetLink}" style="color: #007bff; text-decoration: none; font-weight: bold;">Clique aqui para
-        //        Redefinir Senha</a></p>
-        //     <p>Atenciosamente,</p>
-        //     <p><em>Equipe de Suporte</em></p>
-        // `
-        // });
-
-        // // ───────────────────────────────────────────────
-        // // Passo 8 – Retornar resposta ao cliente
-        // // ───────────────────────────────────────────────
         return {
             message:
                 'Solicitação de recuperação de senha recebida. Um e-mail foi enviado com instruções.'
@@ -241,7 +254,7 @@ class AuthService {
     }
 
     async refresh(id, token) {
-        const userEncontrado = await this.usuarioRepository.buscarPorId(id, { includeTokens: true });
+        const userEncontrado = await this.repository.buscarPorId(id, { includeTokens: true });
         console.log("USER", userEncontrado)
         if (!userEncontrado) {
             throw new CustomError({
@@ -282,7 +295,7 @@ class AuthService {
         await this.repository.armazenarTokens(id, accesstoken, refreshtoken);
 
         // monta o objeto de usuário com os tokens para resposta
-        const userLogado = await this.usuarioRepository.buscarPorId(id, { includeTokens: true });
+        const userLogado = await this.repository.buscarPorId(id, { includeTokens: true });
         delete userLogado.senha;
         const userObjeto = userLogado.toObject();
 
@@ -294,6 +307,181 @@ class AuthService {
 
         return { user: userComTokens };
     }
+    async atualizarSenha({ tokenRecuperacao = null, codigo_recupera_senha = null, senha }) {
+        /* 1) Nenhum identificador */
+        if (!tokenRecuperacao && !codigo_recupera_senha) {
+            throw new CustomError({
+                statusCode: HttpStatusCodes.BAD_REQUEST.code,
+                errorType: 'validationError',
+                field: 'tokenRecuperacao / codigo_recupera_senha',
+                details: [],
+                customMessage:
+                    'Informe o token de recuperação ou o código de recuperação.',
+            });
+        }
+
+
+        let usuarioId;
+
+        /* ─── A) Código de 4 caracteres ───────────────────────────── */
+        if (codigo_recupera_senha) {
+            const usuario = await this.usuarioRepository.buscarPorCodigoRecuperacao(codigo_recupera_senha);
+
+            if (!usuario) {
+                throw new CustomError({
+                    statusCode: HttpStatusCodes.NOT_FOUND.code,
+                    errorType: 'validationError',
+                    field: 'codigo_recupera_senha',
+                    details: [
+                        {
+                            path: 'codigo_recupera_senha',
+                            message: 'Código de recuperação inválido ou não encontrado.',
+                        },
+                    ],
+                    customMessage: 'Código de recuperação inválido ou não encontrado.',
+                });
+            }
+
+            /* Validação de expiração */
+            const expTime = new Date(usuario.exp_codigo_recupera_senha).getTime();
+            if (!expTime || expTime < Date.now()) {
+                throw new CustomError({
+                    statusCode: HttpStatusCodes.UNAUTHORIZED.code,
+                    errorType: 'authenticationError',
+                    field: 'codigo_recupera_senha',
+                    details: [
+                        {
+                            path: 'codigo_recupera_senha',
+                            message: 'Código de recuperação expirado.',
+                        },
+                    ],
+                    customMessage: 'Código de recuperação expirado.',
+                });
+            }
+
+            usuarioId = usuario._id.toString();
+        }
+
+        /* ─── B) Token JWT ────────────────────────────────────────── */
+        if (tokenRecuperacao) {
+            if (typeof tokenRecuperacao !== 'string' || !tokenRecuperacao.trim()) {
+                throw new CustomError({
+                    statusCode: HttpStatusCodes.BAD_REQUEST.code,
+                    errorType: 'validationError',
+                    field: 'tokenRecuperacao',
+                    details: [
+                        {
+                            path: 'tokenRecuperacao',
+                            message: 'Token de recuperação inválido.',
+                        },
+                    ],
+                    customMessage: 'Token de recuperação deve ser uma string não vazia.',
+                });
+            }
+
+            let decoded;
+            try {
+                decoded = await this.TokenUtil.decodePasswordRecoveryToken(tokenRecuperacao);
+            } catch (err) {
+                throw new CustomError({
+                    statusCode: HttpStatusCodes.UNAUTHORIZED.code,
+                    errorType: 'authenticationError',
+                    field: 'tokenRecuperacao',
+                    details: [],
+                    customMessage: 'Token de recuperação expirado ou inválido.',
+                });
+            }
+
+            if (!decoded.usuarioId) {
+                throw new CustomError({
+                    statusCode: HttpStatusCodes.BAD_REQUEST.code,
+                    errorType: 'validationError',
+                    field: 'tokenRecuperacao',
+                    details: [],
+                    customMessage: 'Payload do token não contém ID do usuário.',
+                });
+            }
+
+            usuarioId = decoded.usuarioId;
+        }
+
+        /* 3) Valida ID e busca usuário */
+        objectIdSchema.parse(usuarioId);
+
+        const usuarioEncontrado = await this.usuarioRepository.listarPorId(usuarioId);
+        if (!usuarioEncontrado) {
+            throw new CustomError({
+                statusCode: HttpStatusCodes.NOT_FOUND.code,
+                errorType: 'notFound',
+                field: 'id',
+                details: [],
+                customMessage: 'Usuário não encontrado para alteração de senha.',
+            });
+        }
+
+        /* 4) Valida / gera hash da nova senha */
+        const { senha: senhaValidada } = UsuarioUpdateSchema.parse({ senha });
+        const senhaHash = bcrypt.hash(senhaValidada, 8);
+
+        /* 5) Persiste */
+        await this.usuarioRepository.atualizarSenhar(usuarioId, senhaHash);
+
+        /* 6) Remove código após uso */
+        if (codigo_recupera_senha) {
+            await this.usuarioRepository.alterar(usuarioId, {
+                codigo_recupera_senha: null,
+                exp_codigo_recupera_senha: null,
+            });
+        }
+
+        return { message: 'Senha atualizada com sucesso.' };
+    }
+    async atualizarSenhaToken(tokenRecuperacao, senhaBody) {
+        // 1) Decodifica o token para obter o ID do usuário
+        const usuarioId = await this.TokenUtil.decodePasswordRecoveryToken(
+            tokenRecuperacao,
+            process.env.JWT_SECRET_PASSWORD_RECOVERY
+        );
+
+        // 2) Gera o hash da senha pura
+        const senhaHasheada = await AuthHelper.hashPassword(senhaBody.senha);
+
+        // Buscar usuário pelo token unico
+        const usuario = await this.repository.buscarPorTokenUnico(tokenRecuperacao);
+        if (!usuario) {
+            throw new CustomError({
+                statusCode: HttpStatusCodes.NOT_FOUND.code,
+                field: 'Token',
+                details: [],
+                customMessage: "Token de recuperação já foi utilizado ou é inválido."
+            });
+        }
+
+        // 2) Verifica expiração
+        if (usuario.exp_tokenUnico_recuperacao < new Date()) {
+            throw new CustomError({
+                statusCode: HttpStatusCodes.UNAUTHORIZED.code,
+                field: 'Token de Recuperação',
+                details: [],
+                customMessage: 'Token de recuperação expirado.'
+            });
+        }
+
+        // 3) Atualiza no repositório (já com hash)
+        const usuarioAtualizado = await this.repository.atualizarSenha(usuarioId, senhaHasheada);
+        if (!usuarioAtualizado) {
+            throw new CustomError({
+                statusCode: HttpStatusCodes.INTERNAL_SERVER_ERROR.code,
+                field: 'Senha',
+                details: [],
+                customMessage: 'Erro ao atualizar a senha.'
+            });
+        }
+
+        return { message: 'Senha atualizada com sucesso.' };
+    }
+
+
 }
 
 export default AuthService;

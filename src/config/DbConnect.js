@@ -19,7 +19,6 @@ class DbConnect {
         try {
             const mongoUri = process.env.DB_URL;
 
-            console.log(mongoUri);
             if (!mongoUri) {
                 throw new Error("A variável de ambiente DB_URL não está definida.");
             }
@@ -37,7 +36,7 @@ class DbConnect {
             // Configurações condicional para autoIndex e debug
             if (process.env.NODE_ENV === 'development') {
                 mongoose.set('autoIndex', true); // Cria índices automaticamente
-                mongoose.set('debug', true); // Ativa logs de debug
+                mongoose.set('debug', false); // Ativa logs de debug
                 // logger.info('Configurações de desenvolvimento ativadas: autoIndex e debug.');
             } else {
                 mongoose.set('autoIndex', false); // Desativa criação automática de índices
