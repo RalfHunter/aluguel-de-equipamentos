@@ -36,6 +36,7 @@ class AuthService {
         // Buscar o usuário pelo email
         const userEncontrado = await this.repository.buscarPorEmailCadastrado(body.email);
         if (!userEncontrado) {
+            console.log("EMAIL:", userEncontrado)
             throw new CustomError({
                 statusCode: 401,
                 errorType: 'notFound',
@@ -193,7 +194,7 @@ class AuthService {
             });
         }
 
-        const resetUrl = `http://localhost:5013/auth/?token=${tokenUnico}`;
+        const resetUrl = `${process.env.MAIL_HOST}/auth/?token=${tokenUnico}`;
         console.log('URL de redefinição de senha:', resetUrl);
         const emailData = {
             to: userEncontrado.email,

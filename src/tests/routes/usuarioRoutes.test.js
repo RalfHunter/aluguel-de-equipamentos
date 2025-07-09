@@ -248,7 +248,7 @@ describe('usuarioRoute', () => {
             expect(res.body?.message).toEqual("Rota não encontrada")
         });
     });
-    describe('/usuarios/:id', () => {
+    describe('get /usuarios/:id', () => {
        it('deve retornar o usuário com sucesso', async () => {
             const res = await request(app)
                 .get(`/usuarios/${user?._id}`)
