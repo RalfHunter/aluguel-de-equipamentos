@@ -4,8 +4,6 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { CommonResponse, CustomError, HttpStatusCodes, errorHandler, messages, StatusService, asyncWrapper } from '../utils/helpers/index.js';
 import tokenUtil from '../utils/TokenUtil.js';
-import { v4 as uuid } from 'uuid';
-import SendMail from '../utils/SendMail.js';
 import AuthHelper from '../utils/AuthHelper.js';
 
 import UsuarioRepository from '../repositories/UsuarioRepository.js';
@@ -308,135 +306,135 @@ class AuthService {
 
         return { user: userComTokens };
     }
-    async atualizarSenha({ tokenRecuperacao = null, codigo_recupera_senha = null, senha }) {
-        /* 1) Nenhum identificador */
-        if (!tokenRecuperacao && !codigo_recupera_senha) {
-            throw new CustomError({
-                statusCode: HttpStatusCodes.BAD_REQUEST.code,
-                errorType: 'validationError',
-                field: 'tokenRecuperacao / codigo_recupera_senha',
-                details: [],
-                customMessage:
-                    'Informe o token de recuperação ou o código de recuperação.',
-            });
-        }
+    // async atualizarSenha({ tokenRecuperacao = null, codigo_recupera_senha = null, senha }) {
+    //     /* 1) Nenhum identificador */
+    //     if (!tokenRecuperacao && !codigo_recupera_senha) {
+    //         throw new CustomError({
+    //             statusCode: HttpStatusCodes.BAD_REQUEST.code,
+    //             errorType: 'validationError',
+    //             field: 'tokenRecuperacao / codigo_recupera_senha',
+    //             details: [],
+    //             customMessage:
+    //                 'Informe o token de recuperação ou o código de recuperação.',
+    //         });
+    //     }
 
 
-        let usuarioId;
+    //     let usuarioId;
 
-        /* ─── A) Código de 4 caracteres ───────────────────────────── */
-        if (codigo_recupera_senha) {
-            const usuario = await this.usuarioRepository.buscarPorCodigoRecuperacao(codigo_recupera_senha);
+    //     /* ─── A) Código de 4 caracteres ───────────────────────────── */
+    //     if (codigo_recupera_senha) {
+    //         const usuario = await this.usuarioRepository.buscarPorCodigoRecuperacao(codigo_recupera_senha);
 
-            if (!usuario) {
-                throw new CustomError({
-                    statusCode: HttpStatusCodes.NOT_FOUND.code,
-                    errorType: 'validationError',
-                    field: 'codigo_recupera_senha',
-                    details: [
-                        {
-                            path: 'codigo_recupera_senha',
-                            message: 'Código de recuperação inválido ou não encontrado.',
-                        },
-                    ],
-                    customMessage: 'Código de recuperação inválido ou não encontrado.',
-                });
-            }
+    //         if (!usuario) {
+    //             throw new CustomError({
+    //                 statusCode: HttpStatusCodes.NOT_FOUND.code,
+    //                 errorType: 'validationError',
+    //                 field: 'codigo_recupera_senha',
+    //                 details: [
+    //                     {
+    //                         path: 'codigo_recupera_senha',
+    //                         message: 'Código de recuperação inválido ou não encontrado.',
+    //                     },
+    //                 ],
+    //                 customMessage: 'Código de recuperação inválido ou não encontrado.',
+    //             });
+    //         }
 
-            /* Validação de expiração */
-            const expTime = new Date(usuario.exp_codigo_recupera_senha).getTime();
-            if (!expTime || expTime < Date.now()) {
-                throw new CustomError({
-                    statusCode: HttpStatusCodes.UNAUTHORIZED.code,
-                    errorType: 'authenticationError',
-                    field: 'codigo_recupera_senha',
-                    details: [
-                        {
-                            path: 'codigo_recupera_senha',
-                            message: 'Código de recuperação expirado.',
-                        },
-                    ],
-                    customMessage: 'Código de recuperação expirado.',
-                });
-            }
+    //         /* Validação de expiração */
+    //         const expTime = new Date(usuario.exp_codigo_recupera_senha).getTime();
+    //         if (!expTime || expTime < Date.now()) {
+    //             throw new CustomError({
+    //                 statusCode: HttpStatusCodes.UNAUTHORIZED.code,
+    //                 errorType: 'authenticationError',
+    //                 field: 'codigo_recupera_senha',
+    //                 details: [
+    //                     {
+    //                         path: 'codigo_recupera_senha',
+    //                         message: 'Código de recuperação expirado.',
+    //                     },
+    //                 ],
+    //                 customMessage: 'Código de recuperação expirado.',
+    //             });
+    //         }
 
-            usuarioId = usuario._id.toString();
-        }
+    //         usuarioId = usuario._id.toString();
+    //     }
 
-        /* ─── B) Token JWT ────────────────────────────────────────── */
-        if (tokenRecuperacao) {
-            if (typeof tokenRecuperacao !== 'string' || !tokenRecuperacao.trim()) {
-                throw new CustomError({
-                    statusCode: HttpStatusCodes.BAD_REQUEST.code,
-                    errorType: 'validationError',
-                    field: 'tokenRecuperacao',
-                    details: [
-                        {
-                            path: 'tokenRecuperacao',
-                            message: 'Token de recuperação inválido.',
-                        },
-                    ],
-                    customMessage: 'Token de recuperação deve ser uma string não vazia.',
-                });
-            }
+    //     /* ─── B) Token JWT ────────────────────────────────────────── */
+    //     if (tokenRecuperacao) {
+    //         if (typeof tokenRecuperacao !== 'string' || !tokenRecuperacao.trim()) {
+    //             throw new CustomError({
+    //                 statusCode: HttpStatusCodes.BAD_REQUEST.code,
+    //                 errorType: 'validationError',
+    //                 field: 'tokenRecuperacao',
+    //                 details: [
+    //                     {
+    //                         path: 'tokenRecuperacao',
+    //                         message: 'Token de recuperação inválido.',
+    //                     },
+    //                 ],
+    //                 customMessage: 'Token de recuperação deve ser uma string não vazia.',
+    //             });
+    //         }
 
-            let decoded;
-            try {
-                decoded = await this.TokenUtil.decodePasswordRecoveryToken(tokenRecuperacao);
-            } catch (err) {
-                throw new CustomError({
-                    statusCode: HttpStatusCodes.UNAUTHORIZED.code,
-                    errorType: 'authenticationError',
-                    field: 'tokenRecuperacao',
-                    details: [],
-                    customMessage: 'Token de recuperação expirado ou inválido.',
-                });
-            }
+    //         let decoded;
+    //         try {
+    //             decoded = await this.TokenUtil.decodePasswordRecoveryToken(tokenRecuperacao);
+    //         } catch (err) {
+    //             throw new CustomError({
+    //                 statusCode: HttpStatusCodes.UNAUTHORIZED.code,
+    //                 errorType: 'authenticationError',
+    //                 field: 'tokenRecuperacao',
+    //                 details: [],
+    //                 customMessage: 'Token de recuperação expirado ou inválido.',
+    //             });
+    //         }
 
-            if (!decoded.usuarioId) {
-                throw new CustomError({
-                    statusCode: HttpStatusCodes.BAD_REQUEST.code,
-                    errorType: 'validationError',
-                    field: 'tokenRecuperacao',
-                    details: [],
-                    customMessage: 'Payload do token não contém ID do usuário.',
-                });
-            }
+    //         if (!decoded.usuarioId) {
+    //             throw new CustomError({
+    //                 statusCode: HttpStatusCodes.BAD_REQUEST.code,
+    //                 errorType: 'validationError',
+    //                 field: 'tokenRecuperacao',
+    //                 details: [],
+    //                 customMessage: 'Payload do token não contém ID do usuário.',
+    //             });
+    //         }
 
-            usuarioId = decoded.usuarioId;
-        }
+    //         usuarioId = decoded.usuarioId;
+    //     }
 
-        /* 3) Valida ID e busca usuário */
-        objectIdSchema.parse(usuarioId);
+    //     /* 3) Valida ID e busca usuário */
+    //     objectIdSchema.parse(usuarioId);
 
-        const usuarioEncontrado = await this.usuarioRepository.listarPorId(usuarioId);
-        if (!usuarioEncontrado) {
-            throw new CustomError({
-                statusCode: HttpStatusCodes.NOT_FOUND.code,
-                errorType: 'notFound',
-                field: 'id',
-                details: [],
-                customMessage: 'Usuário não encontrado para alteração de senha.',
-            });
-        }
+    //     const usuarioEncontrado = await this.usuarioRepository.listarPorId(usuarioId);
+    //     if (!usuarioEncontrado) {
+    //         throw new CustomError({
+    //             statusCode: HttpStatusCodes.NOT_FOUND.code,
+    //             errorType: 'notFound',
+    //             field: 'id',
+    //             details: [],
+    //             customMessage: 'Usuário não encontrado para alteração de senha.',
+    //         });
+    //     }
 
-        /* 4) Valida / gera hash da nova senha */
-        const { senha: senhaValidada } = UsuarioUpdateSchema.parse({ senha });
-        const senhaHash = bcrypt.hash(senhaValidada, 8);
+    //     /* 4) Valida / gera hash da nova senha */
+    //     const { senha: senhaValidada } = UsuarioUpdateSchema.parse({ senha });
+    //     const senhaHash = bcrypt.hash(senhaValidada, 8);
 
-        /* 5) Persiste */
-        await this.usuarioRepository.atualizarSenhar(usuarioId, senhaHash);
+    //     /* 5) Persiste */
+    //     await this.usuarioRepository.atualizarSenhar(usuarioId, senhaHash);
 
-        /* 6) Remove código após uso */
-        if (codigo_recupera_senha) {
-            await this.usuarioRepository.alterar(usuarioId, {
-                codigo_recupera_senha: null,
-                exp_codigo_recupera_senha: null,
-            });
-        }
+    //     /* 6) Remove código após uso */
+    //     if (codigo_recupera_senha) {
+    //         await this.usuarioRepository.alterar(usuarioId, {
+    //             codigo_recupera_senha: null,
+    //             exp_codigo_recupera_senha: null,
+    //         });
+    //     }
 
-        return { message: 'Senha atualizada com sucesso.' };
-    }
+    //     return { message: 'Senha atualizada com sucesso.' };
+    // }
     async atualizarSenhaToken(tokenRecuperacao, senhaBody) {
         // 1) Decodifica o token para obter o ID do usuário
         const usuarioId = await this.TokenUtil.decodePasswordRecoveryToken(
