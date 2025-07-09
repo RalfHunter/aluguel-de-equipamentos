@@ -12,6 +12,8 @@ const categoriasValidas = [
   "Betoneira",
 ];
 
+const statusValidos = ["ativo", "pendente", "inativo"];
+
 export const equipamentoSchema = z.object({
   equiNome: z.string({ required_error: 'Nome obrigatório' }).min(2, 'Nome deve ter pelo menos 2 caracteres'),
   equiDescricao: z.string({ required_error: 'Descrição obrigatória' }),
@@ -35,6 +37,9 @@ export const equipamentoSchema = z.object({
       tamanhoMb: z.number().positive(),
     })
   ).min(1, "Pelo menos uma foto é obrigatória"),
+  equiStatus: z.enum(statusValidos, {
+    errorMap: () => ({ message: 'Status inválido' }),
+  }).default('pendente'),
 });
 
 export const equipamentoUpdateSchema = z.object({

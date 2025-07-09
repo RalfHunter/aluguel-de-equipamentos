@@ -21,10 +21,6 @@ async function SeedReserva(usuarios, equipamentos) {
       throw new Error("Nenhum equipamento encontrado. Rode o seed de equipamentos primeiro.");
     }
 
-
-    console.log("Usuários disponíveis:", usuarios.map(u => u._id.toString()));
-    console.log("Equipamentos disponíveis:", equipamentos.map(e => e._id.toString()));
-
     for (let i = 0; i < 10; i++) {
       const usuario = usuarios[i % usuarios.length]; // Seleciona usuário ciclicamente
       const equipamento = equipamentos[i % equipamentos.length]; // Seleciona equipamento ciclicamente
@@ -41,20 +37,15 @@ async function SeedReserva(usuarios, equipamentos) {
         usuarios: usuario._id 
       };
 
-      //console.log(`Reserva ${i + 1} gerada:`, reserva);
       reservas.push(reserva);
     }
 
 
     const resultados = await Reserva.collection.insertMany(reservas, { ordered: false, rawResult: true });
-    console.log("Resultado bruto do insertMany:", resultados);
-    console.log(`${Object.keys(resultados.insertedIds).length} reservas inseridas com sucesso!`);
 
-    console.log("Nome da coleção usada:", Reserva.collection.collectionName);
 
     const reservasCriadas = await Reserva.find();
     console.log(`Reservas encontradas após inserção: ${reservasCriadas.length}`);
-    console.log("Documentos retornados:", reservasCriadas);
 
     return reservasCriadas;
   } catch (error) {

@@ -1,6 +1,5 @@
-import ReservaFilterBuilder from "../repositories/filters/ReservaFilterBuilderder";
-import Reserva from "../models/Reservarva";
-jest.mock("../../models/Reserva");
+import ReservaFilterBuilder from "../../../repositories/filters/ReservaFilterBuilder";
+jest.mock("../../../models/Reserva");
 
 describe('ReservaFilterBuilder', () => {
   let reservaFilterBuilder;

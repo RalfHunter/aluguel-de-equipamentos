@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import objectIdSchema from './ObjectIdSchema.js';
+import objectIdSchema from '../ObjectIdSchema.js';
 
 export const AvaliacaoIdSchema = objectIdSchema;
 
