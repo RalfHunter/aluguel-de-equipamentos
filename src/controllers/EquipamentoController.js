@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { equipamentoSchema, equipamentoUpdateSchema } from "../utils/validators/schemas/zod/EquipamentoSchema.js";
+import { equipamentoSchema, equipamentoUpdateSchema, equipamentoStatusSchema } from "../utils/validators/schemas/zod/EquipamentoSchema.js";
 import { EquipamentoIdSchema, EquipamentoQuerySchema } from "../utils/validators/schemas/zod/querys/EquipamentoQuerySchema.js";
 import EquipamentoService from "../services/EquipamentoService.js";
 import { CommonResponse, HttpStatusCodes } from "../utils/helpers/index.js";
@@ -104,7 +104,7 @@ class EquipamentoController {
       if (!usuarioId) {
         return CommonResponse.error(res, HttpStatusCodes.UNAUTHORIZED.code, 'Usuário não autenticado.');
       }
-      query.equiUsuario = usuarioId;  
+      query.equiUsuario = usuarioId;
       query.equiStatus = 'inativo';
     } else {
       if (usuarioId && !isAdminOrMod) {
@@ -116,7 +116,7 @@ class EquipamentoController {
       } else if (isAdminOrMod) {
         query.equiStatus = { $in: ['ativo', 'pendente'] };
       } else {
-        query.equiStatus = 'ativo'; 
+        query.equiStatus = 'ativo';
       }
     }
 
@@ -174,7 +174,7 @@ class EquipamentoController {
       ...dadosProcessados,
       equiUsuario: usuarioLogado,
       equiFotos,
-      equiStatus: 'pendente'  
+      equiStatus: 'pendente'
     };
 
     const dados = equipamentoSchema.parse(dadosEquipamento);
@@ -235,26 +235,15 @@ class EquipamentoController {
     const resultado = await this.service.reprovar(id, req.user_id);
     return CommonResponse.success(res, resultado, 200, 'Equipamento reprovado e excluído com sucesso.');
   }
-
-  async inativar(req, res) {
+  async atualizarStatus(req, res) {
     const { id } = req.params;
+    const { status } = req.body;
     const usuarioId = req.user_id?.toString();
-    console.log('Tentando inativar:', { id, usuarioId });
-
     EquipamentoIdSchema.parse(id);
-
-    if (!usuarioId) {
-      return CommonResponse.error(res, HttpStatusCodes.UNAUTHORIZED.code, 'Usuário não autenticado.');
-    }
-
-    const equipamento = await this.service.listarPorId(id, usuarioId);
-    if (!equipamento) {
-      return CommonResponse.error(res, HttpStatusCodes.NOT_FOUND.code, 'Equipamento não encontrado.');
-    }
-
-    const resultado = await this.service.inativar(id, usuarioId);
-    console.log('Resultado da inativação:', resultado);
-    return CommonResponse.success(res, resultado, 200, 'Equipamento inativado com sucesso.');
+    equipamentoStatusSchema.parse({ status });
+    if (!usuarioId) return CommonResponse.error(res, HttpStatusCodes.UNAUTHORIZED.code, 'Usuário não autenticado.');
+    const equipamento = await this.service.atualizarStatus(id, usuarioId, status);
+    return CommonResponse.success(res, equipamento, 200, `Equipamento ${status === 'ativo' ? 'ativado' : 'inativado'} com sucesso.`);
   }
 
   async adicionarFoto(req, res) {
