@@ -1,5 +1,5 @@
 import { exitOnError } from "winston";
-import { UsuarioSchema } from "../../../utils/validators/schemas/zod/UsuarioSchema";
+import { UsuarioSchema } from "../../../../../../utils/validators/schemas/zod/UsuarioSchema.js";
 
 describe('UsuarioSchema', () => {
     let usuarioSchema

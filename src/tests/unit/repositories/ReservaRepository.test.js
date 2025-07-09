@@ -1,8 +1,8 @@
 import mongoose from 'mongoose';
 import ReservaRepository from '../../../repositories/ReservaRepository.js';
-import Reserva from '../../../models/Reserva.js
-import Equipamento from '../../../models/Equipamento.js
-import Usuario from '../../../models/Usuario.js
+import Reserva from '../../../models/Reserva.js'
+import Equipamento from '../../../models/Equipamento.js'
+import Usuario from '../../../models/Usuario.js'
 import { CustomError, messages } from '../../../utils/helpers/index.js';
 import ReservaFilterBuilder from '../../../repositories/filters/ReservaFilterBuilder.js';
 

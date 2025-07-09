@@ -1,4 +1,4 @@
-import UsuarioValidator from "../../../utils/ValidatorUsuario";
+import UsuarioValidator from "../../../utils/ValidatorUsuario.js";
 
 describe('ValidatorUsuario', () =>{
     let usuarioValidator;
