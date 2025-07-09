@@ -23,6 +23,7 @@
     "express-fileupload": "^1.5.1",
     "faker-br": "^0.4.1",
     "fs": "^0.0.1-security",
+    "glob": "^11.0.3",
     "helmet": "^8.1.0",
     "image-size": "^2.0.2",
     "install": "^0.13.0",

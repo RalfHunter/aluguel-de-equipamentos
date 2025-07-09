@@ -16,4 +16,5 @@ router
   .post("/instrospect", asyncWrapper(authController.pass.bind(authController)))
   .post("/recover", asyncWrapper(authController.recuperaSenha.bind(authController)))
   .post("/signup", asyncWrapper(usuarioController.criarComSenha.bind(usuarioController)))
+  .patch("/password/reset/token", asyncWrapper(authController.atualizarSenhaToken.bind(authController)))
 export default router;

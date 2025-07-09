@@ -5,16 +5,12 @@ import http from 'http';
 //import  app  from '../../app.js';
 import '../../routes/equipamentoRoutes.js'; 
 
-dotenv.config();
-
-const PORT = process.env.PORT || 5011;
-const BASE_URL = `http://localhost:${PORT}`;
+let app = 'http://localhost:5011';
 
 let server;                             
 let tokenAdmin;
 let tokenUser;
 
-//jest.setTimeout(5011);
 
 describe('Rotas de Equipamentos - Integração', () => {
   beforeAll(async () => {
@@ -347,12 +343,10 @@ describe('Rotas de Equipamentos - Integração', () => {
       const equipamento = await criarEquipamentoValido(tokenUser);
       expect(equipamento).toHaveProperty('_id');
 
-      // Aprovar primeiro
       await request(BASE_URL)
         .patch(`/equipamentos/${equipamento._id}/aprovar`)
         .set('Authorization', `Bearer ${tokenAdmin}`);
 
-      // Tentar reprovar
       const res = await request(BASE_URL)
         .patch(`/equipamentos/${equipamento._id}/reprovar`)
         .set('Authorization', `Bearer ${tokenAdmin}`);

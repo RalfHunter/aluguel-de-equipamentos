@@ -49,3 +49,5 @@ Thumbs.db      # Windows
 logs/
 
 uploads/
+
+.history/

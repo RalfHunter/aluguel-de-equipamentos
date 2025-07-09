@@ -5,7 +5,7 @@ const grupoAdmin = {
     nome: 'admin',
     descricao: 'Grupo com acesso total ao sistema',
     ativo: true,
-    nivelPermissao:0,
+    nivelPermissao: 0,
     permissoes: [{
         rota: "grupos",
         dominio: "locahost",
@@ -17,7 +17,7 @@ const grupoAdmin = {
         excluir: true
     },
     {
-        rota: "grupos:id",
+        rota: "usuarios",
         dominio: "locahost",
         ativo: true,
         buscar: true,
@@ -25,6 +25,26 @@ const grupoAdmin = {
         substituir: true,
         modificar: true,
         excluir: true
+    },
+    {
+        rota: "usuarios-id-foto",
+        dominio: "locahost",
+        ativo: true,
+        buscar: true,
+        enviar: true,
+        substituir: true,
+        modificar: true,
+        excluir: true
+    },
+    {
+        rota: 'perfil',
+        dominio: 'localhost',
+        ativo: true,
+        buscar: true,
+        enviar: true,
+        substituir: true,
+        modificar: true,
+        excluir: false
     }
     ]
 }
@@ -44,14 +64,14 @@ const grupoModerador = {
         excluir: true
     },
     {
-        rota: "usuarios:id",
-        dominio: "locahost",
+        rota: 'perfil',
+        dominio: 'localhost',
         ativo: true,
-        buscar: true,
+        buscar: false,
         enviar: true,
         substituir: true,
         modificar: true,
-        excluir: true
+        excluir: false
     }
     ]
 }
@@ -60,16 +80,36 @@ const grupoUsuario = {
     nome: 'usuario',
     descricao: 'Grupo que pude alocar e alugar equipamentos',
     ativo: true,
-    nivelPermissao:100,
-    permissoes:[{
+    nivelPermissao: 100,
+    permissoes: [{
         rota: 'usuarios',
         dominio: 'localhost',
         ativo: true,
         buscar: false,
         enviar: true,
-        substituir:true,
+        substituir: true,
         modificar: true,
         excluir: false
+    },
+    {
+        rota: 'perfil',
+        dominio: 'localhost',
+        ativo: true,
+        buscar: true,
+        enviar: true,
+        substituir: true,
+        modificar: true,
+        excluir: false
+    },
+{
+        rota: 'usuarios-id-foto',
+        dominio: 'localhost',
+        ativo: true,
+        buscar: true,
+        enviar: true,
+        substituir: true,
+        modificar: true,
+        excluir: true
     }]
 }
 
@@ -82,6 +122,6 @@ async function SeedGrupo() {
 
     return await Grupo.insertMany(grupos)
 
-    
+
 }
 export default SeedGrupo

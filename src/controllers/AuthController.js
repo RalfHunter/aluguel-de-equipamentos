@@ -174,6 +174,36 @@ class AuthController {
       messages.authorized.default
     );
   };
+    async atualizarSenhaToken(req, res, next) {
+    const tokenRecuperacao = req.query.token || req.params.token || null; // token de recuperação passado na URL
+    const senha = req.body.senha || null; // nova senha passada no body
+
+    // 1) Verifica se veio o token de recuperação
+    if (!tokenRecuperacao) {
+      throw new CustomError({
+        statusCode: HttpStatusCodes.UNAUTHORIZED.code,
+        errorType: 'unauthorized',
+        field: 'authentication',
+        details: [],
+        customMessage:
+          'Token de recuperação na URL como parâmetro ou query é obrigatório para troca da senha.'
+      });
+    }
+
+    // Validar a senha com o schema
+    const senhaSchema = UsuarioUpdateSchema.parse({ "senha": senha });
+
+    // atualiza a senha 
+    await this.service.atualizarSenhaToken(tokenRecuperacao, senhaSchema);
+
+    return CommonResponse.success(
+      res,
+      null,
+      HttpStatusCodes.OK.code, 'Senha atualizada com sucesso.',
+      { message: 'Senha atualizada com sucesso via token de recuperação.' },
+    );
+  }
+
 }
 
 export default AuthController;
