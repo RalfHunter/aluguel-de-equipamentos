@@ -157,21 +157,6 @@ async inativar(id, usuarioId) {
     const limite = parseInt(filtros.limit) || 10;
     const builder = new EquipamentoFilterBuilder();
 
-<<<<<<< HEAD
-    let status = 'ativo'; ///padrão
-
-    if (typeof filtros.status === 'string') {
-      if (filtros.status === 'true' || filtros.status.toLowerCase() === 'ativo') {
-        status = 'ativo';
-      } else if (filtros.status === 'false' || filtros.status.toLowerCase() === 'pendente') {
-        status = 'pendente';
-      } else if (['ativo', 'pendente', 'inativo'].includes(filtros.status.toLowerCase())) {
-        status = filtros.status.toLowerCase();
-      } else {
-        status = 'ativo';
-      }
-    }
-=======
     const status = filtros.status
       ? filtros.status === 'true'
         ? 'ativo'
@@ -179,7 +164,6 @@ async inativar(id, usuarioId) {
           ? 'pendente'
           : filtros.status
       : null;
->>>>>>> 5cb03acf9d5aeb3364671e1c6db225379fc67683
 
     builder
       .comCategoria(filtros.categoria)
@@ -205,13 +189,6 @@ async inativar(id, usuarioId) {
   }
 
   async _buscarEquipamentoExistente(id) {
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new CustomError({
-        statusCode: HttpStatusCodes.BAD_REQUEST.code,
-        customMessage: 'ID inválido.',
-      });
-    }
-
     const equipamento = await this.repository.listarPorId(id);
     console.log('Equipamento buscado:', { id, equiUsuario: equipamento?.equiUsuario?.toString(), equiStatus: equipamento?.equiStatus });
     if (!equipamento) {

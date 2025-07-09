@@ -1,24 +1,16 @@
 import { afterEach, beforeEach, describe, expect, jest, it } from '@jest/globals';
 import EquipamentoController from '../../../controllers/EquipamentoController.js';
-<<<<<<< HEAD
-import EquipamentoService from '../../../services/EquipamentoService.js';
-import { CommonResponse, HttpStatusCodes } from '../../../utils/helpers/index.js';
-import { equipamentoSchema, equipamentoUpdateSchema } from '../../../utils/validators/schemas/zod/EquipamentoSchema.js';
-import { EquipamentoQuerySchema, EquipamentoIdSchema } from '../../../utils/validators/schemas/zod/querys/EquipamentoQuerySchema.js';
-import Usuario from '../../../models/Usuario.js';
-=======
 import EquipamentoService from '../services/EquipamentoService.js.js';
 import { CommonResponse, HttpStatusCodes } from '../../../utils/helpers/index.js';
 import { equipamentoSchema, equipamentoUpdateSchema } from '../validators/schemas/zod/EquipamentoSchema.js.js';
 import { EquipamentoQuerySchema, EquipamentoIdSchema } from '../validators/schemas/zod/querys/EquipamentoQuerySchema.js.js';
 import Usuario from '../models/Usuario.js.js';
->>>>>>> a5025f0e6885dbce0263adcd6fd56f9a116eec62
 import fs from 'fs';
 import sizeOf from 'image-size';
 
 // Mock dependencies
-jest.mock('../../../services/EquipamentoService.js');
-jest.mock('../../../utils/helpers/index.js', () => ({
+jest.mock('../../services/EquipamentoService.js');
+jest.mock('../../utils/helpers/index.js', () => ({
   CommonResponse: {
     success: jest.fn(),
     created: jest.fn(),
@@ -29,15 +21,15 @@ jest.mock('../../../utils/helpers/index.js', () => ({
     BAD_REQUEST: { code: 400 },
   },
 }));
-jest.mock('../../../utils/validators/schemas/zod/EquipamentoSchema.js', () => ({
+jest.mock('../../utils/validators/schemas/zod/EquipamentoSchema.js', () => ({
   equipamentoSchema: { parse: jest.fn() },
   equipamentoUpdateSchema: { parse: jest.fn() },
 }));
-jest.mock('../../../utils/validators/schemas/zod/querys/EquipamentoQuerySchema.js', () => ({
+jest.mock('../../utils/validators/schemas/zod/querys/EquipamentoQuerySchema.js', () => ({
   EquipamentoQuerySchema: { parseAsync: jest.fn() },
   EquipamentoIdSchema: { parse: jest.fn() },
 }));
-jest.mock('../../../models/Usuario.js');
+jest.mock('../../models/Usuario.js');
 jest.mock('fs');
 jest.mock('image-size');
 
@@ -93,9 +85,13 @@ describe('EquipamentoController', () => {
 
     it('deve rejeitar se query inválida', async () => {
       req.query = { categoria: 123 };
-      EquipamentoQuerySchema.parseAsync.mockRejectedValue({ name: 'ZodError' });
+      const error = new Error('Erro de validação');
+      error.name = 'ZodError';
+      EquipamentoQuerySchema.parseAsync.mockRejectedValue(error);
 
-      await expect(controller.listar(req, res)).rejects.toEqual(expect.objectContaining({ name: 'ZodError' }));
+      await controller.listar(req, res);
+
+      expect(CommonResponse.error).toHaveBeenCalledWith(res, 400, expect.any(String));
     });
 
     it('deve retornar erro 403 se filtrar pendentes e usuário não for admin', async () => {
@@ -142,15 +138,15 @@ describe('EquipamentoController', () => {
       expect(CommonResponse.success).toHaveBeenCalledWith(res, equipamento);
     });
 
-
     it('deve lançar erro se ID for inválido', async () => {
       req.params.id = 'idInvalido';
       const error = new Error('ID inválido');
       error.name = 'ZodError';
-
       EquipamentoIdSchema.parse.mockImplementation(() => { throw error; });
 
-      await expect(controller.listarPorId(req, res)).rejects.toEqual(expect.objectContaining({ name: 'ZodError' }));
+      await controller.listarPorId(req, res);
+
+      expect(CommonResponse.error).toHaveBeenCalledWith(res, 400, expect.any(String));
     });
   });
 
@@ -187,18 +183,47 @@ describe('EquipamentoController', () => {
       });
     });
 
+    it('deve criar equipamento sem fotos', async () => {
+      req.body = { equiValorDiaria: '100.50', equiQuantidadeDisponivel: '5' };
+      req.files = [];
+      const dadosProcessados = {
+        equiValorDiaria: 100.50,
+        equiQuantidadeDisponivel: 5,
+      };
+      const equipamento = { _id: 'abc123', ...dadosProcessados };
+      equipamentoSchema.parse.mockReturnValue({ ...dadosProcessados, equiUsuario: 'userId', equiFotos: [] });
+      controller.service.criar.mockResolvedValue(equipamento);
+
+      await controller.criar(req, res);
+
+      expect(controller._processarImagemParaFoto).not.toHaveBeenCalled();
+      expect(equipamentoSchema.parse).toHaveBeenCalledWith({
+        ...dadosProcessados,
+        equiUsuario: 'userId',
+        equiFotos: [],
+      });
+      expect(controller.service.criar).toHaveBeenCalledWith({
+        ...dadosProcessados,
+        equiUsuario: 'userId',
+        equiFotos: [],
+      });
+      expect(CommonResponse.created).toHaveBeenCalledWith(res, {
+        mensagem: 'Equipamento cadastrado. Aguardando aprovação.',
+        equipamento,
+      });
+    });
+
     it('deve lançar erro se dados forem inválidos', async () => {
       req.body = { equiValorDiaria: 'invalido', equiQuantidadeDisponivel: 'invalido' };
       req.files = [];
-
       const error = new Error('Dados inválidos');
       error.name = 'ZodError';
-
       equipamentoSchema.parse.mockImplementation(() => { throw error; });
 
-      await expect(controller.criar(req, res)).rejects.toThrow(error);
-    });
+      await controller.criar(req, res);
 
+      expect(CommonResponse.error).toHaveBeenCalledWith(res, 400, expect.any(String));
+    });
   });
 
   describe('atualizar', () => {
@@ -221,28 +246,27 @@ describe('EquipamentoController', () => {
 
     it('deve lançar erro se ID for inválido', async () => {
       req.params.id = 'idInvalido';
-
       const error = new Error('ID inválido');
       error.name = 'ZodError';
-
       EquipamentoIdSchema.parse.mockImplementation(() => { throw error; });
 
-      await expect(controller.atualizar(req, res)).rejects.toThrow(error);
+      await controller.atualizar(req, res);
+
+      expect(CommonResponse.error).toHaveBeenCalledWith(res, 400, expect.any(String));
     });
 
-
     it('deve lançar erro se dados forem inválidos', async () => {
-      const id = '123';
+      const id = 'abc123';
       req.params.id = id;
-      req.body = { nome: 123 }; 
-
+      req.body = { nome: 123 };
       EquipamentoIdSchema.parse.mockReturnValue(id);
-
       const error = new Error('Dados inválidos');
       error.name = 'ZodError';
       equipamentoUpdateSchema.parse.mockImplementation(() => { throw error; });
 
-      await expect(controller.atualizar(req, res)).rejects.toThrow(error);
+      await controller.atualizar(req, res);
+
+      expect(CommonResponse.error).toHaveBeenCalledWith(res, 400, expect.any(String));
     });
   });
 
@@ -276,12 +300,13 @@ describe('EquipamentoController', () => {
     it('deve lançar erro se ID for inválido', async () => {
       req.params.id = 'idInvalido';
       Usuario.findById.mockResolvedValue({ tipoUsuario: 'admin' });
-
       const error = new Error('ID inválido');
       error.name = 'ZodError';
       EquipamentoIdSchema.parse.mockImplementation(() => { throw error; });
 
-      await expect(controller.aprovar(req, res)).rejects.toThrow(error);
+      await controller.aprovar(req, res);
+
+      expect(CommonResponse.error).toHaveBeenCalledWith(res, 400, expect.any(String));
     });
   });
 
@@ -315,14 +340,14 @@ describe('EquipamentoController', () => {
     it('deve lançar erro se ID for inválido', async () => {
       req.params.id = 'idInvalido';
       Usuario.findById.mockResolvedValue({ tipoUsuario: 'admin' });
-
       const error = new Error('ID inválido');
       error.name = 'ZodError';
       EquipamentoIdSchema.parse.mockImplementation(() => { throw error; });
 
-      await expect(controller.reprovar(req, res)).rejects.toThrow(error);
-    });
+      await controller.reprovar(req, res);
 
+      expect(CommonResponse.error).toHaveBeenCalledWith(res, 400, expect.any(String));
+    });
   });
 
   describe('adicionarFoto', () => {
@@ -355,14 +380,14 @@ describe('EquipamentoController', () => {
     it('deve lançar erro se id for inválido', async () => {
       req.params.id = 'idInvalido';
       req.file = { mimetype: 'image/jpeg', path: 'path/to/foto.jpg', originalname: 'foto.jpg', size: 1024, filename: 'foto.jpg' };
-
       const error = new Error('ID inválido');
       error.name = 'ZodError';
       EquipamentoIdSchema.parse.mockImplementation(() => { throw error; });
 
-      await expect(controller.adicionarFoto(req, res)).rejects.toThrow(error);
-    });
+      await controller.adicionarFoto(req, res);
 
+      expect(CommonResponse.error).toHaveBeenCalledWith(res, 400, expect.any(String));
+    });
   });
 
   describe('_obterDimensoesImagem', () => {
@@ -395,12 +420,12 @@ describe('EquipamentoController', () => {
     it('deve lançar erro se imagem não for válida', () => {
       fs.existsSync.mockReturnValue(true);
       fs.statSync.mockReturnValue({ size: 1024 });
-      fs.readFileSync.mockReturnValue(Buffer.from([0x00, 0x00, 0x00]));
+      fs.readFileSync.mockReturnValue(Buffer.from([0x00, 0x00, 0x00])); 
 
       expect(() => controller._obterDimensoesImagem('path/to/invalid/image.jpg')).toThrow('Arquivo não é uma imagem válida');
     });
     it('deve lançar erro se dimensões não forem obtidas', () => {
-      controller._validarHeaderImagem = jest.fn(() => true);
+      controller._validarHeaderImagem = jest.fn(() => true); 
       fs.existsSync.mockReturnValue(true);
       fs.statSync.mockReturnValue({ size: 1024 });
       fs.readFileSync.mockReturnValue(Buffer.from([0xFF, 0xD8, 0xFF, 0xE0]));
@@ -414,17 +439,17 @@ describe('EquipamentoController', () => {
 
   describe('_validarHeaderImagem', () => {
     it('deve validar header JPEG', () => {
-      const buffer = Buffer.from([0xFF, 0xD8, 0xFF, 0xE0]);
+      const buffer = Buffer.from([0xFF, 0xD8, 0xFF, 0xE0]); 
       expect(controller._validarHeaderImagem(buffer)).toBe(true);
     });
 
     it('deve validar header PNG', () => {
-      const buffer = Buffer.from([0x89, 0x50, 0x4E, 0x47]);
+      const buffer = Buffer.from([0x89, 0x50, 0x4E, 0x47]); 
       expect(controller._validarHeaderImagem(buffer)).toBe(true);
     });
 
     it('deve validar header RIFF', () => {
-      const buffer = Buffer.from([0x52, 0x49, 0x46, 0x46]);
+      const buffer = Buffer.from([0x52, 0x49, 0x46, 0x46]); 
       expect(controller._validarHeaderImagem(buffer)).toBe(true);
     });
 

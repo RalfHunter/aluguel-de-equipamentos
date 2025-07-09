@@ -1,12 +1,8 @@
 import EquipamentoRepository from '../../../repositories/EquipamentoRepository.js';
-<<<<<<< HEAD
 import EquipamentoModel from '../../../models/Equipamento.js';
-=======
-import EquipamentoModel from '../../../models/Equipamento.js
->>>>>>> a5025f0e6885dbce0263adcd6fd56f9a116eec62
 import { CustomError, HttpStatusCodes } from '../../../utils/helpers/index.js';
 
-jest.mock('../../../models/Equipamento.js');
+jest.mock('../../models/Equipamento.js');
 
 const mockPaginate = jest.fn();
 const mockFindById = jest.fn();
