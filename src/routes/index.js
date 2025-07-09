@@ -3,7 +3,7 @@ import swaggerUI from "swagger-ui-express";
 import getSwaggerOptions from "../docs/config/head.js";
 import logRoutes from "../middlewares/LogRoutesMiddleware.js";
 import dotenv from "dotenv"
-import usuario from "./usuarioRouter.js"
+import usuario from "./usuarioRoutes.js"
 import reserva from "./reservaRoutes.js"
 import avaliacoes from "./avaliacaoRoutes.js"
 import equipamentoRoutes from "./equipamentoRoutes.js";

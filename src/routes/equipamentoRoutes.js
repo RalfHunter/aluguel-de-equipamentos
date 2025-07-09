@@ -24,6 +24,9 @@ router
     .patch("/equipamentos/:id/aprovar", AuthMiddleware, asyncWrapper(equipamentoController.aprovar.bind(equipamentoController)))
 
     //rota adm reprovar um equipamento
-    .patch("/equipamentos/:id/reprovar", AuthMiddleware, asyncWrapper(equipamentoController.reprovar.bind(equipamentoController)));
+    .patch("/equipamentos/:id/reprovar", AuthMiddleware, asyncWrapper(equipamentoController.reprovar.bind(equipamentoController)))
+    
+    //rota para inativar 
+.patch("/equipamentos/:id/inativar", AuthMiddleware, asyncWrapper(equipamentoController.inativar.bind(equipamentoController)));
 
 export default router;
