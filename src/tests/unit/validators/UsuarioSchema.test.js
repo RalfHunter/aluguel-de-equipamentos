@@ -232,8 +232,8 @@ describe('UsuarioSchema', () => {
         })
         it('deve retornar uma mensagem de erro para um caminho de url inválida', async() =>{
             const SchemaUsuarioFoto = usuarioSchema.partial()
-            const FotoUsuarioInvavalido = {fotoUsuario: "dawd;çdoaijwdg"}
-            await expect(SchemaUsuarioFoto.parseAsync(FotoUsuarioInvavalido)).rejects.toThrow("URL inválida")
+            const FotoUsuarioInvalido = {fotoUsuario: 134567}
+            await expect(SchemaUsuarioFoto.parseAsync(FotoUsuarioInvalido)).rejects.toThrow("foto tem que ser do tipo string")
         });
         it('deve retornar uma mensagem de erro se foto não for uma string', async() =>{
             const SchemaUsuarioFoto = usuarioSchema.partial()

@@ -23,11 +23,27 @@ export default  {
     // testMatch:['**/GrupoFilterBuilder.test.js']
     // testMatch:['**/AuthMiddleware.test.js']
     // testMatch:['**/usuarioRoutes.test.js']
-    testMatch:['**/authRoutes.test.js']
+    // testMatch:['**/authRoutes.test.js']
     // testMatch:['**/GrupoController.test.js']
     // testMatch:['**/GrupoService.test.js']
     // testMatch:['**/GrupoRepository.test.js']
     // testMatch:['**/grupoRoutes.test.js']
     // testMatch:['**/UsuarioSchema.test.js']
+    testMatch:
+    ['**/AuthController.test.js', 
+      '**/AuthService.test.js',
+      '**/Usuario.test.js',
+      '**/UsuarioController.test.js',
+      '**/UsuarioService.test.js',
+      '**/UsuarioRepository.test.js',
+      '**/GrupoFilterBuilder.test.js',
+      '**/AuthMiddleware.test.js',
+      '**/GrupoController.test.js',
+      '**/GrupoService.test.js',
+      '**/GrupoRepository.test.js',
+      '**/UsuarioSchema.test.js',
+      '**/ValidatorUsuario.test.js',
+      '**/UsuarioFilterBuilder.test.js'
+    ]
 
 };
