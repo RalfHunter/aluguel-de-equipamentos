@@ -28,6 +28,6 @@ export default  {
     // testMatch:['**/GrupoController.test.js']
     // testMatch:['**/GrupoService.test.js']
     // testMatch:['**/GrupoRepository.test.js']
-     testMatch:['**/AvaliacaoController.test.js']
+    //testMatch:['**/Reserva.test.js']
     // testMatch:['**/ReservaController.test.js', '**/ReservaService.test.js', '**/ReservaRepository.test.js', '**/ReservaFilterBuilder.test.js']
 };
