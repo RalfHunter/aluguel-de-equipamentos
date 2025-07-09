@@ -58,16 +58,16 @@ Para executar o projeto localmente ou em ambiente de produção, siga os passos 
       npm run dev
 
 ## Para executar o docker
-* Ter docker instalado</li>
+* Ter docker instalado
 
-    # Subir o container
-    docker-compose up -d
+        # Subir o container
+        docker-compose up -d
 
-    # Parar o container
-    docker-compose down
+        # Parar o container
+        docker-compose down
 
-    # Reconstruir e subir
-    docker-compose up --build
+        # Reconstruir e subir
+        docker-compose up --build
 
 ## Para executar os testes
 
