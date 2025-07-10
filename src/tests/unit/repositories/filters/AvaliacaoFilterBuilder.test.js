@@ -1,4 +1,4 @@
-import AvaliacaoFilterBuilder from "../../../repositories/filters/AvaliacaoFilterBuilder.js";
+import AvaliacaoFilterBuilder from "../../../../repositories/filters/AvaliacaoFilterBuilder.js";
 
 describe('AvaliacaoFilterBuilder', () => {
   let avaliacaoFilterBuilder;
