@@ -11,6 +11,34 @@ class ReservaService {
         this.repository = new ReservaRepository();
     }
     async listar(req) {
+        const usuario = await Usuario.findById(req.user_id).populate('grupos');
+
+        if (!usuario) {
+          return res.status(404).json({ message: 'Usuário não encontrado' });
+        }
+        
+        console.log("USER ID:", req.user_id);
+        console.log("USUÁRIO COMPLETO:", usuario);
+        
+        let nivelPermissao = 0;
+        
+        // Pega o maior nível de permissão entre os grupos do usuário
+        for (const grupo of usuario.grupos) {
+          if (grupo.nivelPermissao > nivelPermissao) {
+            nivelPermissao = grupo.nivelPermissao;
+          }
+        }
+        
+        console.log("NÍVEL DE PERMISSÃO:", nivelPermissao);
+        
+        const queryParams = { ...req.query };
+        
+        if (nivelPermissao >= 100) {
+          queryParams.usuarioId = usuario._id.toString();
+        }
+    
+         req.query = queryParams;
+    
         const data = await this.repository.listar(req);
         return data;
     }

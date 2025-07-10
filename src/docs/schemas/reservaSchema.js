@@ -103,7 +103,7 @@ const reservaMongooseSchema = Reserva.schema;
 
 reservaSchemas.ReservaItem.example = await generateExample(reservaSchemas.ReservaItem, null, reservaMongooseSchema);
 reservaSchemas.ReservaDetalhes.example = await generateExample(reservaSchemas.ReservaDetalhes, null, reservaMongooseSchema);
-reservaSchemas.ReservaPost.example = {
+reservaSchemas.ReservaPatch.example = {
   dataInicial: '2025-07-10',
   dataFinal: '2025-07-15',
   quantidadeEquipamento: 2,
