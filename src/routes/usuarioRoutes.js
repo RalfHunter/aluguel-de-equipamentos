@@ -23,5 +23,5 @@ router
     .delete("/usuarios/:id/foto", AuthMiddleware, asyncWrapper(usuarioController.removerFoto.bind(usuarioController)))
     .delete("/usuarios/:id", AuthMiddleware, AuthPermission, asyncWrapper(usuarioController.deletarUsuario.bind(usuarioController)))
     .get("/perfil/", AuthMiddleware, asyncWrapper(usuarioController.getPerfil.bind(usuarioController)))
-    .post("/perfil/", AuthMiddleware, asyncWrapper(usuarioController.updatePerfil.bind(usuarioController)))
+    .patch("/perfil/", AuthMiddleware, asyncWrapper(usuarioController.updatePerfil.bind(usuarioController)))
 export default router

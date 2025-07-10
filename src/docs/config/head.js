@@ -1,5 +1,7 @@
 import reservasSchemas from "../schemas/reservaSchema.js";
 import reservasPaths from "../paths/reserva.js";
+import usuariosSchemas from "../schemas/usuarioSchema.js";
+import usuariosPaths from "../paths/usuarios.js";
 
 const getServersInCorrectOrder = () => {
     const PORT = process.env.APP_PORT
@@ -29,9 +31,14 @@ const getSwaggerOptions = () => {
                     name: "Reservas",
                     description: "Rotas para gestão de reservas"
                 },
+                {
+                    name: "Usuários",
+                    description: "Rotas para gestão de usuários"
+                },
             ],
             paths: {
-                ...reservasPaths
+                ...reservasPaths,
+                ...usuariosPaths
             },
             components: {
                 securitySchemes: {
@@ -43,6 +50,7 @@ const getSwaggerOptions = () => {
                 },
                 schemas: {
                     ...reservasSchemas,
+                    ...usuariosSchemas,
                 }
             },
             security: [{
