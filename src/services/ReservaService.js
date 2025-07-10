@@ -101,14 +101,16 @@ async criar(parsedData) {
             customMessage: 'Equipamento não encontrado.',
         });
     }
-    if (!equipamentoDoc.equiStatus) {
+
+    if (equipamentoDoc.equiStatus !== 'ativo') {
         throw new CustomError({
             statusCode: 400,
             errorType: 'invalidData',
             field: 'equipamentos',
-            customMessage: 'O equipamento não está disponível para reserva.',
+            customMessage: 'O equipamento está inativo e não pode ser reservado.',
         });
     }
+
     if (equipamentoDoc.equiQuantidadeDisponivel < quantidadeEquipamento) {
         throw new CustomError({
             statusCode: 400,
@@ -135,6 +137,15 @@ async criar(parsedData) {
                 errorType: 'resourceNotFound',
                 field: 'usuarios',
                 customMessage: 'Usuário não encontrado.',
+            });
+        }
+
+        if (!usuarioDoc.ativo) {
+            throw new CustomError({
+                statusCode: 400,
+                errorType: 'invalidData',
+                field: 'usuarios',
+                customMessage: 'O usuário está inativo e não pode fazer reservas.',
             });
         }
     }
