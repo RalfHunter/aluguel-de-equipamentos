@@ -248,7 +248,7 @@ describe('usuarioRoute', () => {
             expect(res.body?.message).toEqual("Rota não encontrada")
         });
     });
-    describe('/usuarios/:id', () => {
+    describe('get /usuarios/:id', () => {
        it('deve retornar o usuário com sucesso', async () => {
             const res = await request(app)
                 .get(`/usuarios/${user?._id}`)
@@ -319,7 +319,7 @@ describe('usuarioRoute', () => {
                 expect(res.body?.errors).toHaveLength(0)
         });
     });
-    describe('patch /usuarios/id', () =>{
+    describe('patch /usuarios/:id', () =>{
        it('deve retornar sucesso ao mudar o status de usuário', async () =>{
         
             const res = await request(app)
@@ -445,6 +445,7 @@ describe('usuarioRoute', () => {
             // console.log(res.body)
             expect(res.body?.data?.nome).toEqual(body.nome)
             expect(res.body?.data?.email).toEqual(body.email)
+            
             userTemp = res.body?.data
         });
         it('deve falhar ao criar um usuário, campos unicos repitidos', async ()=>{

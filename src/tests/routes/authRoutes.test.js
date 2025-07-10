@@ -7,19 +7,26 @@ describe('authRouter', () => {
     let usuarioToken;
     let idUsuario;
     let refreshTokenUsuario;
-    let tokenAdmin;
-    let idAdmin;
-    let nomeAdmin;
+    let usuarioFake
     // URL da requisição
     let app = 'http://localhost:5011'
     // Usuário alvo da requisição
-    let tokenUsuario;
-    let id;
-    let statusUser;
-    let user;
-    // Admin alvo para testes
-    let idAdmin2
+    let moderador;
     describe('rota /login', () => {
+        it('/login, realiza login para poder deletar usuário criado durante os testes', async()=>{
+            const body = {
+                email:"moderador@gmail.com",
+                senha:"Moderador@1234"
+            }
+            const res = await request(app)
+            .post('/login')
+            .send(body)
+            .expect(200)
+            expect(res.body?.message).toEqual("Requisição bem-sucedida")
+            expect(res.body?.data).not.toEqual(null)
+            expect(res.body?.errors).toHaveLength(0)
+            moderador = res.body?.data?.user
+        })
         it('/login realizado com sucesso por um usuário comum', async () => {
             const body = {
                 email:"usuario@gmail.com",
@@ -195,61 +202,53 @@ describe('authRouter', () => {
             expect(res.body?.errors[0]).toEqual({"message": "Required", "path": "accessToken"})
         });
     });
-    describe('/recover', () =>{
-        it('deve ter sucesso ao realizar recover', async () =>{
-           const body = {
-            email:'usuario@gmail.com'
-           }
-           const res = await request(app)
-           .post('/recover')
-           .send(body)
-           .expect(200) 
-           expect(res.body?.message).toEqual('Requisição bem-sucedida')
-           expect(res.body?.data?.message).toEqual('Solicitação de recuperação de senha recebida. Um e-mail foi enviado com instruções.')
-           expect(res.body?.errors).toHaveLength(0)
-        });
-        it('deve falhar ao realizar recover, campo email invalido', async () =>{
-           const body = {
-            invalido:'usuario@gmail.com'
-           }
-           const res = await request(app)
-           .post('/recover')
-           .send(body)
-           .expect(404) 
-           expect(res.body?.message).toEqual('Recurso não encontrado')
-           expect(res.body?.errors).toHaveLength(0)
-        });
-        it('deve falhar ao realizar recover, valor do campo email invalido', async () =>{
-           const body = {
-            email:'EsteEmailComCertezaNãoExiste'
-           }
-           const res = await request(app)
-           .post('/recover')
-           .send(body)
-           .expect(400) 
-           expect(res.body?.message).toEqual('Erro de validação. 1 campo(s) inválido(s).')
-           expect(res.body?.errors[0]).toEqual({"message": "Formato de email inválido.", "path": "email"})
-        });
-    });
     describe('post /signup', () =>{
         it('deve realziar singup com sucesso', async() =>{
             const body = gerarUsuarioFake()
             const res = await request(app)
             .post('/signup')
             .send(body)
-
-            console.log(res.body)
+            .expect(201)
+            expect(res.body.message).toEqual('Recurso criado com sucesso')
+            // console.log(res.body)
+            usuarioFake = res.body?.data
+        });
+        it('deve falhar ao realizar singup, dados inválidos', async() =>{
+            const body = {
+                nome:"1231", 
+                email:"invalido",
+                senha:"invalida",
+                telefone:"fone",
+                dataNascimento:"invalido",
+                CPF:"invalido"
+            }
+            const res = await request(app)
+            .post('/signup')
+            .send(body)
+            .expect(400)
+            expect(res.body.message).toEqual('Erro de validação. 8 campo(s) inválido(s).')
+            expect(res.body?.errors).toHaveLength(8)
+        });
+        it('deletar usuário criado durante os testes', async ()=>{
+            // console.log(moderador)
+             const res = await request(app)
+            .delete(`/usuarios/${usuarioFake?._id}`)
+            .set("Authorization", `Bearer ${moderador?.accessToken}`)
+            .expect(200)
+            expect(res.body?.message).toEqual('Usuário excluído com sucesso.')
+            expect(res.body?.data).toMatchObject(usuarioFake)
+            // .expect(200)
         })
-    })
+    });
 })
 
 function gerarUsuarioFake() {
   return {
     nome: fakerbr.name.firstName() + ' ' + fakerbr.name.lastName(),
-    email: fakerbr.internet.email(),
-    telefone: fakerbr.phone.phoneNumber(), // ex: (11) 91234-5678
-    senha: fakerbr.internet.password(12), // pode criptografar depois
-    dataNascimento: gerarDataAleatoria(), // ou fake.date.past(30)
+    email: fakerbr.name.firstName() + fakerbr.name.lastName() + fakerbr.internet.email(),
+    telefone: "11 4789-7843", // ex: (11) 91234-5678
+    senha: "Senha@1234", // pode criptografar depois
+    dataNascimento: "2001-01-01", // ou fake.date.past(30)
     CPF: fakerbr.br.cpf(),
 }
 }

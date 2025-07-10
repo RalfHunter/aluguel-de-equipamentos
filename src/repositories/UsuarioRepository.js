@@ -308,7 +308,7 @@ class UsuarioRepository {
 
         if (!usuario) {
             throw new CustomError({
-                statusCode: HttpStatusCodes.NOT_FOUND.code,
+                statusCode: 404,
                 errorType: 'resourceNotFound',
                 field: 'Usuário',
                 details: [],

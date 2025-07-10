@@ -1,4 +1,4 @@
-import { ReservaIdSchema, ReservaQuerySchema } from "../../../../utils/validators/schemas/zod/querys/ReservaQuerySchema.js";
+import { ReservaIdSchema, ReservaQuerySchema } from "../../../../../../../utils/validators/schemas/zod/querys/ReservaQuerySchema.js";
 import mongoose from "mongoose";
 
 describe('ReservaQuerySchema', () => {

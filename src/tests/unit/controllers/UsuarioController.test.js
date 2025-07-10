@@ -189,16 +189,19 @@ describe('UsuarioController', () => {
                 tipoUsuario: "usuario"
             };
             
-            // Mock que simula um documento Mongoose com método toObject
-            const mockUsuarioDocument = {
+            // Mock que simula um documento retornado do serviço
+            const mockUsuarioData = {
                 ...expectedData,
-                toObject: jest.fn().mockReturnValue(expectedData)
+                _id: '67959501ea0999e0a0fa9f58'
             };
             
-            usuarioController.service.cadastrarUsuario.mockResolvedValue(mockUsuarioDocument)
+            usuarioController.service.cadastrarUsuario.mockResolvedValue(mockUsuarioData)
             await usuarioController.criarComSenha(req, res)
             expect(usuarioController.service.cadastrarUsuario).toHaveBeenCalledWith(expectedData)
-            expect(mockUsuarioDocument.toObject).toHaveBeenCalled()
+            expect(res.status).toHaveBeenCalledWith(201)
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+                data: mockUsuarioData
+            }))
         })
 
         it('deve falhar ao validar dados inválidos', async () => {

@@ -242,4 +242,105 @@ describe("AuthController", () => {
 `)
         });
     });
+    describe('atualizarSenhaToken', () => {
+        beforeEach(() => {
+            req = {
+                query: { token: 'token-recuperacao-123' },
+                body: { senha: 'NovaSenha@123' }
+            };
+        });
+
+        it('deve atualizar a senha com sucesso usando token da query', async () => {
+            const mockResponse = { message: 'Senha atualizada com sucesso.' };
+            controller.service.atualizarSenhaToken = jest.fn().mockResolvedValue(mockResponse);
+
+            await controller.atualizarSenhaToken(req, res);
+
+            expect(controller.service.atualizarSenhaToken).toHaveBeenCalledWith(
+                'token-recuperacao-123',
+                { senha: 'NovaSenha@123' }
+            );
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+                data: null,
+                message: 'Senha atualizada com sucesso.',
+                errors: []
+            }));
+        });
+
+        it('deve atualizar a senha com sucesso usando token dos params', async () => {
+            req.query = {}; // Remove token da query
+            req.params = { token: 'token-recuperacao-params' }; // Adiciona token nos params
+            
+            const mockResponse = { message: 'Senha atualizada com sucesso.' };
+            controller.service.atualizarSenhaToken = jest.fn().mockResolvedValue(mockResponse);
+
+            await controller.atualizarSenhaToken(req, res);
+
+            expect(controller.service.atualizarSenhaToken).toHaveBeenCalledWith(
+                'token-recuperacao-params',
+                { senha: 'NovaSenha@123' }
+            );
+            expect(res.status).toHaveBeenCalledWith(200);
+        });
+
+        it('deve falhar quando token de recuperação não é fornecido', async () => {
+            req.query = {}; // Remove token da query
+            req.params = {}; // Remove token dos params
+
+            await expect(controller.atualizarSenhaToken(req, res)).rejects.toMatchObject({
+                statusCode: 401,
+                errorType: 'unauthorized',
+                field: 'authentication',
+                customMessage: 'Token de recuperação na URL como parâmetro ou query é obrigatório para troca da senha.'
+            });
+        });
+
+        it('deve falhar quando senha não é fornecida', async () => {
+            req.body = {}; // Remove senha do body
+
+            await expect(controller.atualizarSenhaToken(req, res)).rejects.toThrow();
+        });
+
+        it('deve falhar quando senha tem formato inválido', async () => {
+            req.body.senha = '123'; // Senha muito simples
+
+            await expect(controller.atualizarSenhaToken(req, res)).rejects.toThrow();
+        });
+
+        it('deve falhar quando o serviço retorna erro', async () => {
+            const serviceError = new CustomError({
+                statusCode: 404,
+                errorType: 'notFound',
+                field: 'Token',
+                customMessage: 'Token de recuperação não encontrado.'
+            });
+
+            controller.service.atualizarSenhaToken = jest.fn().mockRejectedValue(serviceError);
+
+            await expect(controller.atualizarSenhaToken(req, res)).rejects.toMatchObject({
+                statusCode: 404,
+                errorType: 'notFound',
+                field: 'Token',
+                customMessage: 'Token de recuperação não encontrado.'
+            });
+        });
+
+        it('deve falhar quando token é string vazia', async () => {
+            req.query.token = ''; // Token vazio
+            req.params = {};
+
+            await expect(controller.atualizarSenhaToken(req, res)).rejects.toMatchObject({
+                statusCode: 401,
+                errorType: 'unauthorized',
+                field: 'authentication'
+            });
+        });
+
+        it('deve falhar quando senha é null', async () => {
+            req.body.senha = null;
+
+            await expect(controller.atualizarSenhaToken(req, res)).rejects.toThrow();
+        });
+    });
 })
