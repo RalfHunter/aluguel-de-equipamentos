@@ -51,5 +51,4 @@ export default  {
     // ]
     //testMatch:['**/Reserva.test.js']
     // testMatch:['**/ReservaController.test.js', '**/ReservaService.test.js', '**/ReservaRepository.test.js', '**/ReservaFilterBuilder.test.js']
-
 };
