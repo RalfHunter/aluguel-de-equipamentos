@@ -1,84 +1,49 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import http from 'http';
-//import  app  from '../../app.js';
-import '../../routes/equipamentoRoutes.js'; 
 
-let app = 'http://localhost:5011';
+dotenv.config();
 
-let server;                             
+let app = 'http://localhost:5011'; 
 let tokenAdmin;
 let tokenUser;
 
-
 describe('Rotas de Equipamentos - Integração', () => {
   beforeAll(async () => {
-    // conecta ao MongoDB
-    try {
-      await mongoose.connect(process.env.MONGO_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      });
-    } catch (err) {
-      console.error('Erro ao conectar ao MongoDB:', err);
-      throw err;
-    }
+    // Conecta no MongoDB
+    await mongoose.connect(process.env.DB_URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
 
-    // Inicia o servidor
-    server = http.createServer(app);
-    await new Promise((resolve) => server.listen(PORT, resolve));
-
-    const unique = Date.now() + '-' + Math.floor(Math.random() * 10000);
-    const adminEmail = `admin${unique}@teste.com`;
-    const userEmail = `user${unique}@teste.com`;
-
-    try {
-      await request(app)
-        .post('/usuarios')
-        .send({
-          nome: 'Admin Teste',
-          email: adminEmail,
-          senha: 'Senha@123',
-          tipoUsuario: 'admin',
-          ativo: true,
-        });
-    } catch (err) {}
-
-    // faz login como admin
+    // Faz login do admin "dev@gmail.com"
     const adminLoginRes = await request(app)
       .post('/login')
-      .send({ email: adminEmail, senha: 'Senha@123' });
+      .send({ email: 'dev@gmail.com', senha: 'Dev@1234' });
+
+    console.log('Resposta login admin:', adminLoginRes.body);
+
     tokenAdmin = adminLoginRes.body?.data?.user?.accessToken;
     expect(tokenAdmin).toBeTruthy();
 
-    // criando usuário comum para testes
-    try {
-      await request(app)
-        .post('/usuarios')
-        .send({
-          nome: 'User Teste',
-          email: userEmail,
-          senha: 'Senha@123',
-          tipoUsuario: 'comum',
-          ativo: true,
-        });
-    } catch (err) {}
-
-    //faz login como usuário comum
+    // Opcional: login do usuário comum, se quiser testar permissões
     const userLoginRes = await request(app)
       .post('/login')
-      .send({ email: userEmail, senha: 'Senha@123' });
+      .send({ email: 'usuario@gmail.com', senha: 'Usuario@1234' });
+
     tokenUser = userLoginRes.body?.data?.user?.accessToken;
     expect(tokenUser).toBeTruthy();
   });
 
   afterAll(async () => {
     await mongoose.disconnect();
-    if (server) {
-      await new Promise((resolve) => server.close(resolve));
-    }
   });
+
+  test('Login admin fixo (seed)', async () => {
+    expect(tokenAdmin).toBeTruthy();
+  });
+
+
 
   // equipamento válido
   const criarEquipamentoValido = async (token, override = {}) => {

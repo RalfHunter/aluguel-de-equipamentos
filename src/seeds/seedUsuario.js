@@ -90,7 +90,7 @@ async function SeedUsuario(){
         dataNascimento: fake.dataNascimento(),
         CPF: "12345612346", // Geração de CPF fictício
         notaMedia: 0,
-        ativo: true,
+        ativo: true,    
         fotoUsuario:'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmtv-wGPAGVnAMkWDSteg4qGIRHhtLCYgoDQ&s',
         grupos: [comum._id]
         
