@@ -1,4 +1,4 @@
-import uploadUsuario from '../../../config/multerUserConfig.js';
+import uploadUsuario, { compressUserImage } from '../../../config/multerUserConfig.js';
 
 // Mock do módulo fs para testar cenários de arquivo existente
 jest.mock('fs', () => ({
@@ -288,5 +288,43 @@ describe('multerUserConfig integrado', () => {
     
     // Verificar se foi chamado com erro (pode ser chamado de forma assíncrona)
     expect(mockCallback).toHaveBeenCalled();
+  });
+});
+
+describe('compressUserImage', () => {
+  it('deve ser uma função válida', () => {
+    expect(compressUserImage).toBeDefined();
+    expect(typeof compressUserImage).toBe('function');
+  });
+
+  it('deve chamar next() quando não há arquivo', async () => {
+    const mockReq = { file: null };
+    const mockRes = {};
+    const mockNext = jest.fn();
+
+    await compressUserImage(mockReq, mockRes, mockNext);
+
+    expect(mockNext).toHaveBeenCalled();
+  });
+
+  it('deve chamar next() quando arquivo é menor que 2MB', async () => {
+    const mockReq = { 
+      file: { 
+        path: '/fake/path/file.jpg' 
+      } 
+    };
+    const mockRes = {};
+    const mockNext = jest.fn();
+
+    // Mock fs.statSync para retornar tamanho pequeno
+    const originalStatSync = fs.statSync;
+    fs.statSync = jest.fn().mockReturnValue({ size: 1024 * 1024 }); // 1MB
+
+    await compressUserImage(mockReq, mockRes, mockNext);
+
+    expect(mockNext).toHaveBeenCalled();
+    
+    // Restaurar fs.statSync
+    fs.statSync = originalStatSync;
   });
 });

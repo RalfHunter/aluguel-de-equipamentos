@@ -8,6 +8,7 @@ export default  {
       "/utils/logger.js",
       "utils/helpers/HttpStatusCodes.js"
     ],
+    // testMatch:['**/multerUserConfig.test.js']
     // testMatch:['**/messages.test.js']
     // testMatch:['**/AuthController.test.js']
     // testMatch:['**/AuthService.test.js']
@@ -21,7 +22,7 @@ export default  {
     // testMatch:['**/AuthPermission.test.js']
     // testMatch:['**/errorHandler.test.js']
     // testMatch:['**/GrupoSchema.test.js']
-    testMatch:['**/usuarioRoutes.test.js'] 
+    // testMatch:['**/usuarioRoutes.test.js'] 
     // testMatch:['**/authRoutes.test.js']
     // testMatch:['**/GrupoController.test.js']
     // testMatch:['**/GrupoService.test.js']

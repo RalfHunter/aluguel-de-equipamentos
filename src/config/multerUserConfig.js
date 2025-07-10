@@ -1,6 +1,7 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import sharp from "sharp";
 
 const diretorio = 'uploads/usuarios';
 
@@ -98,4 +99,57 @@ const uploadUsuario = multer({
   }
 });
 
+// Middleware para compressão de imagens
+const compressUserImage = async (req, res, next) => {
+  if (!req.file) return next();
+
+  const filePath = req.file.path;
+  const tempPath = `${filePath}_temp`;
+
+  try {
+    // Verificar o tamanho do arquivo
+    const stats = fs.statSync(filePath);
+    const fileSizeInMB = stats.size / (1024 * 1024);
+
+    // Só comprimir se for maior que 2MB
+    if (fileSizeInMB > 2) {
+      console.log(`Comprimindo imagem de ${fileSizeInMB.toFixed(2)}MB...`);
+
+      await sharp(filePath)
+        .resize(1200, 900, { 
+          fit: 'inside', 
+          withoutEnlargement: true 
+        })
+        .jpeg({ 
+          quality: 85,
+          progressive: true 
+        })
+        .toFile(tempPath);
+
+      // Substituir o arquivo original pelo comprimido
+      fs.unlinkSync(filePath);
+      fs.renameSync(tempPath, filePath);
+
+      // Atualizar informações do arquivo no req.file
+      const newStats = fs.statSync(filePath);
+      req.file.size = newStats.size;
+      
+      console.log(`Imagem comprimida para ${(newStats.size / (1024 * 1024)).toFixed(2)}MB`);
+    }
+
+    next();
+  } catch (error) {
+    console.error('Erro ao comprimir imagem:', error);
+    
+    // Limpar arquivo temporário se existir
+    if (fs.existsSync(tempPath)) {
+      fs.unlinkSync(tempPath);
+    }
+    
+    // Continuar sem compressão em caso de erro
+    next();
+  }
+};
+
 export default uploadUsuario;
+export { compressUserImage };
