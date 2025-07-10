@@ -14,7 +14,12 @@ class ReservaService {
         const usuario = await Usuario.findById(req.user_id).populate('grupos');
 
         if (!usuario) {
-          return res.status(404).json({ message: 'Usuário não encontrado' });
+        throw new CustomError({
+            statusCode: 404,
+            errorType: 'resourceNotFound',
+            field: 'usuarios',
+            customMessage: 'Usuário não encontrado.',
+        });
         }
         
         console.log("USER ID:", req.user_id);

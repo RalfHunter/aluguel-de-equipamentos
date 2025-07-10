@@ -68,13 +68,15 @@ describe('ReservaService', () => {
 
       token = loginRes.body?.data?.user?.accessToken;
       usuarioId = loginRes.body?.data?.user?._id;
+      console.log('USUARIO', usuarioId);
       expect(token).toBeTruthy();
       expect(usuarioId).toBeTruthy();
 
       const equipamentoRes = await request(app)
         .get('/equipamentos')
         .set('Authorization', `Bearer ${token}`);
-      equipamentoId = equipamentoRes.body?.data?.docs[0]?._id;git 
+      equipamentoId = equipamentoRes.body?.data?.docs[0]?._id;
+      console.log('EQUIPAMENTO', equipamentoId);
       expect(equipamentoId).toBeTruthy();
 
       const reservaRes = await request(app)
@@ -113,6 +115,15 @@ describe('ReservaService', () => {
 
   describe('listar', () => {
     it('deve listar todas as reservas', async () => {
+        const usuarioMock = {
+        _id: usuarioId,
+        grupos: [{ nivelPermissao: 0 }],
+      };
+
+      Usuario.findById.mockReturnValue({
+        populate: jest.fn().mockResolvedValue(usuarioMock),
+      });
+
       const mockData = [
         {
           _id: reservaId,
@@ -128,10 +139,68 @@ describe('ReservaService', () => {
       ];
       repositoryMock.listar.mockResolvedValue(mockData);
 
+       req.user_id = usuarioId;
+
       const result = await reservaService.listar(req);
 
       expect(repositoryMock.listar).toHaveBeenCalledWith(req);
       expect(result).toEqual(mockData);
+    });
+
+    it('deve retornar 404 se o usuário não for encontrado', async () => {
+      Usuario.findById.mockReturnValue({
+        populate: jest.fn().mockResolvedValue(null),
+      });
+
+      req.user_id = usuarioId;
+
+      await expect(reservaService.listar(req)).rejects.toThrow(
+        new CustomError({
+          statusCode: 404,
+          errorType: 'resourceNotFound',
+          field: 'usuarios',
+          customMessage: 'Usuário não encontrado.',
+        })
+      );
+    });
+
+    it('deve lançar erro se dataFinalAtrasada for inválida', async () => {
+      const invalidData = criarReservaData({
+        dataFinalAtrasada: 'data-invalida',
+      });
+
+      await expect(reservaService.criar(invalidData)).rejects.toThrow(
+        new CustomError({
+          statusCode: 400,
+          errorType: 'invalidData',
+          field: 'datas',
+          customMessage: 'As datas fornecidas são inválidas.',
+        })
+      );
+    });
+
+    it('deve lançar erro se usuarioId for inválido', async () => {
+      const invalidData = criarReservaData({
+        usuarios: 'usuario-invalido',
+        equipamentos: equipamentoId, 
+      });
+
+      mongoose.Types.ObjectId.isValid.mockImplementation((id) => id !== 'usuario-invalido');
+
+      Equipamento.findById.mockResolvedValue({
+        _id: equipamentoId,
+        equiStatus: 'ativo',
+        equiQuantidadeDisponivel: 10,
+      });
+
+      await expect(reservaService.criar(invalidData)).rejects.toThrow(
+        new CustomError({
+          statusCode: 400,
+          errorType: 'invalidData',
+          field: 'usuarios',
+          customMessage: 'ID de usuário inválido: usuario-invalido',
+        })
+      );
     });
   });
 
@@ -145,6 +214,7 @@ describe('ReservaService', () => {
       };
       const mockUsuario = {
         _id: usuarioId,
+        ativo: true,
       };
       Equipamento.findById.mockResolvedValue(mockEquipamento);
       Usuario.findById.mockResolvedValue(mockUsuario);
@@ -183,10 +253,11 @@ describe('ReservaService', () => {
       const mockEquipamento = {
         _id: equipamentoId,
         equiQuantidadeDisponivel: 5,
-        equiStatus: true,
+        equiStatus: 'ativo',
       };
       const mockUsuario = {
         _id: usuarioId,
+        ativo: true,
       };
       Equipamento.findById.mockResolvedValue(mockEquipamento);
       Equipamento.findByIdAndUpdate.mockResolvedValue(mockEquipamento);
@@ -347,9 +418,9 @@ describe('ReservaService', () => {
 
     it('deve lançar erro se quantidade solicitada excede a disponível', async () => {
       const mockEquipamento = {
-        _id: '6839a07057d3853fbcc379b8', // ID fixo para simular erro
+        _id: '6839a07057d3853fbcc379b8', 
         equiQuantidadeDisponivel: 1,
-        equiStatus: true,
+        equiStatus: 'ativo',
       };
       Equipamento.findById.mockResolvedValue(mockEquipamento);
       const validReservaData = criarReservaData();
@@ -374,10 +445,11 @@ describe('ReservaService', () => {
       const mockEquipamento = {
         _id: equipamentoId,
         equiQuantidadeDisponivel: 5,
-        equiStatus: true,
+        equiStatus: 'ativo',
       };
       const mockUsuario = {
         _id: usuarioId,
+        ativo: true,
       };
       Equipamento.findById.mockResolvedValue(mockEquipamento);
       Usuario.findById.mockResolvedValue(mockUsuario);
