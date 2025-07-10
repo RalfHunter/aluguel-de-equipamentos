@@ -246,34 +246,34 @@ class EquipamentoController {
     return CommonResponse.success(res, equipamento, 200, `Equipamento ${status === 'ativo' ? 'ativado' : 'inativado'} com sucesso.`);
   }
 
-  async adicionarFoto(req, res) {
-    const { id } = req.params;
-    const file = req.file;
-    const usuarioId = req.user_id?.toString();
+  // async adicionarFoto(req, res) {
+  //   const { id } = req.params;
+  //   const file = req.file;
+  //   const usuarioId = req.user_id?.toString();
 
-    EquipamentoIdSchema.parse(id);
+  //   EquipamentoIdSchema.parse(id);
 
-    if (!usuarioId) {
-      return CommonResponse.error(res, HttpStatusCodes.UNAUTHORIZED.code, 'Usuário não autenticado.');
-    }
+  //   if (!usuarioId) {
+  //     return CommonResponse.error(res, HttpStatusCodes.UNAUTHORIZED.code, 'Usuário não autenticado.');
+  //   }
 
-    if (!file) {
-      return CommonResponse.error(res, HttpStatusCodes.BAD_REQUEST.code, 'Nenhuma foto foi enviada.');
-    }
+  //   if (!file) {
+  //     return CommonResponse.error(res, HttpStatusCodes.BAD_REQUEST.code, 'Nenhuma foto foi enviada.');
+  //   }
 
-    const equipamento = await this.service.listarPorId(id, usuarioId);
-    if (!equipamento) {
-      return CommonResponse.error(res, HttpStatusCodes.NOT_FOUND.code, 'Equipamento não encontrado.');
-    }
-    if (equipamento.equiUsuario?.toString() !== usuarioId) {
-      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Apenas o dono do equipamento pode adicionar fotos.');
-    }
+  //   const equipamento = await this.service.listarPorId(id, usuarioId);
+  //   if (!equipamento) {
+  //     return CommonResponse.error(res, HttpStatusCodes.NOT_FOUND.code, 'Equipamento não encontrado.');
+  //   }
+  //   if (equipamento.equiUsuario?.toString() !== usuarioId) {
+  //     return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Apenas o dono do equipamento pode adicionar fotos.');
+  //   }
 
-    const novaFoto = this._processarImagemParaFoto(file, req);
-    const equipamentoAtualizado = await this.service.adicionarFoto(id, novaFoto);
+  //   const novaFoto = this._processarImagemParaFoto(file, req);
+  //   const equipamentoAtualizado = await this.service.adicionarFoto(id, novaFoto);
 
-    return CommonResponse.success(res, equipamentoAtualizado, 200, 'Foto adicionada com sucesso.');
-  }
+  //   return CommonResponse.success(res, equipamentoAtualizado, 200, 'Foto adicionada com sucesso.');
+  // }
 }
 
 export default EquipamentoController;

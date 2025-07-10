@@ -118,12 +118,12 @@ async atualizarStatus(id, usuarioId, novoStatus) {
   return equipamento;
 }
 
-  async adicionarFoto(id, novaFoto) {
-    const equipamento = await this._buscarEquipamentoExistente(id);
-    equipamento.equiFotos.push(novaFoto);
-    await equipamento.save();
-    return equipamento;
-  }
+  // async adicionarFoto(id, novaFoto) {
+  //   const equipamento = await this._buscarEquipamentoExistente(id);
+  //   equipamento.equiFotos.push(novaFoto);
+  //   await equipamento.save();
+  //   return equipamento;
+  // }
 
   _processarFiltros(filtros, usuarioId) {
     const pagina = parseInt(filtros.page) || 1;
