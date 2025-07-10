@@ -133,47 +133,117 @@ class AuthController {
    */
 
   pass = async (req, res) => {
-    // 1. Validação estrutural
-    const bodyrequest = req.body || {};
-    const validatedBody = RequestAuthorizationSchema.parse(bodyrequest);
+    try {
+      // 1. Validação estrutural
+      const bodyrequest = req.body || {};
+      const validatedBody = RequestAuthorizationSchema.parse(bodyrequest);
 
-    // 2. Decodifica e verifica o JWT
-    const decoded = /** @type {{ id: string, exp?: number, iat?: number, nbf?: number, client_id?: string, aud?: string }} */ (
-      await promisify(jwt.verify)(validatedBody.accessToken, process.env.JWT_SECRET_ACCESS_TOKEN)
-    );
-    // 3. Valida ID de usuário
-    // UsuarioIdSchema.parse(decoded.id);
+      // Verifica se o token está presente e não é uma string inválida
+      if (!validatedBody.accessToken || validatedBody.accessToken === 'null' || validatedBody.accessToken === 'undefined') {
+        throw new CustomError({
+          statusCode: HttpStatusCodes.BAD_REQUEST.code,
+          errorType: 'invalidToken',
+          field: 'accessToken',
+          details: [],
+          customMessage: 'Token de acesso é obrigatório para validação.'
+        });
+      }
 
-    // 4. Prepara campos de introspecção
-    const now = Math.floor(Date.now() / 1000);
-    const exp = decoded.exp ?? null; // timestamp UNIX de expiração
-    const iat = decoded.iat ?? null; // timestamp UNIX de emissão 
-    const nbf =  decoded.nbf ?? iat; // não válido antes deste timestamp
-    const active = exp > now;
+      // 2. Decodifica e verifica o JWT
+      const decoded = /** @type {{ id: string, exp?: number, iat?: number, nbf?: number, client_id?: string, aud?: string }} */ (
+        await promisify(jwt.verify)(validatedBody.accessToken, process.env.JWT_SECRET_ACCESS_TOKEN)
+      );
 
-    // tenta extrair o client_id do próprio token; cai em aud se necessário
-    const clientId = decoded.client_id || decoded.id || decoded.aud || null;
+      // Verifica se o token decodificado contém informações válidas
+      if (!decoded) {
+        throw new CustomError({
+          statusCode: HttpStatusCodes.INVALID_TOKEN.code,
+          errorType: 'invalidToken',
+          field: 'accessToken',
+          details: [],
+          customMessage: 'Token de acesso inválido ou malformado.'
+        });
+      }
 
-    /**
-     * 5. Prepara resposta de introspecção
-     */
-    const introspection = {
-      active,               // token ainda válido (não expirado)
-      client_id: clientId,  // ID do cliente OAuth
-      token_type: 'Bearer', // conforme RFC 6749
-      exp,                  // timestamp UNIX de expiração
-      iat,                  // timestamp UNIX de emissão
-      nbf,                  // não válido antes deste timestamp
-      // …adicione aqui quaisquer campos de extensão necessários…
-    };
-    // console.log(introspection)
-    // 5. Retorna resposta no padrão CommonResponse
-    return CommonResponse.success(
-      res,
-      introspection,
-      HttpStatusCodes.OK.code,
-      messages.authorized.default
-    );
+      // 3. Valida ID de usuário
+      // UsuarioIdSchema.parse(decoded.id);
+
+      // 4. Prepara campos de introspecção
+      const now = Math.floor(Date.now() / 1000);
+      const exp = decoded.exp ?? null; // timestamp UNIX de expiração
+      const iat = decoded.iat ?? null; // timestamp UNIX de emissão 
+      const nbf =  decoded.nbf ?? iat; // não válido antes deste timestamp
+      const active = exp > now;
+
+      // tenta extrair o client_id do próprio token; cai em aud se necessário
+      const clientId = decoded.client_id || decoded.id || decoded.aud || null;
+
+      /**
+       * 5. Prepara resposta de introspecção
+       */
+      const introspection = {
+        active,               // token ainda válido (não expirado)
+        client_id: clientId,  // ID do cliente OAuth
+        token_type: 'Bearer', // conforme RFC 6749
+        exp,                  // timestamp UNIX de expiração
+        iat,                  // timestamp UNIX de emissão
+        nbf,                  // não válido antes deste timestamp
+        // …adicione aqui quaisquer campos de extensão necessários…
+      };
+      // console.log(introspection)
+      // 5. Retorna resposta no padrão CommonResponse
+      return CommonResponse.success(
+        res,
+        introspection,
+        HttpStatusCodes.OK.code,
+        messages.authorized.default
+      );
+    } catch (err) {
+      // Tratamento específico para erros de JWT
+      if (err.name === 'JsonWebTokenError') {
+        throw new CustomError({
+          statusCode: HttpStatusCodes.UNAUTHORIZED.code,
+          errorType: 'invalidToken',
+          field: 'accessToken',
+          details: [],
+          customMessage: 'Token de acesso inválido ou malformado.'
+        });
+      }
+      
+      if (err.name === 'TokenExpiredError') {
+        throw new CustomError({
+          statusCode: HttpStatusCodes.INVALID_TOKEN.code,
+          errorType: 'tokenExpired',
+          field: 'accessToken',
+          details: [],
+          customMessage: 'Token de acesso expirado.'
+        });
+      }
+
+      if (err.name === 'NotBeforeError') {
+        throw new CustomError({
+          statusCode: HttpStatusCodes.UNAUTHORIZED.code,
+          errorType: 'invalidToken',
+          field: 'accessToken',
+          details: [],
+          customMessage: 'Token de acesso ainda não é válido.'
+        });
+      }
+
+      // Se for um CustomError, apenas repassa
+      if (err instanceof CustomError) {
+        throw err;
+      }
+
+      // Para outros erros, lança um erro genérico
+      throw new CustomError({
+        statusCode: HttpStatusCodes.INTERNAL_SERVER_ERROR.code,
+        errorType: 'serverError',
+        field: 'introspection',
+        details: [],
+        customMessage: 'Erro interno durante validação do token.'
+      });
+    }
   };
     async atualizarSenhaToken(req, res, next) {
     const tokenRecuperacao = req.query.token || req.params.token || null; // token de recuperação passado na URL

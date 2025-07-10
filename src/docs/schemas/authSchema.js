@@ -182,7 +182,7 @@ const authSchemas = {
 
     SignupRequest: {
         type: "object",
-        required: ["nome", "email", "senha"],
+        required: ["nome", "email", "senha", "telefone", "CPF", "dataNascimento"],
         properties: {
             nome: {
                 type: "string",
@@ -201,6 +201,24 @@ const authSchemas = {
                 pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d@$!%*?&]{8,}$",
                 description: "Senha do usuário (mínimo 8 caracteres, 1 maiúscula, 1 minúscula, 1 número)",
                 example: "MinhaSenh@123"
+            },
+            telefone: {
+                type: "string",
+                pattern: "^\\(?[1-9]{2}\\)?\\s?[9]?[0-9]{4}-?[0-9]{4}$",
+                description: "Telefone do usuário (formato brasileiro com DDD)",
+                example: "(11) 99999-9999"
+            },
+            CPF: {
+                type: "string",
+                pattern: "^[0-9]{3}\\.?[0-9]{3}\\.?[0-9]{3}-?[0-9]{2}$",
+                description: "CPF do usuário (formato brasileiro)",
+                example: "123.456.789-00"
+            },
+            dataNascimento: {
+                type: "string",
+                format: "date",
+                description: "Data de nascimento do usuário (formato YYYY-MM-DD)",
+                example: "1990-05-15"
             }
         }
     },
@@ -211,10 +229,13 @@ const authSchemas = {
         properties: {
             accessToken: {
                 type: "string",
-                description: "Token de acesso a ser validado",
-                example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                minLength: 1,
+                description: "Token de acesso JWT a ser validado. Deve ser um JWT válido e bem formado.",
+                example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxNWY5NDg3ODkzNTQwMDAxNjAwMDAwMSIsImlhdCI6MTYzMzc4MDM1MSwiZXhwIjoxNjMzNzgzOTUxfQ.abc123def456ghi789",
+                pattern: "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$"
             }
-        }
+        },
+        additionalProperties: false
     },
 
     IntrospectResponse: {
@@ -280,6 +301,51 @@ const authSchemas = {
             message: {
                 type: "string",
                 example: "Operação realizada com sucesso"
+            }
+        }
+    },
+
+    TokenErrorResponse: {
+        type: "object",
+        properties: {
+            success: {
+                type: "boolean",
+                example: false
+            },
+            message: {
+                type: "string",
+                enum: [
+                    "Requisição com sintaxe incorreta",
+                    "Não autorizado", 
+                    "O token JWT está expirado!",
+                    "Erro interno do servidor"
+                ]
+            },
+            errors: {
+                type: "array",
+                items: {
+                    type: "object",
+                    properties: {
+                        field: {
+                            type: "string",
+                            example: "accessToken"
+                        },
+                        message: {
+                            type: "string",
+                            enum: [
+                                "Token de acesso é obrigatório para validação.",
+                                "Token de acesso inválido ou malformado.",
+                                "Token de acesso expirado.",
+                                "Token de acesso ainda não é válido.",
+                                "Erro interno durante validação do token."
+                            ]
+                        }
+                    }
+                },
+                example: [{
+                    field: "accessToken",
+                    message: "Token de acesso é obrigatório para validação."
+                }]
             }
         }
     }

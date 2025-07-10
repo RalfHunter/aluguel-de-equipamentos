@@ -10,7 +10,7 @@ export default  {
     ],
     // testMatch:['**/multerUserConfig.test.js']
     // testMatch:['**/messages.test.js']
-    // testMatch:['**/AuthController.test.js']
+    testMatch:['**/AuthController.test.js']
     // testMatch:['**/AuthService.test.js']
     // testMatch:['**/Usuario.test.js']
     // testMatch:['**/UsuarioController.test.js']

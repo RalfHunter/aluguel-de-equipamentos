@@ -213,25 +213,34 @@ const authRoutes = {
     "/introspect": {
         post: {
             tags: ["Autenticação"],
-            summary: "Validar token de acesso",
+            summary: "Validar token de acesso (Introspecção OAuth2)",
             description: `
                 + Caso de uso: 
                     - Validar se um token está ativo e obter suas informações.
+                    - Implementar endpoint de introspecção conforme RFC 7662.
             
                 + Função de Negócio:
                     - Implementar endpoint de introspecção OAuth2.
-                    - Verificar validade e status do token.
-                    - Retornar metadados do token.
+                    - Verificar validade, expiração e status do token.
+                    - Retornar metadados detalhados do token.
+                    - Suportar validação de tokens JWT com diferentes estados.
 
                 + Regras de Negócio:
-                    - Token deve ser fornecido no body.
-                    - Retornar informações de expiração e cliente.
+                    - Token de acesso é obrigatório no body da requisição.
+                    - Token deve ser um JWT válido e bem formado.
+                    - Verificar assinatura, expiração e período de validade.
+                    - Retornar informações de expiração, cliente e status ativo.
                     - Seguir padrão RFC 7662 (OAuth 2.0 Token Introspection).
+
+                + Cenários de Erro:
+                    - 400: Token não fornecido ou vazio
+                    - 401: Token malformado ou com assinatura inválida
+                    - 498: Token expirado ou ainda não válido
+                    - 500: Erro interno durante validação
 
                 + Resultado Esperado:
                     - 200 OK com status e metadados do token.
-                    - 401 se token inválido.
-                    - 400 se token não fornecido.
+                    - Diferentes códigos de erro para diferentes problemas de validação.
             `,
             security: [{ bearerAuth: [] }],
             requestBody: {
@@ -240,24 +249,176 @@ const authRoutes = {
                     "application/json": {
                         schema: {
                             $ref: "#/components/schemas/IntrospectRequest"
+                        },
+                        examples: {
+                            validToken: {
+                                summary: "Token válido",
+                                value: {
+                                    accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxNWY5NDg3ODkzNTQwMDAxNjAwMDAwMSIsImlhdCI6MTYzMzc4MDM1MSwiZXhwIjoxNjMzNzgzOTUxfQ.abc123def456ghi789"
+                                }
+                            },
+                            emptyToken: {
+                                summary: "Token vazio (causará erro 400)",
+                                value: {
+                                    accessToken: ""
+                                }
+                            },
+                            malformedToken: {
+                                summary: "Token malformado (causará erro 401)",
+                                value: {
+                                    accessToken: "token.invalido.malformado"
+                                }
+                            }
                         }
                     }
                 }
             },
             responses: {
                 200: {
-                    description: "Token validado com sucesso",
+                    description: "Token validado com sucesso - contém metadados do token",
                     content: {
                         "application/json": {
                             schema: {
                                 $ref: "#/components/schemas/IntrospectResponse"
+                            },
+                            examples: {
+                                activeToken: {
+                                    summary: "Token ativo",
+                                    value: {
+                                        success: true,
+                                        data: {
+                                            active: true,
+                                            client_id: "615f9487893540001600001",
+                                            token_type: "Bearer",
+                                            exp: 1633783951,
+                                            iat: 1633780351,
+                                            nbf: 1633780351
+                                        },
+                                        message: "Token validado com sucesso"
+                                    }
+                                },
+                                expiredToken: {
+                                    summary: "Token expirado (mas válido)",
+                                    value: {
+                                        success: true,
+                                        data: {
+                                            active: false,
+                                            client_id: "615f9487893540001600001",
+                                            token_type: "Bearer",
+                                            exp: 1633780000,
+                                            iat: 1633776400,
+                                            nbf: 1633776400
+                                        },
+                                        message: "Token validado com sucesso"
+                                    }
+                                }
                             }
                         }
                     }
                 },
-                400: commonResponses.badRequest,
-                401: commonResponses.unauthorized,
-                500: commonResponses.internalServerError
+                400: {
+                    description: "Token não fornecido ou vazio",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string", example: "Requisição com sintaxe incorreta" },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                field: { type: "string", example: "accessToken" },
+                                                message: { type: "string", example: "Token de acesso é obrigatório para validação." }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                401: {
+                    description: "Token inválido, malformado ou ainda não válido",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string", example: "Não autorizado" },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                field: { type: "string", example: "accessToken" },
+                                                message: { 
+                                                    type: "string", 
+                                                    example: "Token de acesso inválido ou malformado.",
+                                                    enum: [
+                                                        "Token de acesso inválido ou malformado.",
+                                                        "Token de acesso ainda não é válido."
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                498: {
+                    description: "Token expirado",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string", example: "O token JWT está expirado!" },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                field: { type: "string", example: "accessToken" },
+                                                message: { type: "string", example: "Token de acesso expirado." }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                500: {
+                    description: "Erro interno durante validação do token",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string", example: "Erro interno do servidor" },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                field: { type: "string", example: "introspection" },
+                                                message: { type: "string", example: "Erro interno durante validação do token." }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     },
@@ -325,17 +486,30 @@ const authRoutes = {
                     - Criar nova conta de usuário.
                     - Validar dados de entrada.
                     - Criptografar senha antes de salvar.
+                    - Validar documentos e informações pessoais.
 
                 + Regras de Negócio:
                     - Email deve ser único no sistema.
+                    - CPF deve ser único e válido (formato brasileiro).
+                    - Telefone deve seguir formato brasileiro com DDD.
                     - Senha deve atender aos critérios de segurança.
-                    - Nome é obrigatório.
+                    - Nome completo é obrigatório.
+                    - Data de nascimento deve ser válida (formato YYYY-MM-DD).
                     - Usuário criado com status ativo por padrão.
+
+                + Campos Obrigatórios:
+                    - nome: Nome completo do usuário
+                    - email: Email único no sistema
+                    - senha: Mínimo 8 caracteres, 1 maiúscula, 1 minúscula, 1 número
+                    - telefone: Formato brasileiro (XX) XXXXX-XXXX
+                    - CPF: Formato brasileiro XXX.XXX.XXX-XX
+                    - dataNascimento: Formato YYYY-MM-DD
 
                 + Resultado Esperado:
                     - 201 Created com dados do usuário criado.
-                    - 400 se dados inválidos.
-                    - 409 se email já existe.
+                    - 400 se dados inválidos ou formato incorreto.
+                    - 409 se email ou CPF já existem.
+                    - 422 se validação de dados falhar.
             `,
             requestBody: {
                 required: true,
@@ -343,6 +517,30 @@ const authRoutes = {
                     "application/json": {
                         schema: {
                             $ref: "#/components/schemas/SignupRequest"
+                        },
+                        examples: {
+                            validUser: {
+                                summary: "Dados válidos de usuário",
+                                value: {
+                                    nome: "João Silva Santos",
+                                    email: "joao.silva@exemplo.com",
+                                    senha: "MinhaSenh@123",
+                                    telefone: "(11) 99999-9999",
+                                    CPF: "123.456.789-00",
+                                    dataNascimento: "1990-05-15"
+                                }
+                            },
+                            invalidData: {
+                                summary: "Dados inválidos (causará erro)",
+                                value: {
+                                    nome: "",
+                                    email: "email-invalido",
+                                    senha: "123",
+                                    telefone: "123",
+                                    CPF: "123",
+                                    dataNascimento: "data-invalida"
+                                }
+                            }
                         }
                     }
                 }
