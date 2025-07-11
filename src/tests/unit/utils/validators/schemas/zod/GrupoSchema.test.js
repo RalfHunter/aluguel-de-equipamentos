@@ -1,7 +1,7 @@
 // src/tests/unit/utils/validators/Schema/zod/GrupoSchema.test.js
 
 import assert from 'assert';
-import { GrupoSchema, GrupoUpdateSchema } from '../../../../../../../src/utils/validators/schemas/zod/GrupoSchema.js';
+import { GrupoSchema, GrupoUpdateSchema } from '../../../../../../utils/validators/schemas/zod/GrupoSchema.js';
 
 describe('GrupoSchema', () => {
     describe('parse', () => {
