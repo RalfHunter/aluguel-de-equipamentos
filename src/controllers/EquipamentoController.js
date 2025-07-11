@@ -3,6 +3,7 @@ import { equipamentoSchema, equipamentoUpdateSchema, equipamentoStatusSchema } f
 import { EquipamentoIdSchema, EquipamentoQuerySchema } from "../utils/validators/schemas/zod/querys/EquipamentoQuerySchema.js";
 import EquipamentoService from "../services/EquipamentoService.js";
 import { CommonResponse, HttpStatusCodes } from "../utils/helpers/index.js";
+import EquipamentoFilterBuilder from "../repositories/filters/EquipamentoFilterBuilder.js";
 import Usuario from '../models/Usuario.js';
 import sizeOf from 'image-size';
 import fs from 'fs';
@@ -85,44 +86,66 @@ class EquipamentoController {
   }
 
   async listar(req, res) {
-    const query = req.query || {};
-    const usuarioId = req.user_id;
+  const query = req.query || {};
+  const usuarioId = req.user_id;
 
-    if (Object.keys(query).length !== 0) {
-      EquipamentoQuerySchema.parseAsync(query);
+  await EquipamentoQuerySchema.parseAsync(query);
+
+  const usuario = usuarioId
+    ? await Usuario.findById(usuarioId).populate('grupos')
+    : null;
+
+  const isAdminOrMod =
+    usuario && usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao));
+
+  if (query.status === 'pendente') {
+    if (!isAdminOrMod) {
+      return CommonResponse.error(
+        res,
+        HttpStatusCodes.FORBIDDEN.code,
+        'Acesso restrito a administradores ou moderadores para filtrar equipamentos pendentes.'
+      );
     }
-
-    const usuario = usuarioId ? await Usuario.findById(usuarioId).populate('grupos') : null;
-    const isAdminOrMod = usuario && usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao));
-
-    if (query.status === 'pendente') {
-      if (!isAdminOrMod) {
-        return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito a administradores ou moderadores para filtrar equipamentos pendentes.');
-      }
-      query.equiStatus = 'pendente';
-    } else if (query.status === 'inativo') {
-      if (!usuarioId) {
-        return CommonResponse.error(res, HttpStatusCodes.UNAUTHORIZED.code, 'Usuário não autenticado.');
-      }
-      query.equiUsuario = usuarioId;
-      query.equiStatus = 'inativo';
-    } else {
-      if (usuarioId && !isAdminOrMod) {
-        query.$or = [
-          { equiStatus: 'ativo' },
-          { equiStatus: 'pendente', equiUsuario: usuarioId },
-          { equiStatus: 'inativo', equiUsuario: usuarioId }
-        ];
-      } else if (isAdminOrMod) {
-        query.equiStatus = { $in: ['ativo', 'pendente'] };
-      } else {
-        query.equiStatus = 'ativo';
-      }
-    }
-
-    const data = await this.service.listar({ ...query, usuarioId });
-    return CommonResponse.success(res, data);
   }
+
+  const filtros = new EquipamentoFilterBuilder()
+    .comCategoria(query.categoria)
+    .comStatus(query.status)
+    .comFaixaDeValor(query.minValor, query.maxValor)
+    .build();
+
+  if (query.status === 'inativo') {
+    if (!usuarioId) {
+      return CommonResponse.error(
+        res,
+        HttpStatusCodes.UNAUTHORIZED.code,
+        'Usuário não autenticado.'
+      );
+    }
+    filtros.equiUsuario = usuarioId;
+  }
+
+  if (!query.status) {
+    if (usuarioId && !isAdminOrMod) {
+      filtros.$or = [
+        { equiStatus: 'ativo' },
+        { equiStatus: 'pendente', equiUsuario: usuarioId },
+        { equiStatus: 'inativo', equiUsuario: usuarioId }
+      ];
+    } else if (isAdminOrMod) {
+      filtros.equiStatus = { $in: ['ativo', 'pendente'] };
+    } else {
+      filtros.equiStatus = 'ativo';
+    }
+  }
+
+  const page = query.page || 1;
+  const limit = query.limit || 10;
+
+  const data = await this.service.listar(filtros, page, limit);
+  return CommonResponse.success(res, data);
+}
+
 
   async listarPorId(req, res) {
     const { id } = req.params;
