@@ -71,7 +71,9 @@ class UsuarioService {
       })
     }
     const data = await this.model.alterarStatus(id, parseData)
-    return data
+    const  dadosTratados = data.toObject()
+    delete dadosTratados.CPF
+    return dataTratados
   }
 
   // ...existing code...
@@ -220,7 +222,6 @@ class UsuarioService {
       nome,
       email,
       telefone,
-      CPF,
       dataNascimento,
       fotoUsuario,
       notaMedia,

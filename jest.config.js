@@ -8,7 +8,7 @@ export default  {
       "/utils/logger.js",
       "utils/helpers/HttpStatusCodes.js"
     ],
-    testMatch:['**/AuthController.test.js', '**/AuthService.test.js', '**/authRoutes.test.js']
+    // testMatch:['**/AuthController.test.js', '**/AuthService.test.js', '**/authRoutes.test.js']
     // testMatch:['**/multerUserConfig.test.js']
     // testMatch:['**/messages.test.js']
     // testMatch:['**/AuthController.test.js']
@@ -34,24 +34,34 @@ export default  {
     // testMatch:['**/CustomError.test.js']
     // testMatch:['**/utils/**/*.test.js']
     // testMatch:['**/MulterErrorHandler.test.js', '**/AuthPermission.test.js', '**/AuthMiddleware.test.js', '**/multerUserConfig.test.js', '**/multerConfig.test.js']
-    // testMatch:
-    // ['**/AuthController.test.js', 
-    //   '**/AuthService.test.js',
-    //   '**/Usuario.test.js',
-    //   '**/UsuarioController.test.js',
-    //   '**/UsuarioService.test.js',
-    //   '**/UsuarioRepository.test.js',
-    //   '**/GrupoFilterBuilder.test.js',
-    //   '**/AuthMiddleware.test.js',
-    //   '**/GrupoController.test.js',
-    //   '**/GrupoService.test.js',
-    //   '**/GrupoRepository.test.js',
-    //   '**/UsuarioSchema.test.js',
-    //   '**/ValidatorUsuario.test.js',
-    //   '**/UsuarioFilterBuilder.test.js',
-    //   '**/Grupo.test.js',
-    //   '**/AuthPermission.test.js'
-    // ]
+    testMatch:
+    ['**/AuthController.test.js', 
+      '**/AuthService.test.js',
+      '**/Usuario.test.js',
+      '**/UsuarioController.test.js',
+      '**/UsuarioService.test.js',
+      '**/UsuarioRepository.test.js',
+      '**/GrupoFilterBuilder.test.js',
+      '**/AuthMiddleware.test.js',
+      '**/GrupoController.test.js',
+      '**/GrupoService.test.js',
+      '**/GrupoRepository.test.js',
+      '**/UsuarioSchema.test.js',
+      '**/UsuarioFilterBuilder.test.js',
+      '**/Grupo.test.js',
+      '**/AuthPermission.test.js',
+      '**/errorHandler.test.js',
+      '**/ValidatorUsuario.test.js',
+      '**/GrupoSchema.test.js',
+      '**/UsuarioQuerySchema.test.js',
+      '**/CustomError.test.js',
+      '**/CommonResponse.test.js',
+      '**/HttpStatusCodes.test.js',
+      '**/index.test.js',
+      '**/messages.test.js',
+      '**/randomPastDate.test.js',
+      '**/StatusService.test.js'
+    ]
     // testMatch:['**/errorHandler.test.js']
     // testMatch:['**/Grupo.test.js']
     //testMatch:['**/Reserva.test.js']
