@@ -4,6 +4,8 @@ import usuariosSchemas from "../schemas/usuarioSchema.js";
 import usuariosPaths from "../paths/usuarios.js";
 import authSchemas from "../schemas/authSchema.js";
 import authPaths from "../paths/auth.js";
+import gruposSchemas from "../schemas/grupoSchema.js";
+import gruposPaths from "../paths/grupos.js";
 
 const getServersInCorrectOrder = () => {
     const PORT = process.env.APP_PORT
@@ -34,6 +36,10 @@ const getSwaggerOptions = () => {
                     description: "Rotas para autenticação e autorização"
                 },
                 {
+                    name: "Grupos",
+                    description: "Rotas para gestão de grupos de permissões"
+                },
+                {
                     name: "Reservas",
                     description: "Rotas para gestão de reservas"
                 },
@@ -44,6 +50,7 @@ const getSwaggerOptions = () => {
             ],
             paths: {
                 ...authPaths,
+                ...gruposPaths,
                 ...reservasPaths,
                 ...usuariosPaths
             },
@@ -57,6 +64,7 @@ const getSwaggerOptions = () => {
                 },
                 schemas: {
                     ...authSchemas,
+                    ...gruposSchemas,
                     ...reservasSchemas,
                     ...usuariosSchemas,
                 }
