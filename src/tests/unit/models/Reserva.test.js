@@ -4,6 +4,7 @@ import Equipamento from "../../../models/Equipamento.js";
 import Usuario from "../../../models/Usuario.js";
 //import { it, expect, describe, beforeAll, afterAll } from "@jest/globals";
 import { MongoMemoryServer } from "mongodb-memory-server";
+import { v4 as uuid } from 'uuid';
 
 let mongoServer;
 

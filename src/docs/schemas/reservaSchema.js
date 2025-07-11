@@ -45,30 +45,30 @@ const reservaSchemas = {
     ...deepCopy(reservaJsonSchema),
     description: 'Schema para detalhes de uma reserva',
   },
-  ReservaPost: {
-    type: 'object',
-    properties: {
-      dataInicial: reservaJsonSchema.properties.dataInicial,
-      dataFinal: reservaJsonSchema.properties.dataFinal,
-      dataFinalAtrasada: reservaJsonSchema.properties.dataFinalAtrasada,
-      quantidadeEquipamento: reservaJsonSchema.properties.quantidadeEquipamento,
-      valorEquipamento: reservaJsonSchema.properties.valorEquipamento,
-      enderecoEquipamento: reservaJsonSchema.properties.enderecoEquipamento,
-      statusReserva: reservaJsonSchema.properties.statusReserva,
-      equipamentos: reservaJsonSchema.properties.equipamentos,
-      usuarios: reservaJsonSchema.properties.usuarios,
-    },
-    required: [
-      'dataInicial',
-      'dataFinal',
-      'quantidadeEquipamento',
-      'valorEquipamento',
-      'enderecoEquipamento',
-      'equipamentos',
-      'usuarios',
-    ],
-    description: 'Schema para criação de reserva',
-  },
+  // ReservaPost: {
+  //   type: 'object',
+  //   properties: {
+  //     dataInicial: reservaJsonSchema.properties.dataInicial,
+  //     dataFinal: reservaJsonSchema.properties.dataFinal,
+  //     dataFinalAtrasada: reservaJsonSchema.properties.dataFinalAtrasada,
+  //     quantidadeEquipamento: reservaJsonSchema.properties.quantidadeEquipamento,
+  //     valorEquipamento: reservaJsonSchema.properties.valorEquipamento,
+  //     enderecoEquipamento: reservaJsonSchema.properties.enderecoEquipamento,
+  //     statusReserva: reservaJsonSchema.properties.statusReserva,
+  //     equipamentos: reservaJsonSchema.properties.equipamentos,
+  //     usuarios: reservaJsonSchema.properties.usuarios,
+  //   },
+  //   required: [
+  //     'dataInicial',
+  //     'dataFinal',
+  //     'quantidadeEquipamento',
+  //     'valorEquipamento',
+  //     'enderecoEquipamento',
+  //     'equipamentos',
+  //     'usuarios',
+  //   ],
+  //   description: 'Schema para criação de reserva',
+  // },
   ReservaPatch: {
     type: 'object',
     properties: {
@@ -101,18 +101,42 @@ Object.entries(removalMapping).forEach(([schemaKey, fields]) => {
 
 const reservaMongooseSchema = Reserva.schema;
 
-reservaSchemas.ReservaItem.example = await generateExample(reservaSchemas.ReservaItem, null, reservaMongooseSchema);
-reservaSchemas.ReservaDetalhes.example = await generateExample(reservaSchemas.ReservaDetalhes, null, reservaMongooseSchema);
-reservaSchemas.ReservaPost.example = {
-  dataInicial: '2025-07-10',
-  dataFinal: '2025-07-15',
+// Definindo exemplos estáticos para evitar problemas com await em nível de módulo
+reservaSchemas.ReservaItem.example = {
+  _id: "507f1f77bcf86cd799439011",
+  dataInicial: "2025-07-10",
+  dataFinal: "2025-07-15",
   quantidadeEquipamento: 2,
   valorEquipamento: 150.0,
-  enderecoEquipamento: 'Major Amarante, 123, Vilhena, RO',
-  statusReserva: 'pendente',
-  equipamentos: '507f1f77bcf86cd799439011',
-  usuarios: '507f191e810c19729de860ea',
+  enderecoEquipamento: "Major Amarante, 123, Vilhena, RO",
+  statusReserva: "pendente",
+  equipamentos: "507f1f77bcf86cd799439011",
+  usuarios: "507f191e810c19729de860ea",
+  createdAt: "2025-07-10T10:00:00.000Z",
+  updatedAt: "2025-07-10T10:00:00.000Z"
 };
-reservaSchemas.ReservaPatch.example = await generateExample(reservaSchemas.ReservaPatch, null, reservaMongooseSchema);
+
+reservaSchemas.ReservaDetalhes.example = {
+  _id: "507f1f77bcf86cd799439012",
+  dataInicial: "2025-07-12",
+  dataFinal: "2025-07-18",
+  quantidadeEquipamento: 1,
+  valorEquipamento: 200.0,
+  enderecoEquipamento: "Av. Brasil, 456, Porto Velho, RO",
+  statusReserva: "confirmada",
+  equipamentos: "507f1f77bcf86cd799439012",
+  usuarios: "507f191e810c19729de860eb",
+  createdAt: "2025-07-12T14:30:00.000Z",
+  updatedAt: "2025-07-12T14:30:00.000Z"
+};
+
+reservaSchemas.ReservaPatch.example = {
+  dataInicial: "2025-07-15",
+  dataFinal: "2025-07-20",
+  quantidadeEquipamento: 3,
+  valorEquipamento: 180.0,
+  enderecoEquipamento: "Rua das Flores, 789, Vilhena, RO",
+  statusReserva: "pendente"
+};
 
 export default reservaSchemas;

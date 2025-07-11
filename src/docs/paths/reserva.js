@@ -4,6 +4,66 @@ import { generateParameters } from "./utils/generateParameters.js";
 
 const reservasRoutes = {
     "/reservas/{id}": {
+        patch: {
+            tags: ["Reservas"],
+            summary: "Atualizar informações de uma reserva existente.",
+            description: `
+                + Caso de uso: 
+                    - Atualizar parcialmente os dados de uma reserva.
+            
+                + Função de Negócio:
+                    - Permitir edição de informações como datas, quantidade, endereço e valor.
+
+                + Regras de Negócio:
+                    - A reserva deve existir.
+                    - Não permitir sobreposição de datas.
+
+                + Resultado Esperado:
+                    - Lista paginada de reservas com metadados 200.
+            `,
+            security: [{ bearerAuth: [] }],
+            parameters: [
+                {
+                    name: 'id',
+                    in: 'path',
+                    required: true,
+                    schema: {
+                        type: 'string',
+                    },
+                    description: 'ID da reserva',
+                },
+            ],
+            requestBody: {
+                required: true,
+                content: {
+                    'application/json': {
+                        schema: reservasSchemas.ReservaPatch,
+                    },
+                },
+            },
+            responses: {
+                200: {
+                    description: 'Reserva retornada com sucesso',
+                    content: {
+                        'application/json': {
+                            schema: reservasSchemas.ReservaDetalhes,
+                        },
+                    },
+                },
+                400: commonResponses[400](),
+                401: commonResponses[401](),
+                404: {
+                    description: 'Reserva não encontrada',
+                    content: {
+                        'application/json': {
+                            schema: {
+                                $ref: '#/components/schemas/ReservaPatch'
+                            },
+                        },
+                    },
+                },
+            }
+        },
         get: {
             tags: ["Reservas"],
             summary: "Listar uma reserva específica usando o identificador único dela.",
@@ -33,17 +93,9 @@ const reservasRoutes = {
                     description: 'ID da reserva',
                 },
             ],
-            requestBody: {
-                required: true,
-                content: {
-                    'application/json': {
-                        schema: reservasSchemas.ReservaDetalhes,
-                    },
-                },
-            },
             responses: {
                 200: {
-                    description: 'Reserva atualizada com sucesso',
+                    description: 'Reserva retornada com sucesso',
                     content: {
                         'application/json': {
                             schema: reservasSchemas.ReservaDetalhes,
@@ -71,7 +123,7 @@ const reservasRoutes = {
                     - Usuário deve estar autenticado.
                     - Filtros opcionais: dataInicial, dataFinal, statusReserva.
                     - Paginação com limite máximo de 100 itens.
-                    - Apenas reservas do usuário ou de seus equipamentos são retornadas.
+                    - Apenas reservas do usuário são retornadas.
 
                 + Resultado Esperado:
                     - Lista paginada de reservas com metadados,200.
@@ -169,68 +221,8 @@ const reservasRoutes = {
                 500: commonResponses[500](),
             },
         },
+    },
 
-        patch: {
-            tags: ["Reservas"],
-            summary: "Atualizar informações de uma reserva existente.",
-            description: `
-                + Caso de uso: 
-                    - Atualizar parcialmente os dados de uma reserva.
-            
-                + Função de Negócio:
-                    - Permitir edição de informações como datas, quantidade, endereço e valor.
-
-                + Regras de Negócio:
-                    - A reserva deve existir.
-                    - Não permitir sobreposição de datas.
-
-                + Resultado Esperado:
-                    - Lista paginada de reservas com metadados 200.
-            `,
-            security: [{ bearerAuth: [] }],
-            parameters: [
-                {
-                    name: 'id',
-                    in: 'path',
-                    required: true,
-                    schema: {
-                        type: 'string',
-                    },
-                    description: 'ID da reserva',
-                },
-            ],
-            requestBody: {
-                required: true,
-                content: {
-                    'application/json': {
-                        schema: reservasSchemas.ReservaPatch,
-                    },
-                },
-            },
-            responses: {
-                200: {
-                    description: 'Reserva atualizada com sucesso',
-                    content: {
-                        'application/json': {
-                            schema: reservasSchemas.ReservaDetalhes,
-                        },
-                    },
-                },
-                400: commonResponses[400](),
-                401: commonResponses[401](),
-                404: {
-                    description: 'Reserva não encontrada',
-                    content: {
-                        'application/json': {
-                            schema: {
-                                $ref: '#/components/schemas/ReservaPatch'
-                            },
-                        },
-                    },
-                },
-            }
-        },
-    }
 }
 
 export default reservasRoutes;

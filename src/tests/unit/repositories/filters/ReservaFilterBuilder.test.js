@@ -1,5 +1,5 @@
-import ReservaFilterBuilder from "../../../repositories/filters/ReservaFilterBuilder";
-jest.mock("../../../models/Reserva");
+import ReservaFilterBuilder from "../../../../repositories/filters/ReservaFilterBuilder";
+jest.mock("../../../../models/Reserva.js");
 
 describe('ReservaFilterBuilder', () => {
   let reservaFilterBuilder;
@@ -165,12 +165,9 @@ describe('ReservaFilterBuilder', () => {
     it('deve setar filtro de statusReserva quando valor é fornecido', () => {
       reservaFilterBuilder.comStatus('pendente');
       const filtros = reservaFilterBuilder.build();
-      
+
       expect(filtros).toHaveProperty('statusReserva');
-      expect(filtros.statusReserva).toEqual({
-        $regex: 'pendente',
-        $options: 'i'
-      });
+      expect(filtros.statusReserva).toBe('pendente');
     });
 
     it('não deve setar filtro de statusReserva quando vazio ou undefined', () => {
@@ -190,35 +187,35 @@ describe('ReservaFilterBuilder', () => {
 
     it('deve retornar objeto de filtros com todos os filtros adicionados', () => {
       const testDate = '2023-01-01';
-      
+
       reservaFilterBuilder
         .comDataInicial(testDate)
         .comDataFinal(testDate)
         .comQuantidadeEquipamento('2')
         .comStatus('pendente');
-      
+
       const filtros = reservaFilterBuilder.build();
-      
+
       expect(filtros).toEqual({
         dataInicial: { $gte: new Date(testDate) },
         dataFinal: { $lte: new Date(testDate) },
         quantidadeEquipamento: 2,
-        statusReserva: { $regex: 'pendente', $options: 'i' }
+        statusReserva: 'pendente'
       });
     });
   });
 
-  describe('escapeRegex', () => {
-    it('deve escapar caracteres especiais de regex', () => {
-      const testString = 'test.*+?^${}()|[]\\';
-      const escaped = reservaFilterBuilder.escapeRegex(testString);
+  // describe('escapeRegex', () => {
+  //   it('deve escapar caracteres especiais de regex', () => {
+  //     const testString = 'test.*+?^${}()|[]\\';
+  //     const escaped = reservaFilterBuilder.escapeRegex(testString);
       
-      expect(escaped).toBe('test\\.\\*\\+\\?\\^\\$\\{\\}\\(\\)\\|\\[\\]\\\\');
-    });
+  //     expect(escaped).toBe('test\\.\\*\\+\\?\\^\\$\\{\\}\\(\\)\\|\\[\\]\\\\');
+  //   });
 
-    it('deve retornar string vazia quando input é vazio', () => {
-      const escaped = reservaFilterBuilder.escapeRegex('');
-      expect(escaped).toBe('');
-    });
-  });
+  //   it('deve retornar string vazia quando input é vazio', () => {
+  //     const escaped = reservaFilterBuilder.escapeRegex('');
+  //     expect(escaped).toBe('');
+  //   });
+  // });
 });

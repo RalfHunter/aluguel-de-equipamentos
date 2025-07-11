@@ -24,44 +24,28 @@ class ReservaRepository {
         return await this.buscarPorID(params.id);
     }
 
-    const filterBuilder = new ReservaFilterBuilder(queryParams);
-    
-    if (queryParams.usuarios) {
-        const usuarios = await this.usuarioModel.find(
-        { nome: { $regex: queryParams.usuarios, $options: 'i' } },
-        '_id'
-        ).lean().exec();
-        
-        if (usuarios.length === 0) {
-        return {
-            docs: [],
-            totalDocs: 0,
-            limit: parseInt(queryParams.limite) || 10,
-            page: parseInt(queryParams.page) || 1,
-            totalPages: 0,
-        };
-        }
-        
-        filterBuilder.comUsuarios(usuarios.map(u => u._id));
-    }
+    const filterBuilder = new ReservaFilterBuilder();
 
-    if (queryParams.equipamentos) {
-        const equipamentos = await this.equipamentoModel.find(
-        { equiNome: { $regex: queryParams.equipamentos, $options: 'i' } },
-        '_id'
-        ).lean().exec();
-        
-        if (equipamentos.length === 0) {
-        return {
-            docs: [],
-            totalDocs: 0,
-            limit: parseInt(queryParams.limite) || 10,
-            page: parseInt(queryParams.page) || 1,
-            totalPages: 0,
-        };
-        }
-        
-        filterBuilder.comEquipamentos(equipamentos.map(e => e._id));
+    if (queryParams.quantidadeEquipamento) {
+      filterBuilder.comQuantidadeEquipamento(queryParams.quantidadeEquipamento);
+    }
+    if (queryParams.usuarioId) {
+      filterBuilder.comUsuarios(queryParams.usuarioId);
+    }
+    if (queryParams.statusReserva) {
+      filterBuilder.comStatus(queryParams.statusReserva);
+    }
+    if (queryParams.dataInicial) {
+      filterBuilder.comDataInicial(queryParams.dataInicial);
+    }
+    if (queryParams.dataFinal) {
+      filterBuilder.comDataFinal(queryParams.dataFinal);
+    }
+    if (queryParams.enderecoEquipamento) {
+      filterBuilder.comEnderecoEquipamento(queryParams.enderecoEquipamento);
+    }
+    if (queryParams.valorEquipamento) {
+      filterBuilder.comValorEquipamento(queryParams.valorEquipamento);
     }
 
     const query = filterBuilder.build();

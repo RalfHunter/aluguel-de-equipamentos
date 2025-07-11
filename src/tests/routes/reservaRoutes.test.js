@@ -2,13 +2,14 @@ import reservaRoutes from "../../routes/reservaRoutes.js";
 import request from "supertest";
 import mongoose from "mongoose";
 
-let app = 'http://localhost:5011'
+const PORT = process.env.APP_PORT || 3000;
+let app = `http://localhost:${PORT}`
 
 describe("Reservas", () => {
     let token;
     let usuarioId;
-    let equipamentoId = '685de5ee33dc9509d2d7cc52';
-    let reservaId = '685de5f433dc9509d2d7cddb';
+    let equipamentoId
+    let reservaId 
 
     beforeAll(async () => {
         const loginRes = await request(app)
@@ -18,34 +19,28 @@ describe("Reservas", () => {
         token = loginRes.body?.data?.user?.accessToken
         usuarioId = loginRes.body?.data?.user?._id
         expect(token).toBeTruthy();
+
+        const equipamentoRes = await request(app)
+            .get('/equipamentos')
+            .set('Authorization', `Bearer ${token}`)
+        equipamentoId = equipamentoRes.body?.data?.docs[0]?._id;
+        expect(equipamentoId).toBeTruthy();
+
+        const reservaRes = await request(app)
+            .get('/reservas')
+            .set('Authorization', `Bearer ${token}`)
+        reservaId = reservaRes.body?.data?.dados?.docs[0]?._id;
+        expect(reservaId).toBeTruthy();
     });
 
     describe("get /reservas", () => {
         it("Deve retornar uma lista de reservas cadastradas", async () => {
-            // const equipamentoRes = await request(app).post("/equipamentos").send({
-            //     equiNome: "Betoneira 400L",
-            //     equiDescricao: "Betoneira elétrica de 400 litros, ideal para obras de médio porte.",
-            //     equiValorDiaria: 150,
-            //     equiCategoria: "construção civil",
-            //     equiFotos: [
-            //         {
-            //             url: `https://exemplo.com/fotos/${uuid()}.jpg`,
-            //             largura: 800,
-            //             altura: 600,
-            //             tamanhoMb: 1
-            //         }
-            //     ],
-            //     equiQuantidadeDisponivel: 5,
-            //     equiUsuario: usuarioId,
-            // }).set('Authorization', `Bearer ${token}`);
-            // console.log("EQUIPAMENTO", equipamentoRes)
-            // const equipamentoId = equipamentoRes.body.data._id;
 
             await request(app)
                 .post("/reservas")
                 .send({
-                    dataInicial: new Date(Date.now() + 86400000).toISOString(), // Amanhã
-                    dataFinal: new Date(Date.now() + 2 * 86400000).toISOString(), // Depois de amanhã
+                    dataInicial: new Date(Date.now() + 86400000).toISOString(),
+                    dataFinal: new Date(Date.now() + 2 * 86400000).toISOString(), 
                     quantidadeEquipamento: 2,
                     valorEquipamento: 100,
                     enderecoEquipamento: "Rua Teste, 123",
@@ -62,6 +57,15 @@ describe("Reservas", () => {
             expect(res.status).toBe(200);
             expect(res.body.message).toBe("Requisição bem-sucedida");
             expect(res.body.data.dados).toHaveProperty("docs");
+            expect(Array.isArray(res.body.data.dados.docs)).toBe(true);
+        });
+
+        it("Deve retornar reservas filtradas por statusReserva", async () => {
+            const res = await request(app)
+                .get(`/reservas?statusReserva=pendente`)
+                .set("Authorization", `Bearer ${token}`);
+        
+            expect(res.status).toBe(200);
             expect(Array.isArray(res.body.data.dados.docs)).toBe(true);
         });
     });
@@ -88,35 +92,36 @@ describe("Reservas", () => {
         });
     });
     describe("post /reservas", () => {
-        // it("Deve cadastrar uma nova reserva com sucesso", async () => {
+        // it("Deve criar uma nova reserva com sucesso", async () => {
+        //     const dataInicial = new Date(Date.now() + 86400000 + Math.floor(Math.random() * 10000)).toISOString();
+        //     const dataFinal = new Date(new Date(dataInicial).getTime() + 86400000).toISOString();           
         //     const novaReserva = {
-        //         dataInicial: new Date('2026-08-22'),
-        //         dataFinal: new Date('2026-08-23'),
-        //         quantidadeEquipamento: 2,
-        //         valorEquipamento: 100,
-        //         enderecoEquipamento: "Rua Teste, 123",
+        //         dataInicial,
+        //         dataFinal,
+        //         quantidadeEquipamento: 1,
+        //         valorEquipamento: 200,
+        //         enderecoEquipamento: "Av. Teste, 456",
         //         statusReserva: "pendente",
         //         equipamentos: equipamentoId,
         //         usuarios: usuarioId,
         //     };
-
+        
         //     const res = await request(app)
         //         .post("/reservas")
         //         .send(novaReserva)
         //         .set("Authorization", `Bearer ${token}`);
-
-        //     console.log("RESERVA", res.body)
+        
         //     expect(res.status).toBe(201);
-        //     expect(res.body).toHaveProperty("message");
-        //     expect(res.body).toHaveProperty("data");
-        //     expect(res.body.data).toHaveProperty("quantidadeEquipamento", novaReserva.quantidadeEquipamento);
+        //     expect(res.body.message).toBe("Recurso criado com sucesso");
+        //     expect(res.body.data).toHaveProperty("_id");
+        //     expect(res.body.data).toHaveProperty("statusReserva", "pendente");
         // });
 
         it("Deve retornar erro ao cadastrar reserva com dados inválidos", async () => {
             const novaReserva = {
-                dataInicial: new Date(Date.now() - 86400000).toISOString(), // Data no passado
+                dataInicial: new Date(Date.now() - 86400000).toISOString(), 
                 dataFinal: new Date(Date.now() + 86400000).toISOString(),
-                quantidadeEquipamento: 0, // Quantidade inválida
+                quantidadeEquipamento: 0,
                 valorEquipamento: 100,
                 enderecoEquipamento: "Rua Teste, 123",
                 statusReserva: "pendente",
@@ -132,21 +137,68 @@ describe("Reservas", () => {
             expect(res.status).toBe(400);
             expect(res.body.message).toContain("A data inicial não pode ser no passado");
         });
-    });
-    describe("patch /reservas/:id", () => {
-        it("Deve atualizar parcialmente uma reserva", async () => {
-            const reservaRes = await request(app)
+
+        it("Deve retornar erro ao tentar criar reserva com dataFinal menor que dataInicial", async () => {
+            const reservaInvalida = {
+                dataInicial: new Date(Date.now() + 2 * 86400000).toISOString(),
+                dataFinal: new Date(Date.now() + 86400000).toISOString(), 
+                quantidadeEquipamento: 1,
+                valorEquipamento: 100,
+                enderecoEquipamento: "Rua Exemplo, 999",
+                statusReserva: "pendente",
+                equipamentos: equipamentoId,
+                usuarios: usuarioId,
+            };
+        
+            const res = await request(app)
+                .post("/reservas")
+                .send(reservaInvalida)
+                .set("Authorization", `Bearer ${token}`);
+        
+            expect(res.status).toBe(400); 
+            expect(res.body.message).toContain("A data inicial deve ser anterior à data final.");
+        });
+
+        it("Deve retornar erro ao tentar reservar com equipamento inexistente", async () => {
+            const res = await request(app)
                 .post("/reservas")
                 .send({
-                    quantidadeEquipamento: 2,
+                    dataInicial: new Date(Date.now() + 86400000),
+                    dataFinal: new Date(Date.now() + 2 * 86400000),
+                    quantidadeEquipamento: 1,
+                    valorEquipamento: 100,
+                    enderecoEquipamento: "Rua Teste, 123",
+                    statusReserva: "pendente",
+                    equipamentos: new mongoose.Types.ObjectId().toString(), 
+                    usuarios: usuarioId
+                })
+                .set("Authorization", `Bearer ${token}`);
+        
+            expect(res.status).toBe(404);
+            expect(res.body.message).toBe("Equipamento não encontrado.");
+        });
+
+        it("Deve retornar erro ao tentar reservar com usuário inexistente", async () => {
+            const res = await request(app)
+                .post("/reservas")
+                .send({
+                    dataInicial: new Date(Date.now() + 86400000),
+                    dataFinal: new Date(Date.now() + 2 * 86400000),
+                    quantidadeEquipamento: 1,
                     valorEquipamento: 100,
                     enderecoEquipamento: "Rua Teste, 123",
                     statusReserva: "pendente",
                     equipamentos: equipamentoId,
-                    usuarios: usuarioId,
+                    usuarios: new mongoose.Types.ObjectId().toString()
                 })
                 .set("Authorization", `Bearer ${token}`);
-
+        
+            expect(res.status).toBe(404);
+            expect(res.body.message).toBe("Usuário não encontrado.");
+        });
+    });
+    describe("patch /reservas/:id", () => {
+        it("Deve atualizar parcialmente uma reserva", async () => {
             const atualizacao = {
                 statusReserva: "confirmada",
             };
