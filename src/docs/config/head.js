@@ -1,5 +1,7 @@
 import reservasSchemas from "../schemas/reservaSchema.js";
+import avaliacaoSchemas from "../schemas/avaliacaoSchema.js";
 import reservasPaths from "../paths/reserva.js";
+import avaliacaoPaths from "../paths/avaliacao.js";
 
 const getServersInCorrectOrder = () => {
     const PORT = process.env.APP_PORT
@@ -29,9 +31,14 @@ const getSwaggerOptions = () => {
                     name: "Reservas",
                     description: "Rotas para gestão de reservas"
                 },
+                {
+                    name: "Avaliações",
+                    description: "Rotas relacionadas às avaliações feitas em equipamentos."
+                },
             ],
             paths: {
-                ...reservasPaths
+                ...reservasPaths,
+                ...avaliacaoPaths,
             },
             components: {
                 securitySchemes: {
@@ -43,6 +50,7 @@ const getSwaggerOptions = () => {
                 },
                 schemas: {
                     ...reservasSchemas,
+                    ...avaliacaoSchemas,
                 }
             },
             security: [{

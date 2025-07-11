@@ -30,8 +30,7 @@ class AvaliacaoRepository {
 
         const { filtros, ordenacao } = new AvaliacaoFilterBuilder(req.query)
             .comOrdemNota()
-            .comNotaMinima()
-            .comNotaMaxima()
+            .build();
 
         const query = { equipamentos: equipamentoId, ...filtros };
 

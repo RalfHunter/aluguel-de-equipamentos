@@ -49,6 +49,6 @@ export default  {
     //   '**/Grupo.test.js',
     //   '**/AuthPermission.test.js'
     // ]
-    //testMatch:['**/Reserva.test.js']
-    // testMatch:['**/ReservaController.test.js', '**/ReservaService.test.js', '**/ReservaRepository.test.js', '**/ReservaFilterBuilder.test.js']
+    //testMatch:['**/AvaliacaoRepository.test.js', '**/AvaliacaoFilterBuilder.test.js']
+    testMatch:['**/ReservaController.test.js', '**/ReservaService.test.js', '**/ReservaRepository.test.js', '**/ReservaFilterBuilder.test.js']
 };
