@@ -25,6 +25,42 @@ class UsuarioService {
   async listar(req) {
     // console.log("Estou no listar em Usuario")
     const data = await this.model.listar(req)
+    
+    // Remover CPF dos dados retornados, exceto para getPerfil e updatePerfil
+    if (data && data.docs) {
+      // Caso seja paginação (com docs)
+      data.docs = data.docs.map(usuario => {
+        const usuarioObj = usuario.toObject ? usuario.toObject() : usuario
+        delete usuarioObj.CPF
+        delete usuarioObj.accessToken
+        delete usuarioObj.refreshToken
+        delete usuarioObj.codigo_recupera_senha
+        delete usuarioObj.exp_codigo_recupera_senha
+        return usuarioObj
+      })
+      return data
+    } else if (Array.isArray(data)) {
+      // Caso seja array simples
+      return data.map(usuario => {
+        const usuarioObj = usuario.toObject ? usuario.toObject() : usuario
+        delete usuarioObj.CPF
+        delete usuarioObj.accessToken
+        delete usuarioObj.refreshToken
+        delete usuarioObj.codigo_recupera_senha
+        delete usuarioObj.exp_codigo_recupera_senha
+        return usuarioObj
+      })
+    } else if (data && typeof data === 'object') {
+      // Caso seja um objeto único
+      const usuarioObj = data.toObject ? data.toObject() : data
+      delete usuarioObj.CPF
+      delete usuarioObj.accessToken
+      delete usuarioObj.refreshToken
+      delete usuarioObj.codigo_recupera_senha
+      delete usuarioObj.exp_codigo_recupera_senha
+      return usuarioObj
+    }
+    
     // console.log("Estou retornando os dados em UsuarioService")
     return data
   }
@@ -71,9 +107,15 @@ class UsuarioService {
       })
     }
     const data = await this.model.alterarStatus(id, parseData)
-    const  dadosTratados = data.toObject()
+    if (data && typeof data.toObject === 'function') {
+      const dadosTratados = data.toObject()
+      delete dadosTratados.CPF
+      return dadosTratados
+    }
+    // Se não for um documento do Mongoose, tratar como objeto simples
+    const dadosTratados = { ...data }
     delete dadosTratados.CPF
-    return dataTratados
+    return dadosTratados
   }
 
   // ...existing code...
@@ -197,14 +239,14 @@ class UsuarioService {
     const dataObject =  data.toObject()
     delete dataObject.accessToken
     delete dataObject.refreshToken
-    const {nome, email, CPF, telefone, dataNascimento, fotoUsuario, notaMedia, grupos} = dataObject
+    const {nome, email, telefone, dataNascimento, CPF, fotoUsuario, notaMedia, grupos} = dataObject
     const nomesGrupos = grupos.map(grupo => grupo.nome);
     return{
       nome,
       email,
       telefone,
-      CPF,
       dataNascimento,
+      CPF,
       fotoUsuario,
       notaMedia,
       grupos:nomesGrupos
@@ -216,13 +258,14 @@ class UsuarioService {
     const usuarioAtualizado = data.toObject()
     delete usuarioAtualizado.accessToken
     delete usuarioAtualizado.refreshToken
-    const {email, CPF, dataNascimento, fotoUsuario, notaMedia, grupos} = usuarioAtualizado
+    const {email, dataNascimento, CPF, fotoUsuario, notaMedia, grupos} = usuarioAtualizado
     const nomesGrupos = grupos.map(grupo => grupo.nome);
     return{
       nome,
       email,
       telefone,
       dataNascimento,
+      CPF,
       fotoUsuario,
       notaMedia,
       grupos:nomesGrupos

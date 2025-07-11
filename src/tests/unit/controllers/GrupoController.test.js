@@ -282,7 +282,7 @@ describe('GrupoController', () => {
 
             await Grupo.deletar(req, res);
 
-            expect(Grupo.service.deletar).toHaveBeenCalledWith(id);
+            expect(Grupo.service.deletar).toHaveBeenCalledWith(req, id);
             expect(CommonResponse.success).toHaveBeenCalledWith(
                 res,
                 mockResult,
