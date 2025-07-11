@@ -47,9 +47,120 @@ const authRoutes = {
                         }
                     }
                 },
-                400: commonResponses.badRequest,
-                401: commonResponses.unauthorized,
-                422: commonResponses.unprocessableEntity,
+                400: {
+                    description: "Campos obrigatórios ausentes ou inválidos",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string", example: "Erro de validação. 2 campo(s) inválido(s)." },
+                                    data: { type: "null", example: null },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                path: { type: "string" },
+                                                message: { type: "string" }
+                                            }
+                                        },
+                                        example: [
+                                            { path: "email", message: "Campo email é obrigatório." },
+                                            { path: "senha", message: "A senha deve ter pelo menos 8 caracteres." }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                401: {
+                    description: "Credenciais inválidas ou usuário inativo",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string", example: "Não autorizado" },
+                                    data: { type: "null", example: null },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                field: { type: "string" },
+                                                message: { type: "string" }
+                                            }
+                                        },
+                                        example: [
+                                            { field: "Email", message: "Erro de autorização: Senha ou Email." }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                403: {
+                    description: "Usuário desativado pelo administrador",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string", example: "Proibido" },
+                                    data: { type: "null", example: null },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                field: { type: "string" },
+                                                message: { type: "string" }
+                                            }
+                                        },
+                                        example: [
+                                            { field: "Status", message: "Está conta foi desativada por um administrador por violação de contrato." }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                422: {
+                    description: "Dados de entrada não atendem aos critérios de validação",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string", example: "Falha na validação" },
+                                    data: { type: "null", example: null },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                path: { type: "string" },
+                                                message: { type: "string" }
+                                            }
+                                        },
+                                        example: [
+                                            { path: "email", message: "Formato de email inválido." },
+                                            { path: "senha", message: "A senha deve conter pelo menos 1 letra maiúscula, 1 letra minúscula, 1 número e no mínimo 8 caracteres." }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 500: commonResponses.internalServerError
             }
         }
@@ -100,8 +211,91 @@ const authRoutes = {
                         }
                     }
                 },
-                400: commonResponses.badRequest,
-                401: commonResponses.unauthorized,
+                400: {
+                    description: "Token não fornecido ou inválido",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string", example: "Requisição com sintaxe incorreta" },
+                                    data: { type: "null", example: null },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                field: { type: "string" },
+                                                message: { type: "string" }
+                                            }
+                                        },
+                                        example: [
+                                            { field: "Logout", message: "Requisição com sintaxe incorreta" }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                401: {
+                    description: "Token inválido, malformado ou expirado",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string" },
+                                    data: { type: "null", example: null },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                field: { type: "string" },
+                                                message: { type: "string" }
+                                            }
+                                        }
+                                    }
+                                },
+                                examples: {
+                                    tokenInvalido: {
+                                        value: {
+                                            success: false,
+                                            message: "Token de acesso inválido ou malformado.",
+                                            data: null,
+                                            errors: [
+                                                { field: "NotAuthorized", message: "Token de acesso inválido ou malformado." }
+                                            ]
+                                        }
+                                    },
+                                    tokenExpirado: {
+                                        value: {
+                                            success: false,
+                                            message: "Token de acesso expirado.",
+                                            data: null,
+                                            errors: [
+                                                { field: "NotAuthorized", message: "Token de acesso expirado." }
+                                            ]
+                                        }
+                                    },
+                                    tokenNaoValido: {
+                                        value: {
+                                            success: false,
+                                            message: "Token de acesso ainda não é válido.",
+                                            data: null,
+                                            errors: [
+                                                { field: "NotAuthorized", message: "Token de acesso ainda não é válido." }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 500: commonResponses.internalServerError
             }
         }
@@ -151,8 +345,119 @@ const authRoutes = {
                         }
                     }
                 },
-                400: commonResponses.badRequest,
-                401: commonResponses.unauthorized,
+                400: {
+                    description: "Refresh token não fornecido ou inválido",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string", example: "Requisição com sintaxe incorreta" },
+                                    data: { type: "null", example: null },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                field: { type: "string" },
+                                                message: { type: "string" }
+                                            }
+                                        },
+                                        example: [
+                                            { field: "Refresh", message: "Refresh token is missing." }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                401: {
+                    description: "Refresh token inválido, malformado ou expirado",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string" },
+                                    data: { type: "null", example: null },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                field: { type: "string" },
+                                                message: { type: "string" }
+                                            }
+                                        }
+                                    }
+                                },
+                                examples: {
+                                    tokenInvalido: {
+                                        value: {
+                                            success: false,
+                                            message: "Token JWT inválido!",
+                                            data: null,
+                                            errors: [
+                                                { field: "Token", message: "Token JWT inválido!" }
+                                            ]
+                                        }
+                                    },
+                                    tokenExpirado: {
+                                        value: {
+                                            success: false,
+                                            message: "Token JWT expirado!",
+                                            data: null,
+                                            errors: [
+                                                { field: "Token", message: "Token JWT expirado!" }
+                                            ]
+                                        }
+                                    },
+                                    tokenNaoValido: {
+                                        value: {
+                                            success: false,
+                                            message: "Token JWT ainda não é válido!",
+                                            data: null,
+                                            errors: [
+                                                { field: "Token", message: "Token JWT ainda não é válido!" }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                498: {
+                    description: "Refresh token expirado",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string", example: "Token JWT expirado!" },
+                                    data: { type: "null", example: null },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                field: { type: "string" },
+                                                message: { type: "string" }
+                                            }
+                                        },
+                                        example: [
+                                            { field: "Token", message: "Token JWT expirado!" }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 500: commonResponses.internalServerError
             }
         }
@@ -203,8 +508,63 @@ const authRoutes = {
                         }
                     }
                 },
-                400: commonResponses.badRequest,
+                400: {
+                    description: "ID de usuário inválido ou não fornecido",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string", example: "Erro de validação. 1 campo(s) inválido(s)." },
+                                    data: { type: "null", example: null },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                path: { type: "string" },
+                                                message: { type: "string" }
+                                            }
+                                        },
+                                        example: [
+                                            { path: "", message: "ID inválido" }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 401: commonResponses.unauthorized,
+                404: {
+                    description: "Usuário não encontrado",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string", example: "Recurso não encontrado em Usuário." },
+                                    data: { type: "null", example: null },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                field: { type: "string" },
+                                                message: { type: "string" }
+                                            }
+                                        },
+                                        example: [
+                                            { field: "Usuário", message: "Recurso não encontrado em Usuário." }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 500: commonResponses.internalServerError
             }
         }
@@ -317,22 +677,45 @@ const authRoutes = {
                     }
                 },
                 400: {
-                    description: "Token não fornecido ou vazio",
+                    description: "Token não fornecido ou campos de validação inválidos",
                     content: {
                         "application/json": {
                             schema: {
                                 type: "object",
                                 properties: {
                                     success: { type: "boolean", example: false },
-                                    message: { type: "string", example: "Requisição com sintaxe incorreta" },
+                                    message: { type: "string" },
+                                    data: { type: "null", example: null },
                                     errors: {
                                         type: "array",
                                         items: {
                                             type: "object",
                                             properties: {
-                                                field: { type: "string", example: "accessToken" },
-                                                message: { type: "string", example: "Token de acesso é obrigatório para validação." }
+                                                path: { type: "string" },
+                                                message: { type: "string" }
                                             }
+                                        }
+                                    }
+                                },
+                                examples: {
+                                    campoObrigatorio: {
+                                        value: {
+                                            success: false,
+                                            message: "Erro de validação. 1 campo(s) inválido(s).",
+                                            data: null,
+                                            errors: [
+                                                { path: "accessToken", message: "Required" }
+                                            ]
+                                        }
+                                    },
+                                    tokenVazio: {
+                                        value: {
+                                            success: false,
+                                            message: "Token de acesso é obrigatório para validação.",
+                                            data: null,
+                                            errors: [
+                                                { field: "accessToken", message: "Token de acesso é obrigatório para validação." }
+                                            ]
                                         }
                                     }
                                 }
@@ -348,22 +731,38 @@ const authRoutes = {
                                 type: "object",
                                 properties: {
                                     success: { type: "boolean", example: false },
-                                    message: { type: "string", example: "Não autorizado" },
+                                    message: { type: "string" },
+                                    data: { type: "null", example: null },
                                     errors: {
                                         type: "array",
                                         items: {
                                             type: "object",
                                             properties: {
-                                                field: { type: "string", example: "accessToken" },
-                                                message: { 
-                                                    type: "string", 
-                                                    example: "Token de acesso inválido ou malformado.",
-                                                    enum: [
-                                                        "Token de acesso inválido ou malformado.",
-                                                        "Token de acesso ainda não é válido."
-                                                    ]
-                                                }
+                                                field: { type: "string" },
+                                                message: { type: "string" }
                                             }
+                                        }
+                                    }
+                                },
+                                examples: {
+                                    tokenInvalido: {
+                                        value: {
+                                            success: false,
+                                            message: "Token de acesso inválido ou malformado.",
+                                            data: null,
+                                            errors: [
+                                                { field: "accessToken", message: "Token de acesso inválido ou malformado." }
+                                            ]
+                                        }
+                                    },
+                                    tokenNaoValido: {
+                                        value: {
+                                            success: false,
+                                            message: "Token de acesso ainda não é válido.",
+                                            data: null,
+                                            errors: [
+                                                { field: "accessToken", message: "Token de acesso ainda não é válido." }
+                                            ]
                                         }
                                     }
                                 }
@@ -371,15 +770,16 @@ const authRoutes = {
                         }
                     }
                 },
-                498: {
-                    description: "Token expirado",
+                422: {
+                    description: "Token expirado (Token Expired Error)",
                     content: {
                         "application/json": {
                             schema: {
                                 type: "object",
                                 properties: {
                                     success: { type: "boolean", example: false },
-                                    message: { type: "string", example: "O token JWT está expirado!" },
+                                    message: { type: "string", example: "Token de acesso expirado." },
+                                    data: { type: "null", example: null },
                                     errors: {
                                         type: "array",
                                         items: {
@@ -403,7 +803,8 @@ const authRoutes = {
                                 type: "object",
                                 properties: {
                                     success: { type: "boolean", example: false },
-                                    message: { type: "string", example: "Erro interno do servidor" },
+                                    message: { type: "string", example: "Erro interno durante validação do token." },
+                                    data: { type: "null", example: null },
                                     errors: {
                                         type: "array",
                                         items: {
@@ -467,8 +868,90 @@ const authRoutes = {
                         }
                     }
                 },
-                400: commonResponses.badRequest,
-                404: commonResponses.notFound,
+                400: {
+                    description: "Campo email inválido ou não fornecido",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string", example: "Erro de validação. 1 campo(s) inválido(s)." },
+                                    data: { type: "null", example: null },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                path: { type: "string" },
+                                                message: { type: "string" }
+                                            }
+                                        },
+                                        example: [
+                                            { path: "email", message: "Campo email é obrigatório." }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                403: {
+                    description: "Usuário desativado não pode recuperar senha",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string", example: "Proibido" },
+                                    data: { type: "null", example: null },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                field: { type: "string" },
+                                                message: { type: "string" }
+                                            }
+                                        },
+                                        example: [
+                                            { field: "Aprovado", message: "Se sua conta foi desativada, ela não pode mais ser acessada. Para dúvidas, entre em contato com o suporte." }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                404: {
+                    description: "Email não encontrado no sistema",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string", example: "Recurso não encontrado" },
+                                    data: { type: "null", example: null },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                field: { type: "string" },
+                                                message: { type: "string" }
+                                            }
+                                        },
+                                        example: [
+                                            { field: "Email", message: "Recurso não encontrado" }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 500: commonResponses.internalServerError
             }
         }
@@ -620,10 +1103,153 @@ const authRoutes = {
                         }
                     }
                 },
-                400: commonResponses.badRequest,
-                401: commonResponses.unauthorized,
-                422: commonResponses.unprocessableEntity,
-                500: commonResponses.internalServerError
+                400: {
+                    description: "Senha inválida ou não fornecida",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string", example: "Erro de validação. 1 campo(s) inválido(s)." },
+                                    data: { type: "null", example: null },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                path: { type: "string" },
+                                                message: { type: "string" }
+                                            }
+                                        },
+                                        example: [
+                                            { path: "senha", message: "A senha deve ter pelo menos 8 caracteres." }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                401: {
+                    description: "Token de recuperação não fornecido, inválido, malformado ou expirado",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string" },
+                                    data: { type: "null", example: null },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                field: { type: "string" },
+                                                message: { type: "string" }
+                                            }
+                                        }
+                                    }
+                                },
+                                examples: {
+                                    tokenAusente: {
+                                        value: {
+                                            success: false,
+                                            message: "Token de recuperação na URL como parâmetro ou query é obrigatório para troca da senha.",
+                                            data: null,
+                                            errors: [
+                                                { field: "authentication", message: "Token de recuperação na URL como parâmetro ou query é obrigatório para troca da senha." }
+                                            ]
+                                        }
+                                    },
+                                    tokenInvalido: {
+                                        value: {
+                                            success: false,
+                                            message: "Token de recuperação inválido ou malformado.",
+                                            data: null,
+                                            errors: [
+                                                { field: "token", message: "Token de recuperação inválido ou malformado." }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                422: {
+                    description: "Token de recuperação expirado ou dados de entrada inválidos",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string" },
+                                    data: { type: "null", example: null },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                field: { type: "string" },
+                                                message: { type: "string" }
+                                            }
+                                        }
+                                    }
+                                },
+                                examples: {
+                                    tokenExpirado: {
+                                        value: {
+                                            success: false,
+                                            message: "Token de recuperação expirado.",
+                                            data: null,
+                                            errors: [
+                                                { field: "token", message: "Token de recuperação expirado." }
+                                            ]
+                                        }
+                                    },
+                                    senhaInvalida: {
+                                        value: {
+                                            success: false,
+                                            message: "Falha na validação",
+                                            data: null,
+                                            errors: [
+                                                { path: "senha", message: "A senha deve conter pelo menos 1 letra maiúscula, 1 letra minúscula, 1 número e no mínimo 8 caracteres." }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                500: {
+                    description: "Erro interno durante alteração da senha",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    success: { type: "boolean", example: false },
+                                    message: { type: "string", example: "Erro interno durante alteração da senha." },
+                                    data: { type: "null", example: null },
+                                    errors: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                field: { type: "string", example: "passwordReset" },
+                                                message: { type: "string", example: "Erro interno durante alteração da senha." }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }

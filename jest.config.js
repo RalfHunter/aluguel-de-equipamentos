@@ -8,6 +8,7 @@ export default  {
       "/utils/logger.js",
       "utils/helpers/HttpStatusCodes.js"
     ],
+    testMatch:['**/AuthController.test.js', '**/AuthService.test.js', '**/authRoutes.test.js']
     // testMatch:['**/multerUserConfig.test.js']
     // testMatch:['**/messages.test.js']
     // testMatch:['**/AuthController.test.js']
@@ -25,7 +26,7 @@ export default  {
     // testMatch:['**/usuarioRoutes.test.js'] 
     // testMatch:['**/authRoutes.test.js']
     // testMatch:['**/GrupoController.test.js']
-    testMatch:['**/GrupoService.test.js']
+    // testMatch:['**/GrupoService.test.js']
     // testMatch:['**/GrupoRepository.test.js']
     // testMatch:['**/grupoRoutes.test.js']
     // testMatch:['**/UsuarioSchema.test.js']
