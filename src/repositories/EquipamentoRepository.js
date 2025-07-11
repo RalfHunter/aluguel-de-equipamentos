@@ -73,6 +73,18 @@ class EquipamentoRepository {
     }
     return resultado;
   }
+
+  async buscarFotoPorId(equipamentoId, fotoId) {
+    const equipamento = await this.model.findById(equipamentoId);
+    if (!equipamento) {
+      throw new CustomError({
+        statusCode: HttpStatusCodes.NOT_FOUND.code,
+        customMessage: 'Equipamento não encontrado.',
+      });
+    }
+    const foto = equipamento.equiFotos.find(f => f._id.toString() === fotoId);
+    return foto;
+  }
 }
 
 export default EquipamentoRepository;
