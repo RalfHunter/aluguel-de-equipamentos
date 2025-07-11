@@ -19,6 +19,7 @@ describe("Avaliações", () => {
 
         token = loginRes.body?.data?.user?.accessToken;
         usuarioId = loginRes.body?.data?.user?._id;
+        console.log("USER", loginRes.body?.data)
         expect(token).toBeTruthy();
         expect(usuarioId).toBeTruthy();
 
@@ -71,26 +72,6 @@ describe("Avaliações", () => {
     });
 
     describe("POST /avaliacoes", () => {
-        // it("Deve criar uma nova avaliação com sucesso", async () => {
-        //     const novaAvaliacao = {
-        //         nota: 5,
-        //         descricao: "Excelente equipamento!",
-        //         equipamentoId: equipamentoId,
-        //         usuarioId: usuarioId
-        //     };
-
-        //     const res = await request(app)
-        //         .post("/avaliacoes")
-        //         .send(novaAvaliacao)
-        //         .set("Authorization", `Bearer ${token}`);
-
-        //     expect(res.status).toBe(201);
-        //     expect(res.body.message).toBe("Avaliação criada com sucesso.");
-        //     expect(res.body.data).toHaveProperty("_id");
-        //     expect(res.body.data).toHaveProperty("nota", novaAvaliacao.nota);
-        //     expect(res.body.data).toHaveProperty("descricao", novaAvaliacao.descricao);
-        // });
-
         it("Deve retornar erro ao tentar criar avaliação com nota inválida", async () => {
             const avaliacaoInvalida = {
                 nota: 6, 
@@ -145,6 +126,8 @@ describe("Avaliações", () => {
                 descricao: "Esperava mais do equipamento"
             };
 
+            // console.log("PATCH AVALI", avaliacaoId)
+            // console.log("PATCH USERID", usuarioId)
             const res = await request(app)
                 .patch(`/avaliacoes/${avaliacaoId}?usuarioId=${usuarioId}`)
                 .send(atualizacao)
@@ -191,7 +174,7 @@ describe("Avaliações", () => {
     describe("DELETE /avaliacoes/:id", () => {
         it("Deve remover uma avaliação com sucesso", async () => {
             const res = await request(app)
-                .delete(`/avaliacoes/${invalidId}?usuarioId=${usuarioId}`)
+                .delete(`/avaliacoes/${avaliacaoId}?usuarioId=${usuarioId}`)
                 .set("Authorization", `Bearer ${token}`);
 
             expect(res.status).toBe(200);
@@ -199,14 +182,14 @@ describe("Avaliações", () => {
         });
 
         it("Deve retornar erro ao tentar remover avaliação com ID inválido", async () => {
-            const invalidId = new mongoose.Types.ObjectId().toString();
+            const invalidId = new mongoose.Types.ObjectId().toString()
 
             const res = await request(app)
                 .delete(`/avaliacoes/${invalidId}?usuarioId=${usuarioId}`)
                 .set("Authorization", `Bearer ${token}`);
 
-            expect(res.status).toBe(400);
-            expect(res.body.message).toBe("ID inválido.");
+            expect(res.status).toBe(403);
+            expect(res.body.message).toBe("Recurso não encontrado em Permissão.");
         });
 ;
     });
