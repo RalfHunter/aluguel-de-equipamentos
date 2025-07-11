@@ -88,8 +88,8 @@ describe('authRouter', () => {
             const res = await request(app)
             .post("/logout")
             .set("Authorization", `Bearer invalido`)
-            .expect(500)
-            expect(res.body?.message).toEqual("Erro interno do servidor. Tente novamente mais tarde.")
+            .expect(401)
+            expect(res.body?.message).toEqual("Token de acesso inválido ou malformado.")
         });
         
     });
@@ -159,7 +159,7 @@ describe('authRouter', () => {
             .send(body)
             .expect(401)
             expect(res.body?.data).toEqual(null)
-            expect(res.body?.message).toEqual('Erro de autorização: Token.')
+            expect(res.body?.message).toEqual('Refresh token inválido ou não corresponde ao usuário.')
         });
     });
     describe('/introspect', () =>{

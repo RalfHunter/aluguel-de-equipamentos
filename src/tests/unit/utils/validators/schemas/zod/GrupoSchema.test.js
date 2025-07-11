@@ -1,7 +1,7 @@
 // src/tests/unit/utils/validators/Schema/zod/GrupoSchema.test.js
 
 import assert from 'assert';
-import { GrupoSchema, GrupoUpdateSchema } from '../../../../../../../src/utils/validators/schemas/zod/GrupoSchema.js';
+import { GrupoSchema, GrupoUpdateSchema } from '../../../../../../utils/validators/schemas/zod/GrupoSchema.js';
 
 describe('GrupoSchema', () => {
     describe('parse', () => {
@@ -14,7 +14,6 @@ describe('GrupoSchema', () => {
                 permissoes: [
                     {
                         rota: 'usuarios',
-                        dominio: 'usuarios',
                         ativo: true,
                         buscar: true,
                         enviar: true,
@@ -41,7 +40,6 @@ describe('GrupoSchema', () => {
                 permissoes: [
                     {
                         rota: 'test',
-                        dominio: 'test',
                         ativo: true
                     }
                 ]
@@ -60,7 +58,6 @@ describe('GrupoSchema', () => {
                 permissoes: [
                     {
                         rota: 'test',
-                        dominio: 'test',
                         ativo: true
                     }
                 ]
@@ -80,7 +77,6 @@ describe('GrupoSchema', () => {
                 permissoes: [
                     {
                         rota: 'test',
-                        dominio: 'test',
                         ativo: true
                     }
                 ]
@@ -99,7 +95,6 @@ describe('GrupoSchema', () => {
                 permissoes: [
                     {
                         rota: 'test',
-                        dominio: 'test',
                         ativo: true
                     }
                 ]
@@ -121,7 +116,6 @@ describe('GrupoSchema', () => {
                 permissoes: [
                     {
                         rota: 'test',
-                        dominio: 'test',
                         ativo: true
                     }
                 ]
@@ -140,7 +134,6 @@ describe('GrupoSchema', () => {
                 permissoes: [
                     {
                         rota: 'test',
-                        dominio: 'test',
                         ativo: true
                     }
                 ]
@@ -160,7 +153,6 @@ describe('GrupoSchema', () => {
                 permissoes: [
                     {
                         rota: 'test',
-                        dominio: 'test',
                         ativo: true
                     }
                 ]
@@ -178,8 +170,7 @@ describe('GrupoSchema', () => {
                 nivelPermissao: 5,
                 permissoes: [
                     {
-                        rota: 'test',
-                        dominio: 'test',
+                        rota: 'test',                 
                         ativo: true
                     }
                 ]
@@ -201,7 +192,6 @@ describe('GrupoSchema', () => {
                 permissoes: [
                     {
                         rota: 'test',
-                        dominio: 'test',
                         ativo: true
                     }
                 ]
@@ -220,7 +210,6 @@ describe('GrupoSchema', () => {
                 permissoes: [
                     {
                         rota: 'test',
-                        dominio: 'test',
                         ativo: true
                     }
                 ]
@@ -238,8 +227,7 @@ describe('GrupoSchema', () => {
                 nivelPermissao: 5,
                 permissoes: [
                     {
-                        rota: 'test',
-                        dominio: 'test',
+                        rota: 'test',       
                         ativo: true
                     }
                 ]
@@ -258,7 +246,6 @@ describe('GrupoSchema', () => {
                 permissoes: [
                     {
                         rota: 'test',
-                        dominio: 'test',
                         ativo: true
                     }
                 ]
@@ -280,7 +267,6 @@ describe('GrupoSchema', () => {
                 permissoes: [
                     {
                         rota: 'test',
-                        dominio: 'test',
                         ativo: true
                     }
                 ]
@@ -298,8 +284,7 @@ describe('GrupoSchema', () => {
                 nivelPermissao: 0,
                 permissoes: [
                     {
-                        rota: 'test',
-                        dominio: 'test',
+                        rota: 'test',   
                         ativo: true
                     }
                 ]
@@ -318,7 +303,7 @@ describe('GrupoSchema', () => {
                 permissoes: [
                     {
                         rota: 'test',
-                        dominio: 'test',
+                        
                         ativo: true
                     }
                 ]
@@ -338,7 +323,7 @@ describe('GrupoSchema', () => {
                 permissoes: [
                     {
                         rota: 'test',
-                        dominio: 'test',
+                        
                         ativo: true
                     }
                 ]
@@ -358,7 +343,7 @@ describe('GrupoSchema', () => {
                 permissoes: [
                     {
                         rota: 'test',
-                        dominio: 'test',
+                        
                         ativo: true
                     }
                 ]
@@ -377,7 +362,7 @@ describe('GrupoSchema', () => {
                 permissoes: [
                     {
                         rota: 'test',
-                        dominio: 'test',
+                        
                         ativo: true
                     }
                 ]
@@ -399,7 +384,6 @@ describe('GrupoSchema', () => {
                 permissoes: [
                     {
                         rota: 'usuarios',
-                        dominio: 'usuarios',
                         ativo: true,
                         buscar: true,
                         enviar: false,
@@ -409,7 +393,6 @@ describe('GrupoSchema', () => {
                     },
                     {
                         rota: 'grupos',
-                        dominio: 'grupos',
                         ativo: true,
                         buscar: true,
                         enviar: true,
@@ -432,8 +415,7 @@ describe('GrupoSchema', () => {
                 nivelPermissao: 5,
                 permissoes: [
                     {
-                        rota: 'test',
-                        dominio: 'test'
+                        rota: 'test'
                     }
                 ]
             };
@@ -499,7 +481,7 @@ describe('GrupoSchema', () => {
                 permissoes: [
                     {
                         rota: '',
-                        dominio: 'test',
+                        
                         ativo: true
                     }
                 ]
@@ -508,26 +490,6 @@ describe('GrupoSchema', () => {
             const resultado = GrupoSchema.safeParse(dados);
             assert.strictEqual(resultado.success, false);
             assert.ok(resultado.error.errors.some(err => err.path.includes('rota')));
-        });
-
-        it('deve retornar erro se domínio da permissão for inválido', () => {
-            const dados = {
-                nome: 'Grupo Teste',
-                descricao: 'Descrição do grupo',
-                ativo: true,
-                nivelPermissao: 5,
-                permissoes: [
-                    {
-                        rota: 'test',
-                        dominio: '',
-                        ativo: true
-                    }
-                ]
-            };
-
-            const resultado = GrupoSchema.safeParse(dados);
-            assert.strictEqual(resultado.success, false);
-            assert.ok(resultado.error.errors.some(err => err.path.includes('dominio')));
         });
     });
 });
@@ -578,7 +540,6 @@ describe('GrupoUpdateSchema', () => {
             permissoes: [
                 {
                     rota: 'nova-rota',
-                    dominio: 'novo-dominio',
                     ativo: true
                 }
             ]

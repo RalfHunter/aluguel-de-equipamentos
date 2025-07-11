@@ -82,7 +82,7 @@ class GrupoController {
         }
         const parsedData = GrupoIdSchema.parse(id)
         // Chama o serviço para deletar o grupo
-        const data = await this.service.deletar(id);
+        const data = await this.service.deletar(req, id);
     
         // Se chegou até aqui, é porque deu tudo certo, retornar 200 OK
         return CommonResponse.success(res, data, 200, 'Grupo excluído com sucesso.');

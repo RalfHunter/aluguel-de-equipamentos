@@ -1,7 +1,14 @@
 import reservasSchemas from "../schemas/reservaSchema.js";
 import avaliacaoSchemas from "../schemas/avaliacaoSchema.js";
 import reservasPaths from "../paths/reserva.js";
+import usuariosSchemas from "../schemas/usuarioSchema.js";
+import usuariosPaths from "../paths/usuarios.js";
+import authSchemas from "../schemas/authSchema.js";
+import authPaths from "../paths/auth.js";
+import gruposSchemas from "../schemas/grupoSchema.js";
+import gruposPaths from "../paths/grupos.js";
 import avaliacaoPaths from "../paths/avaliacao.js";
+
 
 const getServersInCorrectOrder = () => {
     const PORT = process.env.APP_PORT
@@ -28,6 +35,14 @@ const getSwaggerOptions = () => {
             servers: getServersInCorrectOrder(),
             tags: [
                 {
+                    name: "Autenticação",
+                    description: "Rotas para autenticação e autorização"
+                },
+                {
+                    name: "Grupos",
+                    description: "Rotas para gestão de grupos de permissões"
+                },
+                {
                     name: "Reservas",
                     description: "Rotas para gestão de reservas"
                 },
@@ -35,10 +50,22 @@ const getSwaggerOptions = () => {
                     name: "Avaliações",
                     description: "Rotas relacionadas às avaliações feitas em equipamentos."
                 },
+                {
+                    name: "Usuários",
+                    description: "Rotas para gestão de usuários"
+                },
+                {
+                    name: "Perfil",
+                    description: "Rotas para gestão do perfil do usuário logado"
+                },
             ],
             paths: {
+                ...authPaths,
+                ...gruposPaths,
                 ...reservasPaths,
+                ...usuariosPaths,
                 ...avaliacaoPaths,
+
             },
             components: {
                 securitySchemes: {
@@ -49,8 +76,12 @@ const getSwaggerOptions = () => {
                     }
                 },
                 schemas: {
+                    ...authSchemas,
+                    ...gruposSchemas,
                     ...reservasSchemas,
+                    ...usuariosSchemas,
                     ...avaliacaoSchemas,
+
                 }
             },
             security: [{

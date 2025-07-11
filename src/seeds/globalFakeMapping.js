@@ -45,7 +45,6 @@ const fakeMappings = {
       const rotaAleatoria = fakebr.helpers.arrayElement(rotas);
       return {
         rota: rotaAleatoria,
-        dominio: 'localhost',
         ativo: true,
         buscar: fakebr.datatype.boolean(0.8),
         enviar: fakebr.datatype.boolean(0.6),

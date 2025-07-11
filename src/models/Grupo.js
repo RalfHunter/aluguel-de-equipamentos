@@ -37,10 +37,6 @@ class Grupo {
                             trim: true,
                             lowercase: true
                         }, // produtos, usuarios, fornecedores, etc
-                        dominio: { 
-                            type: String,
-                            default: 'localhost'
-                        }, // localhost, api.exemplo.com, etc
                         ativo: { 
                             type: Boolean, 
                             default: true 
@@ -78,14 +74,14 @@ class Grupo {
             }
         );
 
-        // Validação personalizada para garantir que rota + dominio sejam únicos dentro do grupo
+        // Validação personalizada para garantir que rotas sejam únicas dentro do grupo
         grupoSchema.pre('save', function (next) {
             const permissoes = this.permissoes;
-            const combinacoes = permissoes.map(p => `${p.rota}_${p.dominio}`);
-            const setCombinacoes = new Set(combinacoes);
+            const rotas = permissoes.map(p => p.rota);
+            const setRotas = new Set(rotas);
 
-            if (combinacoes.length !== setCombinacoes.size) {
-                return next(new Error('Permissões duplicadas encontradas: rota + domínio devem ser únicos dentro de cada grupo.'));
+            if (rotas.length !== setRotas.size) {
+                return next(new Error('Permissões duplicadas encontradas: cada rota deve ser única dentro de cada grupo.'));
             }
 
             next();

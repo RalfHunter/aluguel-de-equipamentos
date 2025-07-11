@@ -112,9 +112,21 @@ class AuthPermission {
 
       let hasPermission = false;
 
-      for (const grupo of usuario.grupos) {
+      const gruposAtivos = usuario.grupos.filter(grupo => grupo.ativo === true);
+
+      if (gruposAtivos.length === 0) {
+        throw new CustomError({
+          statusCode: 403,
+          errorType: 'forbidden',
+          field: 'Grupos',
+          details: [],
+          customMessage: 'Usuário não possui grupos ativos.'
+        });
+      }
+
+      for (const grupo of gruposAtivos) {
         const permissao = grupo.permissoes.find(
-          (p) => p.rota === rotaReq && p[metodoPermissao] === true
+          (p) => p.rota === rotaReq && p[metodoPermissao] === true && p.ativo === true
         );
         if (permissao) {
           hasPermission = true;
@@ -134,7 +146,7 @@ class AuthPermission {
       // 8. Anexa o usuário ao objeto de requisição para uso posterior
       req.user = { id: userId };
       let nivelPermissao = null
-      for (const grupo of usuario.grupos) {
+      for (const grupo of gruposAtivos) {
         nivelPermissao = nivelPermissao >= grupo.nivelPermissao ? nivelPermissao : grupo.nivelPermissao
       }
       req.nivelPermissao = nivelPermissao
