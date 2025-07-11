@@ -1,8 +1,10 @@
 import GrupoService from "../../../services/GrupoService.js";
 import GrupoRepository from "../../../repositories/GrupoRepository.js"
+import UsuarioRepository from "../../../repositories/UsuarioRepository.js"
 import { CustomError, HttpStatusCodes, messages } from "../../../utils/helpers/index.js";
 
 jest.mock("../../../repositories/GrupoRepository.js");
+jest.mock("../../../repositories/UsuarioRepository.js");
 
 const mockCustomError = jest.fn();
 jest.mock("../../../utils/helpers/index.js", () => {
@@ -44,10 +46,11 @@ const makeGrupo = (props = {}) => ({
 describe('GrupoService', () => {
     let grupoService;
     let mockGrupoRepositoryInstance;
+    let mockUsuarioRepositoryInstance;
     let req, res;
 
     beforeEach(() => {
-        req = { params: {}, body: {}, query: {} };
+        req = { params: {}, body: {}, query: {}, user_id: "admin123" };
         res = {
             status: jest.fn().mockReturnThis(),
             json: jest.fn().mockReturnThis()
@@ -63,7 +66,12 @@ describe('GrupoService', () => {
             verificarUsuariosAssociados: jest.fn(),
         };
 
+        mockUsuarioRepositoryInstance = {
+            buscarPorId: jest.fn(),
+        };
+
         GrupoRepository.mockImplementation(() => mockGrupoRepositoryInstance);
+        UsuarioRepository.mockImplementation(() => mockUsuarioRepositoryInstance);
 
         grupoService = new GrupoService();
         mockCustomError.mockClear();
@@ -114,7 +122,8 @@ describe('GrupoService', () => {
         const mockDadosGrupo = {
             nome: "Grupo Teste",
             descricao: "Descrição do grupo teste",
-            ativo: true
+            ativo: true,
+            nivelPermissao: 1
         };
 
         it('deve criar um grupo com sucesso', async () => {
@@ -143,6 +152,50 @@ describe('GrupoService', () => {
                 customMessage: 'Nome já está em uso.',
             });
             expect(mockGrupoRepositoryInstance.buscarPorNome).toHaveBeenCalledWith(mockDadosGrupo.nome, null);
+            expect(mockGrupoRepositoryInstance.criar).not.toHaveBeenCalled();
+        });
+
+        it('deve lançar erro se nivelPermissao é menor ou igual a zero', async () => {
+            const dadosInvalidos = { ...mockDadosGrupo, nivelPermissao: 0 };
+            mockGrupoRepositoryInstance.buscarPorNome.mockResolvedValue(null);
+
+            await expect(grupoService.criar(dadosInvalidos)).rejects.toThrow();
+
+            expect(mockCustomError).toHaveBeenCalledWith({
+                statusCode: 400,
+                errorType: "validationError",
+                field: "nivelPermissao",
+                details: [
+                    {
+                        path: "nivelPermissao",
+                        message: "O nível de permissão deve ser maior que zero.",
+                    },
+                ],
+                customMessage: "Não é permitido criar um grupo com nível de permissão menor ou igual a zero.",
+            });
+            expect(mockGrupoRepositoryInstance.buscarPorNome).toHaveBeenCalledWith(dadosInvalidos.nome, null);
+            expect(mockGrupoRepositoryInstance.criar).not.toHaveBeenCalled();
+        });
+
+        it('deve lançar erro se nivelPermissao é negativo', async () => {
+            const dadosInvalidos = { ...mockDadosGrupo, nivelPermissao: -1 };
+            mockGrupoRepositoryInstance.buscarPorNome.mockResolvedValue(null);
+
+            await expect(grupoService.criar(dadosInvalidos)).rejects.toThrow();
+
+            expect(mockCustomError).toHaveBeenCalledWith({
+                statusCode: 400,
+                errorType: "validationError",
+                field: "nivelPermissao",
+                details: [
+                    {
+                        path: "nivelPermissao",
+                        message: "O nível de permissão deve ser maior que zero.",
+                    },
+                ],
+                customMessage: "Não é permitido criar um grupo com nível de permissão menor ou igual a zero.",
+            });
+            expect(mockGrupoRepositoryInstance.buscarPorNome).toHaveBeenCalledWith(dadosInvalidos.nome, null);
             expect(mockGrupoRepositoryInstance.criar).not.toHaveBeenCalled();
         });
     });
@@ -207,13 +260,19 @@ describe('GrupoService', () => {
             mockGrupoRepositoryInstance.buscarPorId.mockResolvedValue(makeGrupo());
         });
 
-        it('deve deletar um grupo com sucesso quando não há usuários associados', async () => {
+        it('deve deletar um grupo com sucesso quando não há usuários associados e admin não pertence ao grupo', async () => {
+            const mockUsuarioAdmin = {
+                _id: "admin123",
+                grupos: [{ _id: "507f1f77bcf86cd799439012" }] // Grupo diferente
+            };
+            mockUsuarioRepositoryInstance.buscarPorId.mockResolvedValue(mockUsuarioAdmin);
             mockGrupoRepositoryInstance.verificarUsuariosAssociados.mockResolvedValue(null);
             mockGrupoRepositoryInstance.deletar.mockResolvedValue(true);
 
-            const resultado = await grupoService.deletar(mockId);
+            const resultado = await grupoService.deletar(req, mockId);
 
             expect(mockGrupoRepositoryInstance.buscarPorId).toHaveBeenCalledWith(mockId);
+            expect(mockUsuarioRepositoryInstance.buscarPorId).toHaveBeenCalledWith(req.user_id);
             expect(mockGrupoRepositoryInstance.verificarUsuariosAssociados).toHaveBeenCalledWith(mockId);
             expect(mockGrupoRepositoryInstance.deletar).toHaveBeenCalledWith(mockId);
             expect(resultado).toBe(true);
@@ -222,22 +281,77 @@ describe('GrupoService', () => {
         it('deve lançar erro se o grupo não existir', async () => {
             mockGrupoRepositoryInstance.buscarPorId.mockResolvedValue(null);
 
-            await expect(grupoService.deletar(mockId)).rejects.toThrow('Recurso não encontrado em Grupo.');
+            await expect(grupoService.deletar(req, mockId)).rejects.toThrow('Recurso não encontrado em Grupo.');
 
             expect(mockGrupoRepositoryInstance.buscarPorId).toHaveBeenCalledWith(mockId);
+            expect(mockUsuarioRepositoryInstance.buscarPorId).not.toHaveBeenCalled();
             expect(mockGrupoRepositoryInstance.verificarUsuariosAssociados).not.toHaveBeenCalled();
             expect(mockGrupoRepositoryInstance.deletar).not.toHaveBeenCalled();
         });
 
+        it('deve lançar erro se o admin pertence ao grupo que está tentando deletar', async () => {
+            const mockUsuarioAdmin = {
+                _id: "admin123",
+                grupos: [{ _id: mockId }] // Mesmo grupo que está tentando deletar
+            };
+            mockUsuarioRepositoryInstance.buscarPorId.mockResolvedValue(mockUsuarioAdmin);
+
+            await expect(grupoService.deletar(req, mockId)).rejects.toThrow();
+
+            expect(mockCustomError).toHaveBeenCalledWith({
+                statusCode: 403,
+                errorType: "unauthorized",
+                details: [],
+                customMessage: "Admin não pode deletar o grupo ao qual pertence"
+            });
+            expect(mockGrupoRepositoryInstance.buscarPorId).toHaveBeenCalledWith(mockId);
+            expect(mockUsuarioRepositoryInstance.buscarPorId).toHaveBeenCalledWith(req.user_id);
+            expect(mockGrupoRepositoryInstance.deletar).not.toHaveBeenCalled();
+        });
+
         it('deve lançar erro se há usuários associados ao grupo', async () => {
+            const mockUsuarioAdmin = {
+                _id: "admin123",
+                grupos: [{ _id: "507f1f77bcf86cd799439012" }] // Grupo diferente
+            };
             const usuarioAssociado = { _id: "user123", nome: "Usuario Teste" };
+            mockUsuarioRepositoryInstance.buscarPorId.mockResolvedValue(mockUsuarioAdmin);
             mockGrupoRepositoryInstance.verificarUsuariosAssociados.mockResolvedValue(usuarioAssociado);
 
-            await expect(grupoService.deletar(mockId)).rejects.toThrow('Conflito de recurso em Grupo contém Usuários associados.');
+            await expect(grupoService.deletar(req, mockId)).rejects.toThrow('Conflito de recurso em Grupo contém Usuários associados.');
 
             expect(mockGrupoRepositoryInstance.buscarPorId).toHaveBeenCalledWith(mockId);
+            expect(mockUsuarioRepositoryInstance.buscarPorId).toHaveBeenCalledWith(req.user_id);
             expect(mockGrupoRepositoryInstance.verificarUsuariosAssociados).toHaveBeenCalledWith(mockId);
             expect(mockGrupoRepositoryInstance.deletar).not.toHaveBeenCalled();
+        });
+
+        it('deve lançar erro se o usuário admin não for encontrado', async () => {
+            mockUsuarioRepositoryInstance.buscarPorId.mockResolvedValue(null);
+
+            await expect(grupoService.deletar(req, mockId)).rejects.toThrow('Recurso não encontrado em Usuario.');
+
+            expect(mockGrupoRepositoryInstance.buscarPorId).toHaveBeenCalledWith(mockId);
+            expect(mockUsuarioRepositoryInstance.buscarPorId).toHaveBeenCalledWith(req.user_id);
+            expect(mockGrupoRepositoryInstance.verificarUsuariosAssociados).not.toHaveBeenCalled();
+            expect(mockGrupoRepositoryInstance.deletar).not.toHaveBeenCalled();
+        });
+
+        it('deve lançar erro se o admin pertence ao grupo usando string comparison', async () => {
+            const mockUsuarioAdmin = {
+                _id: "admin123",
+                grupos: [{ _id: "507f1f77bcf86cd799439011" }] // Mesmo ID como string
+            };
+            mockUsuarioRepositoryInstance.buscarPorId.mockResolvedValue(mockUsuarioAdmin);
+
+            await expect(grupoService.deletar(req, mockId)).rejects.toThrow();
+
+            expect(mockCustomError).toHaveBeenCalledWith({
+                statusCode: 403,
+                errorType: "unauthorized",
+                details: [],
+                customMessage: "Admin não pode deletar o grupo ao qual pertence"
+            });
         });
     });
 

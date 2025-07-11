@@ -10,7 +10,7 @@ export default  {
     ],
     // testMatch:['**/multerUserConfig.test.js']
     // testMatch:['**/messages.test.js']
-    testMatch:['**/AuthController.test.js']
+    // testMatch:['**/AuthController.test.js']
     // testMatch:['**/AuthService.test.js']
     // testMatch:['**/Usuario.test.js']
     // testMatch:['**/UsuarioController.test.js']
@@ -25,7 +25,7 @@ export default  {
     // testMatch:['**/usuarioRoutes.test.js'] 
     // testMatch:['**/authRoutes.test.js']
     // testMatch:['**/GrupoController.test.js']
-    // testMatch:['**/GrupoService.test.js']
+    testMatch:['**/GrupoService.test.js']
     // testMatch:['**/GrupoRepository.test.js']
     // testMatch:['**/grupoRoutes.test.js']
     // testMatch:['**/UsuarioSchema.test.js']
