@@ -4,49 +4,6 @@ import { generateParameters } from "./utils/generateParameters.js";
 
 const reservasRoutes = {
     "/reservas/{id}": {
-        get: {
-            tags: ["Reservas"],
-            summary: "Listar uma reserva específica usando o identificador único dela.",
-            description: `
-                    + Caso de uso: 
-                        - Consultar os detalhes completos de uma reserva específica.
-            
-                    + Função de Negócio:
-                        - Permitir ao usuário visualizar uma reserva vinculada a ele ou ao seu equipamento.
-
-                    + Regras de Negócio:
-                        - ID da reserva deve ser válido.
-                        - Verificar se a reserva existe e se o usuário tem permissão.
-
-                    + Resultado Esperado:
-                        - Retorno dos dados da reserva, 200.
-                `,
-            security: [{ bearerAuth: [] }],
-            parameters: [
-                {
-                    name: 'id',
-                    in: 'path',
-                    required: true,
-                    schema: {
-                        type: 'string',
-                    },
-                    description: 'ID da reserva',
-                },
-            ],
-            responses: {
-                200: {
-                    description: 'Reserva retornada com sucesso',
-                    content: {
-                        'application/json': {
-                            schema: reservasSchemas.ReservaDetalhes,
-                        },
-                    },
-                },
-                400: commonResponses[400](),
-                401: commonResponses[401](),
-                404: commonResponses[404](),
-            },
-        },
         patch: {
             tags: ["Reservas"],
             summary: "Atualizar informações de uma reserva existente.",
@@ -106,6 +63,49 @@ const reservasRoutes = {
                     },
                 },
             }
+        },
+        get: {
+            tags: ["Reservas"],
+            summary: "Listar uma reserva específica usando o identificador único dela.",
+            description: `
+                    + Caso de uso: 
+                        - Consultar os detalhes completos de uma reserva específica.
+            
+                    + Função de Negócio:
+                        - Permitir ao usuário visualizar uma reserva vinculada a ele ou ao seu equipamento.
+
+                    + Regras de Negócio:
+                        - ID da reserva deve ser válido.
+                        - Verificar se a reserva existe e se o usuário tem permissão.
+
+                    + Resultado Esperado:
+                        - Retorno dos dados da reserva, 200.
+                `,
+            security: [{ bearerAuth: [] }],
+            parameters: [
+                {
+                    name: 'id',
+                    in: 'path',
+                    required: true,
+                    schema: {
+                        type: 'string',
+                    },
+                    description: 'ID da reserva',
+                },
+            ],
+            responses: {
+                200: {
+                    description: 'Reserva retornada com sucesso',
+                    content: {
+                        'application/json': {
+                            schema: reservasSchemas.ReservaDetalhes,
+                        },
+                    },
+                },
+                400: commonResponses[400](),
+                401: commonResponses[401](),
+                404: commonResponses[404](),
+            },
         },
     },
     "/reservas": {
