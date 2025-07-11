@@ -3,7 +3,10 @@ import UsuarioRepository from "../../../repositories/UsuarioRepository.js"
 import { afterEach, beforeEach, describe, expect, jest } from "@jest/globals";
 import { CustomError, messages } from "../../../utils/helpers/index.js";
 import { it } from '@jest/globals';
-jest.mock('../../../repositories/UsuarioRepository.js')
+import fs from 'fs';
+
+jest.mock('../../../repositories/UsuarioRepository.js');
+jest.mock('fs');
 
 describe('UsuarioService', () => {
     let usuarioService;
@@ -20,7 +23,10 @@ describe('UsuarioService', () => {
         usuarioService = new UsuarioService(repositoryMock);
     });
     afterEach(() => {
-        jest.clearAllMocks()
+        jest.clearAllMocks();
+        // Reset fs mocks
+        fs.existsSync.mockReset();
+        fs.unlinkSync.mockReset();
     });
     describe('listar', () => {
         it('deve listar todos os clientes', async () => {
@@ -845,6 +851,156 @@ describe('UsuarioService', () => {
 
             expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
             expect(usuarioService.model.deletarUsuario).toHaveBeenCalledWith(userId);
+        });
+
+        it('deve deletar usuário e remover foto quando foto existe', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const reqData = {
+                user_id: '67959501ea0999e0a0fa9f59',
+                nivelPermissao: 1
+            };
+
+            const mockUser = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                grupos: [
+                    { nivelPermissao: 2 }
+                ]
+            };
+
+            const mockDeletedUser = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                fotoUsuario: 'uploads/usuarios/foto123.jpg',
+                deletedCount: 1
+            };
+
+            usuarioService.model.buscarPorId.mockResolvedValue(mockUser);
+            usuarioService.model.deletarUsuario.mockResolvedValue(mockDeletedUser);
+            fs.existsSync.mockReturnValue(true);
+            fs.unlinkSync.mockReturnValue(undefined);
+
+            const resultado = await usuarioService.deletarUsuario(reqData, userId);
+
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.model.deletarUsuario).toHaveBeenCalledWith(userId);
+            expect(fs.existsSync).toHaveBeenCalledWith(mockDeletedUser.fotoUsuario);
+            expect(fs.unlinkSync).toHaveBeenCalledWith(mockDeletedUser.fotoUsuario);
+            expect(resultado).toEqual(mockDeletedUser);
+        });
+
+        it('deve deletar usuário sem tentar remover foto quando foto não existe', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const reqData = {
+                user_id: '67959501ea0999e0a0fa9f59',
+                nivelPermissao: 1
+            };
+
+            const mockUser = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                grupos: [
+                    { nivelPermissao: 2 }
+                ]
+            };
+
+            const mockDeletedUser = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                fotoUsuario: 'uploads/usuarios/foto123.jpg',
+                deletedCount: 1
+            };
+
+            usuarioService.model.buscarPorId.mockResolvedValue(mockUser);
+            usuarioService.model.deletarUsuario.mockResolvedValue(mockDeletedUser);
+            fs.existsSync.mockReturnValue(false);
+
+            const resultado = await usuarioService.deletarUsuario(reqData, userId);
+
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.model.deletarUsuario).toHaveBeenCalledWith(userId);
+            expect(fs.existsSync).toHaveBeenCalledWith(mockDeletedUser.fotoUsuario);
+            expect(fs.unlinkSync).not.toHaveBeenCalled();
+            expect(resultado).toEqual(mockDeletedUser);
+        });
+
+        it('deve deletar usuário sem tentar remover foto quando fotoUsuario é null', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const reqData = {
+                user_id: '67959501ea0999e0a0fa9f59',
+                nivelPermissao: 1
+            };
+
+            const mockUser = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                grupos: [
+                    { nivelPermissao: 2 }
+                ]
+            };
+
+            const mockDeletedUser = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                fotoUsuario: null,
+                deletedCount: 1
+            };
+
+            usuarioService.model.buscarPorId.mockResolvedValue(mockUser);
+            usuarioService.model.deletarUsuario.mockResolvedValue(mockDeletedUser);
+
+            const resultado = await usuarioService.deletarUsuario(reqData, userId);
+
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.model.deletarUsuario).toHaveBeenCalledWith(userId);
+            expect(fs.existsSync).not.toHaveBeenCalled();
+            expect(fs.unlinkSync).not.toHaveBeenCalled();
+            expect(resultado).toEqual(mockDeletedUser);
+        });
+
+        it('deve deletar usuário mesmo se houver erro ao remover foto', async () => {
+            const userId = '67959501ea0999e0a0fa9f58';
+            const reqData = {
+                user_id: '67959501ea0999e0a0fa9f59',
+                nivelPermissao: 1
+            };
+
+            const mockUser = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                grupos: [
+                    { nivelPermissao: 2 }
+                ]
+            };
+
+            const mockDeletedUser = {
+                _id: userId,
+                nome: 'Usuario Teste',
+                fotoUsuario: 'uploads/usuarios/foto123.jpg',
+                deletedCount: 1
+            };
+
+            // Mock console.error para capturar o log
+            const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+            usuarioService.model.buscarPorId.mockResolvedValue(mockUser);
+            usuarioService.model.deletarUsuario.mockResolvedValue(mockDeletedUser);
+            fs.existsSync.mockReturnValue(true);
+            fs.unlinkSync.mockImplementation(() => {
+                throw new Error('Erro ao remover arquivo');
+            });
+
+            const resultado = await usuarioService.deletarUsuario(reqData, userId);
+
+            expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
+            expect(usuarioService.model.deletarUsuario).toHaveBeenCalledWith(userId);
+            expect(fs.existsSync).toHaveBeenCalledWith(mockDeletedUser.fotoUsuario);
+            expect(fs.unlinkSync).toHaveBeenCalledWith(mockDeletedUser.fotoUsuario);
+            expect(consoleSpy).toHaveBeenCalledWith('Erro ao remover foto do usuário:', expect.any(Error));
+            expect(resultado).toEqual(mockDeletedUser);
+
+            // Limpar o mock do console
+            consoleSpy.mockRestore();
         });
     });
     describe('atualizarFotoUsuario', () => {

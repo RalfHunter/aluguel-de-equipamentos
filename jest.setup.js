@@ -1,3 +1,11 @@
+jest.mock('./src/utils/logger.js', () => ({
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+    log: jest.fn()
+}));
+
 // Mocks globais para dependências problemáticas
 jest.mock('bcrypt', () => ({
     hash: jest.fn(),

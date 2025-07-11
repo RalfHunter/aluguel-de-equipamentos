@@ -202,7 +202,16 @@ class UsuarioService {
         customMessage: messages.error.unauthorized("Permissão")
       })
     }
+  
     const data = await this.model.deletarUsuario(id);
+    if (data.fotoUsuario && fs.existsSync(data.fotoUsuario)) {
+      try {
+        fs.unlinkSync(data.fotoUsuario)
+      } catch (error) {
+        console.error('Erro ao remover foto do usuário:', error);
+        // Usuário foi deletado, mas foto permaneceu (não crítico)
+      }
+    }
     return data;
   
 

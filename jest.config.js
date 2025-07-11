@@ -2,6 +2,7 @@ export default  {
   transform: {
     "^.+\\.js$": "babel-jest"
   },
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
   "coveragePathIgnorePatterns": [
       "/node_modules/",
       "/src/utils/helpers/index.js",
@@ -15,7 +16,7 @@ export default  {
     // testMatch:['**/AuthService.test.js']
     // testMatch:['**/Usuario.test.js']
     // testMatch:['**/UsuarioController.test.js']
-    // testMatch:['**/UsuarioService.test.js']
+    testMatch:['**/UsuarioService.test.js']
     // testMatch:['**/UsuarioRepository.test.js']
     // testMatch:['**/GrupoFilterBuilder.test.js']
     //testMatch:['**/UsuarioRepository.test.js']
