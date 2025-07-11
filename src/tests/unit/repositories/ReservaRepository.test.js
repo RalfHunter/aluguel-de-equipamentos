@@ -173,65 +173,64 @@ describe('ReservaRepository', () => {
       expect(result).toEqual(mockResultado);
     });
 
-    it('deve retornar resultado vazio quando nenhum usuário é encontrado', async () => {
+    it('deve aplicar todos os filtros no builder', async () => {
+      const comQuantidadeEquipamento = jest.fn().mockReturnThis();
+      const comUsuarios = jest.fn().mockReturnThis();
+      const comStatus = jest.fn().mockReturnThis();
+      const comDataInicial = jest.fn().mockReturnThis();
+      const comDataFinal = jest.fn().mockReturnThis();
+      const comEnderecoEquipamento = jest.fn().mockReturnThis();
+      const comValorEquipamento = jest.fn().mockReturnThis();
+      const build = jest.fn().mockReturnValue({});
+    
+      ReservaFilterBuilder.mockImplementation(() => ({
+        comQuantidadeEquipamento,
+        comUsuarios,
+        comStatus,
+        comDataInicial,
+        comDataFinal,
+        comEnderecoEquipamento,
+        comValorEquipamento,
+        build,
+      }));
+    
       const mockReq = {
-        query: { usuarios: 'Inexistente', page: '1', limite: '10' },
+        query: {
+          quantidadeEquipamento: 3,
+          usuarioId: 'userId1234567890123456789012',
+          statusReserva: 'pendente',
+          dataInicial: '2025-01-01',
+          dataFinal: '2025-01-10',
+          enderecoEquipamento: 'Rua X',
+          valorEquipamento: 200,
+          page: '1',
+          limite: '10',
+        },
         params: {},
       };
-
-      // Configura o mock para retornar uma lista vazia de usuários
-      const findMock = {
-        lean: jest.fn().mockReturnThis(),
-        exec: jest.fn().mockResolvedValue([]),
-      };
-      Usuario.find.mockReturnValue(findMock);
-
-      const result = await reservaRepository.listar(mockReq);
-
-      expect(Usuario.find).toHaveBeenCalledWith(
-        { nome: { $regex: 'Inexistente', $options: 'i' } },
-        '_id'
-      );
-      expect(findMock.lean).toHaveBeenCalled();
-      expect(findMock.exec).toHaveBeenCalled();
-      expect(result).toEqual({
+    
+      const mockResult = {
         docs: [],
         totalDocs: 0,
-        limit: 10,
         page: 1,
-        totalPages: 0,
-      });
-      expect(Reserva.paginate).not.toHaveBeenCalled();
-    });
-
-    it('deve retornar resultado vazio quando nenhum equipamento é encontrado', async () => {
-      const mockReq = {
-        query: { equipamentos: 'Inexistente', page: '1', limite: '10' },
-        params: {},
+        limit: 10,
       };
-
-      // Mock para retornar uma lista vazia de equipamentos
-      Equipamento.find.mockReturnValue({
-        lean: jest.fn().mockReturnThis(),
-        exec: jest.fn().mockResolvedValue([]),
-      });
-
+    
+      Reserva.paginate.mockResolvedValue(mockResult);
+    
       const result = await reservaRepository.listar(mockReq);
-
-      expect(Equipamento.find).toHaveBeenCalledWith(
-        { equiNome: { $regex: 'Inexistente', $options: 'i' } },
-        '_id'
-      );
-      expect(result).toEqual({
-        docs: [],
-        totalDocs: 0,
-        limit: 10,
-        page: 1,
-        totalPages: 0,
-      });
-      // Garante que a query não foi construída além do necessário
-      expect(Reserva.paginate).not.toHaveBeenCalled();
+    
+      expect(comQuantidadeEquipamento).toHaveBeenCalledWith(3);
+      expect(comUsuarios).toHaveBeenCalledWith('userId1234567890123456789012');
+      expect(comStatus).toHaveBeenCalledWith('pendente');
+      expect(comDataInicial).toHaveBeenCalledWith('2025-01-01');
+      expect(comDataFinal).toHaveBeenCalledWith('2025-01-10');
+      expect(comEnderecoEquipamento).toHaveBeenCalledWith('Rua X');
+      expect(comValorEquipamento).toHaveBeenCalledWith(200);
+      expect(build).toHaveBeenCalled();
+      expect(result).toEqual(mockResult);
     });
+
 
     it('deve lançar erro para ID inválido', async () => {
       mongoose.Types.ObjectId.isValid.mockReturnValue(false);
@@ -246,6 +245,18 @@ describe('ReservaRepository', () => {
           customMessage: 'ID inválido: invalid_id',
         })
       );
+    });
+
+    it('deve tratar req.params sem id', async () => {
+      Reserva.paginate.mockResolvedValue({ docs: [], totalDocs: 0, page: 1, limit: 10 });
+      const result = await reservaRepository.listar({ params: {} });
+      expect(result.docs).toEqual([]);
+    });
+
+    it('deve funcionar quando usuarioId não é fornecido', async () => {
+      Reserva.paginate.mockResolvedValue({ docs: [], totalDocs: 0, page: 1, limit: 10 });
+      const result = await reservaRepository.listar({ query: { statusReserva: 'pendente' } });
+      expect(result.docs).toEqual([]);
     });
   });
 

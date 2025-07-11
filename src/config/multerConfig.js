@@ -3,12 +3,15 @@ import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 
-const diretorio = 'uploads/equipamentos';
+// Caminho onde as imagens dos equipamentos serão salvas
+const diretorio = 'Uploads/equipamentos';
 
+// Garante que o diretório exista
 if (!fs.existsSync(diretorio)) {
   fs.mkdirSync(diretorio, { recursive: true });
 }
 
+// Configuração do armazenamento dos arquivos
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, diretorio);
@@ -20,16 +23,20 @@ const storage = multer.diskStorage({
   }
 });
 
+// Configuração final do multer
 const upload = multer({
   storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, 
+    fileSize: 25 * 1024 * 1024, // Limite de 25MB por arquivo
   },
   fileFilter: (req, file, cb) => {
-    const mimeTypesPermitidos = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!mimeTypesPermitidos.includes(file.mimetype)) {
-      return cb(new Error("Formato de imagem inválido. Use JPEG, PNG ou WebP."), false);
+    const extensao = path.extname(file.originalname).toLowerCase();
+    const permitidas = ['.jpg', '.jpeg', '.png'];
+
+    if (!permitidas.includes(extensao)) {
+      return cb(new Error("Extensão de imagem inválida."), false);
     }
+
     cb(null, true);
   }
 });

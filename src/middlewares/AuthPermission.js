@@ -23,7 +23,6 @@ class AuthPermission {
       // 1. Extrair o token do cabeçalho Authorization
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        console.log("TOKENNNNNNNNNNNNN")
         throw new CustomError({
           statusCode: 401,
           errorType: 'authenticationError',
@@ -52,7 +51,6 @@ class AuthPermission {
 
       // 3. Buscar o usuário no banco de dados
       const usuario = await this.usuario.buscarPorId(req.user_id)
-      // console.log("USUARIO", usuario)
       if (!usuario) {
         throw new CustomError({
           statusCode: 404,
@@ -118,14 +116,12 @@ class AuthPermission {
         const permissao = grupo.permissoes.find(
           (p) => p.rota === rotaReq && p[metodoPermissao] === true
         );
-        // grupo.permissoes.find((p) => console.log(`${p.rota} === ${rotaReq} && ${p[metodoPermissao]} === true`))
         if (permissao) {
           hasPermission = true;
           break;
         }
       }
       if (!hasPermission) {
-        console.log(hasPermission)
         throw new CustomError({
           statusCode: 403,
           errorType: 'forbidden',

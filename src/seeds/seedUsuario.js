@@ -88,7 +88,7 @@ async function SeedUsuario(){
         telefone: "69 93121-2271",
         senha:  await bcrypt.hash('Usuario@1234', 8),
         dataNascimento: fake.dataNascimento(),
-        CPF: "12345612346", // Geração de CPF fictício
+        CPF: "95677319007", // Geração de CPF fictício
         notaMedia: 0,
         ativo: true,    
         fotoUsuario:'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmtv-wGPAGVnAMkWDSteg4qGIRHhtLCYgoDQ&s',

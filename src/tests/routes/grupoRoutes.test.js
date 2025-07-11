@@ -22,18 +22,18 @@ describe('grupoRouter', () => {
         })
         it('deve logar como moderador para provar que seu acesso não é permitido em nenhuma dessas rotas', async() =>{
             const body = {
-                email: "dev@gmail.com",
-                senha:"Dev@1234"
+                email: "moderador@gmail.com",
+                senha:"Moderador@1234"
             }
             const res = await request(app)
                 .post("/login")
                 .send(body)
             moderador = res.body?.data?.user
         })
-        it('deve logar como admin para ser possivel fazer requisições', async () => {
+        it('deve logar como Dev/admin para ser possivel fazer requisições', async () => {
             const body = {
-                email: "dono@gmail.com",
-                senha: "Dono@1234"
+                email: "dev@gmail.com",
+                senha: "Dev@1234"
             }
             const res = await request(app)
                 .post("/login")

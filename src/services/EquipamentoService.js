@@ -4,6 +4,11 @@ import EquipamentoFilterBuilder from '../repositories/filters/EquipamentoFilterB
 import { CustomError, HttpStatusCodes, messages } from '../utils/helpers/index.js';
 import Reserva from '../models/Reserva.js';
 import Usuario from '../models/Usuario.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+
+const getDirname = () => path.dirname(fileURLToPath(import.meta.url));
 
 class EquipamentoService {
   constructor() {
@@ -35,12 +40,14 @@ class EquipamentoService {
   async criar(dados) {
     this._validarCamposObrigatorios(dados);
     this._validarFotosObrigatorias(dados);
-    
+
     const dadosComStatus = {
       ...dados,
       equiStatus: 'pendente'
     };
-    
+
+    console.log('Dados antes de criar:', dadosComStatus); // Adicione este log
+
     return await this.repository.criar(dadosComStatus);
   }
 
@@ -95,35 +102,82 @@ class EquipamentoService {
     await this.repository.excluir(id);
     return { id, mensagem: 'Equipamento excluído com sucesso.' };
   }
-async atualizarStatus(id, usuarioId, novoStatus) {
-  const equipamento = await this.repository.listarPorId(id);
-  if (!equipamento) throw new CustomError({ statusCode: HttpStatusCodes.NOT_FOUND.code, customMessage: 'Equipamento não encontrado.' });
-  const donoId = equipamento.equiUsuario?._id?.toString() || equipamento.equiUsuario?.toString();
-  if (!donoId || donoId !== usuarioId) throw new CustomError({ statusCode: HttpStatusCodes.FORBIDDEN.code, customMessage: 'Apenas o dono do equipamento pode alterar seu status.' });
-  if (equipamento.equiStatus === 'pendente') throw new CustomError({ statusCode: HttpStatusCodes.FORBIDDEN.code, customMessage: 'Não é possível alterar o status de um equipamento pendente.' });
-  if (equipamento.equiStatus === novoStatus) throw new CustomError({ statusCode: HttpStatusCodes.CONFLICT.code, customMessage: `O equipamento já está ${novoStatus}.` });
-  if (novoStatus === 'inativo') {
-    const reservasAtivas = await this.reservaModel.countDocuments({
-      equipamentos: new mongoose.Types.ObjectId(id),
-      statusReserva: { $in: ['pendente', 'confirmada'] },
-      $or: [{ dataInicial: { $lte: new Date() }, dataFinal: { $gte: new Date() } }, { dataInicial: { $gte: new Date() } }],
-    });
-    if (reservasAtivas > 0) throw new CustomError({ statusCode: HttpStatusCodes.CONFLICT.code, customMessage: 'Não é possível inativar equipamento com reservas ativas.' });
-  }
-  if ((novoStatus === 'ativo' && equipamento.equiStatus !== 'inativo') || (novoStatus === 'inativo' && equipamento.equiStatus !== 'ativo')) {
-    throw new CustomError({ statusCode: HttpStatusCodes.BAD_REQUEST.code, customMessage: `Transição inválida: de ${equipamento.equiStatus} para ${novoStatus}.` });
-  }
-  equipamento.equiStatus = novoStatus;
-  await equipamento.save();
-  return equipamento;
-}
 
-  // async adicionarFoto(id, novaFoto) {
-  //   const equipamento = await this._buscarEquipamentoExistente(id);
-  //   equipamento.equiFotos.push(novaFoto);
-  //   await equipamento.save();
-  //   return equipamento;
-  // }
+  async atualizarStatus(id, usuarioId, novoStatus) {
+    console.log(`AtualizarStatus chamado para equipamento ${id} por usuário ${usuarioId} com novoStatus: ${novoStatus}`);
+    const equipamento = await this.repository.listarPorId(id);
+    if (!equipamento) throw new CustomError({ statusCode: HttpStatusCodes.NOT_FOUND.code, customMessage: 'Equipamento não encontrado.' });
+    console.log(`Equipamento antes de atualizar: ${equipamento.equiStatus}`);
+    const donoId = equipamento.equiUsuario?._id?.toString() || equipamento.equiUsuario?.toString();
+    if (!donoId || donoId !== usuarioId) throw new CustomError({ statusCode: HttpStatusCodes.FORBIDDEN.code, customMessage: 'Apenas o dono do equipamento pode alterar seu status.' });
+    if (equipamento.equiStatus === 'pendente') throw new CustomError({ statusCode: HttpStatusCodes.FORBIDDEN.code, customMessage: 'Não é possível alterar o status de um equipamento pendente.' });
+    if (equipamento.equiStatus === novoStatus) throw new CustomError({ statusCode: HttpStatusCodes.CONFLICT.code, customMessage: `O equipamento já está ${novoStatus}.` });
+    if (novoStatus === 'inativo') {
+      const reservasAtivas = await this.reservaModel.countDocuments({
+        equipamentos: new mongoose.Types.ObjectId(id),
+        statusReserva: { $in: ['pendente', 'confirmada'] },
+        $or: [{ dataInicial: { $lte: new Date() }, dataFinal: { $gte: new Date() } }, { dataInicial: { $gte: new Date() } }],
+      });
+      console.log(`Reservas ativas encontradas: ${reservasAtivas}`);
+      if (reservasAtivas > 0) throw new CustomError({ statusCode: HttpStatusCodes.CONFLICT.code, customMessage: 'Não é possível inativar equipamento com reservas ativas.' });
+    }
+    if ((novoStatus === 'ativo' && equipamento.equiStatus !== 'inativo') || (novoStatus === 'inativo' && equipamento.equiStatus !== 'ativo')) {
+      throw new CustomError({ statusCode: HttpStatusCodes.BAD_REQUEST.code, customMessage: `Transição inválida: de ${equipamento.equiStatus} para ${novoStatus}.` });
+    }
+    equipamento.equiStatus = novoStatus;
+    await equipamento.save();
+    console.log(`Equipamento após atualizar: ${equipamento.equiStatus}`);
+    return equipamento;
+  }
+
+  async adicionarFotos(id, novasFotos) {
+    const equipamento = await this._buscarEquipamentoExistente(id);
+
+    if (!Array.isArray(novasFotos) || novasFotos.length === 0) {
+      throw new CustomError({
+        statusCode: HttpStatusCodes.BAD_REQUEST.code,
+        customMessage: 'Nenhuma foto válida fornecida.',
+      });
+    }
+
+    equipamento.equiFotos.push(...novasFotos);
+    await equipamento.save();
+    return equipamento;
+  }
+
+
+  async ListarFoto(id, fotoId) {
+    const equipamento = await this._buscarEquipamentoExistente(id);
+    const foto = await this.repository.buscarFotoPorId(id, fotoId);
+
+    if (!foto) {
+      throw new CustomError({
+        statusCode: HttpStatusCodes.NOT_FOUND.code,
+        customMessage: 'Foto não encontrada.',
+      });
+    }
+
+    const filename = path.basename(foto.url);
+    const uploadsDir = path.join(getDirname(), '..', '..', 'Uploads', 'equipamentos');
+    const filePath = path.join(uploadsDir, filename);
+
+    if (!fs.existsSync(filePath)) {
+      throw new CustomError({
+        statusCode: HttpStatusCodes.NOT_FOUND.code,
+        customMessage: 'Arquivo da foto não encontrado no servidor.',
+      });
+    }
+
+    const extensao = path.extname(filename).slice(1).toLowerCase();
+    const mimeTypes = {
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      png: 'image/png',
+    };
+    const contentType = mimeTypes[extensao] || 'application/octet-stream';
+
+    return { filePath, contentType };
+  }
 
   _processarFiltros(filtros, usuarioId) {
     const pagina = parseInt(filtros.page) || 1;
@@ -143,10 +197,10 @@ async atualizarStatus(id, usuarioId, novoStatus) {
       .comFaixaDeValor(filtros.minValor, filtros.maxValor);
 
     if (status === 'pendente') {
-      builder.comStatus('pendente');  
+      builder.comStatus('pendente');
     } else if (status === 'inativo' && usuarioId) {
       builder.comStatus('inativo');
-      builder.filtros.equiUsuario = usuarioId; 
+      builder.filtros.equiUsuario = usuarioId;
     } else if (usuarioId) {
       builder.filtros.$or = [
         { equiStatus: 'ativo' },
@@ -154,7 +208,7 @@ async atualizarStatus(id, usuarioId, novoStatus) {
         { equiStatus: 'inativo', equiUsuario: usuarioId }
       ];
     } else {
-      builder.comStatus('ativo'); 
+      builder.comStatus('ativo');
     }
 
     const query = builder.build();

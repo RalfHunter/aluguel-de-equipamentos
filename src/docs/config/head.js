@@ -4,7 +4,7 @@ import reservasPaths from "../paths/reserva.js";
 const getServersInCorrectOrder = () => {
     const PORT = process.env.APP_PORT
     const devUrl = { url: process.env.SWAGGER_DEV_URL || `http://localhost:${PORT}` };
-    const prodUrl1 = { url: process.env.SWAGGER_PROD_URL || "https://api-aluguel.exemplo.com" };
+    const prodUrl1 = { url: process.env.SWAGGER_PROD_URL || "https://api-aluguel-equipamentos.com" };
 
     if (process.env.NODE_ENV === "production") return [prodUrl1, devUrl];
     else return [devUrl, prodUrl1];

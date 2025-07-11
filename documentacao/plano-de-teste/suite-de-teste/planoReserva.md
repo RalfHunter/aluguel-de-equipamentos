@@ -45,3 +45,16 @@
 | Validação de reservas sobrepostas   | Não deve ser possível criar reservas sobrepostas para o mesmo equipamento      | Chamar método criar com período que se sobrepõe a uma reserva existente        | A operação lança um erro CustomError com `status 409`         | 
 | Atualização de reserva   | Uma reserva existente deve ser atualizada com dados válidos      | Chamar método atualizar com ID e novos dados       | A reserva reflete os dados alterados e é retornada         |
 | Verificação de existência   | A reserva deve existir para ser atualizada      | Chamar método ensureReservaExists com ID inexistente       | A operação lança um erro CustomError com `status 404`         |
+
+# Plano de Teste Endpoints (Sprint 8)
+
+| Funcionalidade          | Comportamento Esperado                                                          | Verificações                                                  | Critérios de Aceite                                                          |
+| ----------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Listar todas as reservas    | Deve retornar todas as reservas via `GET /reservas`                   | Fazer requisição `GET /reservas`         | 	Resposta contém array com todas as reservas cadastradas e `status 200`             |
+| Buscar reserva por ID	      | 	Deve retornar a reserva correta via `GET /reservas/:id`   | Fazer requisição `GET /reservas/:id` | 	Retorna a reserva correta ou `status 404` se não encontrada     |
+| Listar reservas com filtros                   | Deve retornar reservas filtradas via `GET /reservas` com query params      | Fazer `GET /reservas?dataInicial=...` | Retorna array com reservas filtradas conforme query | 
+| Criar reserva válida  | 	Deve criar reserva via POST /reservas com dados válidos                           | Fazer `POST /reservas` com todos os campos obrigatórios   | Reserva criada, retornada com _id, `status 201` | 
+| Criar reserva com dados inválidos     | Não deve criar reserva com dados faltando ou inválidos                           | azer `POST /reservas` com campos obrigatórios faltando ou inválidos   | Retorna `erro 400` com mensagem de validação |  
+| Criar reserva com data sobreposta   | Não deve permitir reserva em período já reservado para mesmo equipamento                           | Fazer `POST /reservas` com período que conflita com outra reserva  | Retorna `erro 409 conflito` |
+| Atualizar reserva válida   | Deve atualizar reserva via PUT /reservas/:id com dados válidos   | CFazer `PATCH /reservas/:id` com novos dados válidos     | Reserva atualizada com sucesso, `status 200`            | 
+| Atualizar reserva com ID inválido  | Não deve atualizar reserva com ID inválido      | Fazer `PUT /reservas/:idInválido`        | Retorna `erro 404`        | 
