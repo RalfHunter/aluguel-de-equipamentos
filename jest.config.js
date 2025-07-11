@@ -16,7 +16,7 @@ export default  {
     // testMatch:['**/AuthService.test.js']
     // testMatch:['**/Usuario.test.js']
     // testMatch:['**/UsuarioController.test.js']
-    testMatch:['**/UsuarioService.test.js']
+    // testMatch:['**/UsuarioService.test.js']
     // testMatch:['**/UsuarioRepository.test.js']
     // testMatch:['**/GrupoFilterBuilder.test.js']
     //testMatch:['**/UsuarioRepository.test.js']
@@ -64,7 +64,8 @@ export default  {
     //   '**/messages.test.js',
     //   '**/randomPastDate.test.js',
     //   '**/StatusService.test.js',
-    //   '**/LoginSchema.test.js'
+    //   '**/LoginSchema.test.js',
+    //   '**/authRoutes.test.js'
     // ]
     // testMatch:['**/GrupoQuerySchema.test.js']
     // testMatch:['**/errorHandler.test.js']

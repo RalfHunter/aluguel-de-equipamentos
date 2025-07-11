@@ -4,6 +4,7 @@ import { includes } from 'zod/v4';
 import Usuario from '../../models/Usuario';
 import sharp from 'sharp';
 import bcrypt from 'bcrypt'
+import "../../../src/routes/usuarioRoutes.js"
 
 describe('usuarioRoute', () => {
     // Admin que está fazendo a requição

@@ -1,5 +1,5 @@
 import request from 'supertest'
-
+import '../../../src/routes/grupoRoutes.js'
 
 
 describe('grupoRouter', () => {
