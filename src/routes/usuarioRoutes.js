@@ -3,11 +3,8 @@ import { asyncWrapper } from "../utils/helpers/index.js"
 import UsuarioController from "../controllers/UsuarioController.js"
 import AuthMiddleware from "../middlewares/AuthMiddleware.js"
 import AuthPermission from "../middlewares/AuthPermission.js"
-import upload from "../config/multerConfig.js"
 import uploadUsuario, { compressUserImage } from "../config/multerUserConfig.js"
-import FileMiddleware from "../middlewares/FileMiddleware.js"
 import MulterErrorHandler from "../middlewares/MulterErrorHandler.js"
-import { accessSync } from "fs"
 const router = express.Router()
 
 const usuarioController = new UsuarioController()

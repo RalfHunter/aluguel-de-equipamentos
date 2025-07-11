@@ -2,16 +2,8 @@
 import UsuarioRepository from '../repositories/UsuarioRepository.js';
 import CustomError from '../utils/helpers/CustomError.js';
 import messages from '../utils/helpers/messages.js';
-import TokenUtil from '../utils/TokenUtil.js';
-import { fileURLToPath } from 'url';
-import path from 'path';
 import fs from 'fs';
-import sharp from 'sharp';
-import { v4 as uuidv4 } from 'uuid';
-import bcrypt from 'bcrypt';
-import AuthHelper from '../utils/AuthHelper.js';
 import { UsuarioUpdateSchema } from '../utils/validators/schemas/zod/UsuarioSchema.js';
-import sizeOf from 'image-size';
 import HttpStatusCodes from '../utils/helpers/HttpStatusCodes.js';
 // Configuração para ES6 modules
 

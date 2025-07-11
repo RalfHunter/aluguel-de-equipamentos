@@ -1,5 +1,5 @@
 import AuthService from '../../../services/AuthService.js';
-import UsuarioRepository from '../../../repositories/UsuarioRepository.js'
+
 import CustomError from '../../../utils/helpers/CustomError.js';
 import messages from "../../../utils/helpers/messages.js"
 import jwt from 'jsonwebtoken';

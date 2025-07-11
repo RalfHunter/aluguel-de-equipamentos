@@ -1,6 +1,6 @@
 import GrupoRepository from '../repositories/GrupoRepository.js';
 import UsuarioRepository from '../repositories/UsuarioRepository.js';
-import { CustomError, HttpStatusCodes, messages } from '../utils/helpers/index.js';
+import { CustomError, messages } from '../utils/helpers/index.js';
 
 class GrupoService {
     constructor() {

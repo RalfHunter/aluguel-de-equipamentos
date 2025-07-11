@@ -2,14 +2,14 @@
 
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { CommonResponse, CustomError, HttpStatusCodes, errorHandler, messages, StatusService, asyncWrapper } from '../utils/helpers/index.js';
+import { CustomError, HttpStatusCodes, messages } from '../utils/helpers/index.js';
 import tokenUtil from '../utils/TokenUtil.js';
 import AuthHelper from '../utils/AuthHelper.js';
 
 import UsuarioRepository from '../repositories/UsuarioRepository.js';
 
 class AuthService {
-    constructor({ tokenUtil: injectedTokenUtil, usuarioRepository, authusuarioRepository } = {}) {
+    constructor({ tokenUtil: injectedTokenUtil, usuarioRepository} = {}) {
         // Se nada for injetado, usa a instância importada
         this.TokenUtil = injectedTokenUtil || tokenUtil;
         this.repository = usuarioRepository || new UsuarioRepository();

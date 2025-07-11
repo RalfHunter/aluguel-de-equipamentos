@@ -2,20 +2,11 @@ import { CommonResponse } from '../utils/helpers/index.js';
 import UsuarioService from '../services/UsuarioService.js';
 import { UsuarioIdSchema, UsuarioQuerySchema } from '../utils/validators/schemas/zod/querys/UsuarioQuerySchema.js';
 import { UsuarioSchema, UsuarioUpdateSchema } from '../utils/validators/schemas/zod/UsuarioSchema.js';
-import fileUpload from 'express-fileupload';
 import { CustomError } from '../utils/helpers/index.js';
 import { HttpStatusCodes } from '../utils/helpers/index.js';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
-import sharp from 'sharp';
-import TokenUtil from '../utils/TokenUtil.js';
-import multer from 'multer';
-import uploadUsuario from '../config/multerConfig.js';
 import sizeOf from 'image-size';
-import Usuario from '../models/Usuario.js';
-import { dirname } from 'path';
 
 
 // const __filename = fileURLToPath(import.meta.url);

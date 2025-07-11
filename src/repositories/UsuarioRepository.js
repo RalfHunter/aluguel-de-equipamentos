@@ -1,4 +1,3 @@
-import { populate } from "dotenv"
 import UsuarioModel from "../models/Usuario.js"
 // import AvaliacaoModel from "../models/Avaliacao.js"
 import CustomError from "../utils/helpers/CustomError.js"
@@ -7,7 +6,7 @@ import UsuarioFilterBuilder from "./filters/UsuarioFilterBuilder.js"
 import bcrypt from 'bcrypt'
 import Grupo from "../models/Grupo.js"
 import Usuario from "../models/Usuario.js"
-import { UsuarioIdSchema } from "../utils/validators/schemas/zod/querys/UsuarioQuerySchema.js"
+
 
 class UsuarioRepository {
     constructor({

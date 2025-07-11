@@ -1,5 +1,5 @@
 import { LoginSchema } from '../../../../../../utils/validators/schemas/zod/LoginSchema.js';
-import { z } from 'zod';
+
 
 describe('LoginSchema', () => {
     describe('Validação de email', () => {

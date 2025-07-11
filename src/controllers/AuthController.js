@@ -4,8 +4,8 @@ import jwt from 'jsonwebtoken';
 import { promisify } from 'util';
 import { CommonResponse, CustomError, HttpStatusCodes, errorHandler, messages, StatusService, asyncWrapper } from '../utils/helpers/index.js';
 import { LoginSchema } from '../utils/validators/schemas/zod/LoginSchema.js';
-import { UsuarioSchema, UsuarioUpdateSchema } from '../utils/validators/schemas/zod/UsuarioSchema.js';
-import { objectIdMongo, UsuarioIdSchema } from '../utils/validators/schemas/zod/querys/UsuarioQuerySchema.js';
+import {UsuarioUpdateSchema } from '../utils/validators/schemas/zod/UsuarioSchema.js';
+import { objectIdMongo} from '../utils/validators/schemas/zod/querys/UsuarioQuerySchema.js';
 import { RequestAuthorizationSchema } from '../utils/validators/schemas/zod/querys/RequestAuthorizationSchema.js';
 
 import AuthService from '../services/AuthService.js';
