@@ -24,7 +24,7 @@ export default  {
     // testMatch:['**/AuthPermission.test.js']
     // testMatch:['**/errorHandler.test.js']
     // testMatch:['**/GrupoSchema.test.js']
-    // testMatch:['**/usuarioRoutes.test.js'] 
+    testMatch:['**/usuarioRoutes.test.js'] 
     // testMatch:['**/authRoutes.test.js']
     // testMatch:['**/GrupoController.test.js']
     // testMatch:['**/GrupoService.test.js']
@@ -65,7 +65,9 @@ export default  {
     //   '**/randomPastDate.test.js',
     //   '**/StatusService.test.js',
     //   '**/LoginSchema.test.js',
-    //   '**/authRoutes.test.js'
+    //   '**/authRoutes.test.js',
+    //   '**/grupoRoutes.test.js',
+    //   '**/usuarioRoutes.test.js'
     // ]
     // testMatch:['**/GrupoQuerySchema.test.js']
     // testMatch:['**/errorHandler.test.js']
