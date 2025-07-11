@@ -1,37 +1,387 @@
-## 1. Login de Usuário
+# Documentação das Rotas
 
-### 1.1 POST /login 
+## 1. Autenticação (Auth)
+
+### 1.1 POST /signup
 
 #### Caso de Uso
-- Permitir que os usuários (ou sistemas externos) entrem no sistema e obtenham acesso às funcionalidades internas.
+- Registrar um novo usuário no sistema.
 
 #### Regras de Negócio
-- Verificação de Credenciais: Validar login/senha.
-- Bloqueio de Usuários:  Impedir o acesso de usuários desativados ou não confirmados.
-- Gestão de Tokens: Gerar e armazenar tokens de acesso e refresh de forma segura, permitindo revogação futura.
+- Não requer autenticação.
+- Dados obrigatórios: nome, email, telefone, senha, dataNascimento, CPF.
+- Email deve ser único no sistema.
+- Telefone deve ser único no sistema.
+- CPF deve ser único no sistema.
+- Senha deve atender aos critérios de segurança.
 
 #### Resultado Esperado
-- Retorno dos tokens de acesso e refresh.
-- Em caso de erro, mensagem de erro: "E-mail já cadastrado" ou "Dados inválidos".
+- Usuário registrado com sucesso e token de acesso retornado.
+- Em caso de erro, mensagem de erro: "Email já cadastrado", "Telefone já cadastrado", "CPF já cadastrado" ou "Dados inválidos".
 
-### 1.2 POST  /register
+### 1.2 POST /login
 
 #### Caso de Uso
-- Permitir que novos usuários se cadastrem no sistema para acessar as funcionalidades do aplicativo, criando uma conta com suas informações pessoais.
+- Realizar login de usuário no sistema.
 
 #### Regras de Negócio
-- Validação de Dados: Verificar se os campos obrigatórios (nome, e-mail, senha, telefone) 
-- Confirmação de Cadastro: Enviar um e-mail de confirmação com um link para validar a conta antes de permitir o login
-- Criptografia de Senha: Armazenar a senha de forma segura.
+- Não requer autenticação.
+- Dados obrigatórios: email e senha.
+- Usuário deve estar ativo no sistema.
+- Credenciais devem ser válidas.
+
+#### Resultado Esperado
+- Login realizado com sucesso e token de acesso retornado.
+- Em caso de erro, mensagem de erro: "Credenciais inválidas", "Usuário inativo", "Dados inválidos" ou "Usuário não está cadastrado".
+
+### 1.3 POST /revoke
 
 #### Caso de Uso
-- Usuário cadastrado com sucesso.
-- Em caso de erro, mensagem de erro: "E-mail já cadastrado" ou "Dados inválidos".
+- Revogar token de acesso do usuário.
 
+#### Regras de Negócio
+- Requer autenticação.
+- Token deve ser válido.
 
-## 2. Equipamentos
+#### Resultado Esperado
+- Token revogado com sucesso.
+- Em caso de erro, mensagem de erro: "Token inválido" ou "Não autorizado".
 
-### 2.1 POST /equipamentos
+### 1.4 POST /logout
+
+#### Caso de Uso
+- Realizar logout do usuário do sistema.
+
+#### Regras de Negócio
+- Requer autenticação.
+- Token deve ser válido.
+
+#### Resultado Esperado
+- Logout realizado com sucesso.
+- Em caso de erro, mensagem de erro: "Token inválido" ou "Não autorizado".
+
+### 1.5 POST /refresh
+
+#### Caso de Uso
+- Renovar token de acesso do usuário.
+
+#### Regras de Negócio
+- Requer token de refresh válido.
+- Token de refresh não deve estar expirado.
+
+#### Resultado Esperado
+- Novo token de acesso gerado com sucesso.
+- Em caso de erro, mensagem de erro: "Token de refresh inválido" ou "Token expirado".
+
+### 1.6 POST /introspect
+
+#### Caso de Uso
+- Verificar informações do token de acesso.
+
+#### Regras de Negócio
+- Requer token de acesso.
+- Token deve ser válido.
+
+#### Resultado Esperado
+- Informações do token retornadas com sucesso.
+- Em caso de erro, mensagem de erro: "Token inválido" ou "Token expirado".
+
+### 1.7 POST /recover
+
+#### Caso de Uso
+- Solicitar redefinição de senha via email.
+
+#### Regras de Negócio
+- Não requer autenticação.
+- Email deve estar cadastrado no sistema.
+- Usuário deve estar ativo.
+
+#### Resultado Esperado
+- Email de redefinição de senha enviado com sucesso.
+- Em caso de erro, mensagem de erro: "Email não encontrado" ou "Usuário inativo".
+
+### 1.8 PATCH /password/reset/token
+
+#### Caso de Uso
+- Redefinir senha do usuário usando token de redefinição.
+
+#### Regras de Negócio
+- Não requer autenticação.
+- Token de redefinição deve ser válido e não expirado.
+- Nova senha deve atender aos critérios de segurança.
+
+#### Resultado Esperado
+- Senha redefinida com sucesso.
+- Em caso de erro, mensagem de erro: "Token inválido", "Token expirado" ou "Senha inválida".
+
+## 2. Usuários
+
+### 2.1 GET /usuarios
+
+#### Caso de Uso
+- Listar todos os usuários do sistema.
+
+#### Regras de Negócio
+- Apenas usuários autenticados podem acessar.
+- Requer permissão de administrador ou moderador.
+- Filtragem e paginação disponíveis.
+
+#### Resultado Esperado
+- Lista de usuários com informações básicas.
+- Em caso de erro, mensagem de erro: "Não autorizado" ou "Permissão negada".
+
+### 2.2 GET /usuarios/:id
+
+#### Caso de Uso
+- Buscar um usuário específico pelo ID.
+
+#### Regras de Negócio
+- Apenas usuários autenticados podem acessar.
+- Requer permissão de administrador ou moderador.
+- ID do usuário deve ser válido.
+
+#### Resultado Esperado
+- Dados do usuário solicitado.
+- Em caso de erro, mensagem de erro: "Usuário não encontrado" ou "Permissão negada".
+
+### 2.3 PATCH /usuarios/
+
+#### Caso de Uso
+- Atualizar dados do próprio usuário logado.
+
+#### Regras de Negócio
+- Apenas usuários autenticados podem acessar.
+- Usuário só pode editar seus próprios dados.
+- Campos editáveis: nome, telefone, dataNascimento.
+
+#### Resultado Esperado
+- Dados do usuário atualizados com sucesso.
+- Em caso de erro, mensagem de erro: "Dados inválidos" ou "Não autorizado".
+
+### 2.4 PATCH /usuarios/:id
+
+#### Caso de Uso
+- Alterar status do usuário (apenas administradores e moderadores).
+
+#### Regras de Negócio
+- Apenas usuários autenticados podem acessar.
+- Requer permissão de administrador ou moderador.
+- ID do usuário deve ser válido.
+
+#### Resultado Esperado
+- Status do usuário alterado com sucesso.
+- Em caso de erro, mensagem de erro: "Usuário não encontrado" ou "Permissão negada".
+
+### 2.5 POST /usuarios
+
+#### Caso de Uso
+- Criar um novo usuário no sistema.
+
+#### Regras de Negócio
+- Apenas usuários autenticados podem acessar.
+- Requer permissão de administrador ou moderador.
+- Dados obrigatórios: nome, email, telefone, senha, dataNascimento, CPF.
+- Email deve ser único no sistema.
+- Telefone deve ser único no sistema.
+- CPF deve ser único no sistema.
+
+#### Resultado Esperado
+- Usuário criado com sucesso.
+- Em caso de erro, mensagem de erro: "Email já cadastrado", "Telefone já cadastrado", "CPF já cadastrado" ou "Permissão negada".
+
+### 2.6 POST /usuarios/:id/foto
+
+#### Caso de Uso
+- Fazer upload da foto do usuário.
+
+#### Regras de Negócio
+- Apenas usuários autenticados podem acessar.
+- Usuário pode fazer upload de sua própria foto ou administradores/moderadores podem fazer upload para qualquer usuário.
+- Arquivo deve ser uma imagem válida.
+- Tamanho máximo do arquivo limitado.
+
+#### Resultado Esperado
+- Foto do usuário salva com sucesso.
+- Em caso de erro, mensagem de erro: "Arquivo inválido", "Tamanho muito grande" ou "Permissão negada".
+
+### 2.7 GET /usuarios/:id/foto
+
+#### Caso de Uso
+- Obter a foto do usuário.
+
+#### Regras de Negócio
+- Apenas usuários autenticados podem acessar.
+- ID do usuário deve ser válido.
+
+#### Resultado Esperado
+- Foto do usuário retornada com sucesso.
+- Em caso de erro, mensagem de erro: "Usuário não encontrado" ou "Foto não encontrada".
+
+### 2.8 DELETE /usuarios/:id/foto
+
+#### Caso de Uso
+- Remover a foto do usuário.
+
+#### Regras de Negócio
+- Apenas usuários autenticados podem acessar.
+- Usuário pode remover sua própria foto ou administradores/moderadores podem remover foto de qualquer usuário.
+- ID do usuário deve ser válido.
+
+#### Resultado Esperado
+- Foto do usuário removida com sucesso.
+- Em caso de erro, mensagem de erro: "Usuário não encontrado", "Foto não encontrada" ou "Permissão negada".
+
+### 2.9 DELETE /usuarios/:id
+
+#### Caso de Uso
+- Deletar um usuário do sistema.
+
+#### Regras de Negócio
+- Apenas usuários autenticados podem acessar.
+- Requer permissão de administrador ou moderador.
+- ID do usuário deve ser válido.
+- Usuário não pode deletar a si mesmo.
+
+#### Resultado Esperado
+- Usuário deletado com sucesso.
+- Em caso de erro, mensagem de erro: "Usuário não encontrado", "Não é possível deletar o próprio usuário" ou "Permissão negada".
+
+### 2.10 GET /perfil/
+
+#### Caso de Uso
+- Obter dados do perfil do usuário logado.
+
+#### Regras de Negócio
+- Apenas usuários autenticados podem acessar.
+- Retorna dados do próprio usuário.
+
+#### Resultado Esperado
+- Dados do perfil do usuário retornados com sucesso.
+- Em caso de erro, mensagem de erro: "Não autorizado" ou "Usuário não encontrado".
+
+### 2.11 PATCH /perfil/
+
+#### Caso de Uso
+- Atualizar dados específicos do perfil do usuário logado.
+
+#### Regras de Negócio
+- Apenas usuários autenticados podem acessar.
+- Usuário só pode editar seus próprios dados.
+- Pelo menos um campo deve ser fornecido para atualização.
+
+#### Resultado Esperado
+- Dados do perfil atualizados com sucesso.
+- Em caso de erro, mensagem de erro: "Dados inválidos" ou "Não autorizado".
+
+### 2.12 DELETE /usuarios/:id
+
+#### Caso de Uso
+- Deletar um usuário do sistema.
+
+#### Regras de Negócio
+- Apenas usuários autenticados podem acessar.
+- Requer permissão de administrador ou moderador.
+- ID do usuário deve ser válido.
+- Usuário não pode deletar a si mesmo.
+
+#### Resultado Esperado
+- Usuário deletado com sucesso.
+- Em caso de erro, mensagem de erro: "Usuário não encontrado", "Não é possível deletar próprio usuário" ou "Permissão negada".
+
+## 3. Grupos
+
+### 3.1 GET /grupos
+
+#### Caso de Uso
+- Listar todos os grupos do sistema.
+
+#### Regras de Negócio
+- Apenas usuários autenticados podem acessar.
+- Requer permissão de administrador.
+- Filtragem e paginação disponíveis.
+
+#### Resultado Esperado
+- Lista de grupos com informações básicas.
+- Em caso de erro, mensagem de erro: "Não autorizado" ou "Permissão negada".
+
+### 3.2 GET /grupos/:id
+
+#### Caso de Uso
+- Obter informações específicas de um grupo.
+
+#### Regras de Negócio
+- Apenas usuários autenticados podem acessar.
+- Requer permissão de administrador.
+- ID do grupo deve ser válido.
+
+#### Resultado Esperado
+- Dados completos do grupo solicitado.
+- Em caso de erro, mensagem de erro: "Grupo não encontrado" ou "Permissão negada".
+
+### 3.3 POST /grupos
+
+#### Caso de Uso
+- Criar novo grupo no sistema.
+
+#### Regras de Negócio
+- Apenas usuários autenticados podem acessar.
+- Requer permissão de administrador.
+- Nome do grupo deve ser único.
+- Validação de dados obrigatórios.
+
+#### Resultado Esperado
+- Grupo criado com sucesso.
+- Em caso de erro, mensagem de erro: "Nome já existe" ou "Dados inválidos".
+
+### 3.4 PUT /grupos/:id
+
+#### Caso de Uso
+- Atualizar grupo existente.
+
+#### Regras de Negócio
+- Apenas usuários autenticados podem acessar.
+- Requer permissão de administrador.
+- ID do grupo deve ser válido.
+- Validação de dados obrigatórios.
+
+#### Resultado Esperado
+- Grupo atualizado com sucesso.
+- Em caso de erro, mensagem de erro: "Grupo não encontrado" ou "Dados inválidos".
+
+### 3.5 PATCH /grupos/:id
+
+#### Caso de Uso
+- Atualizar parcialmente dados de um grupo existente.
+
+#### Regras de Negócio
+- Apenas usuários autenticados podem acessar.
+- Requer permissão de administrador.
+- ID do grupo deve ser válido.
+- Pelo menos um campo deve ser fornecido para atualização.
+- Nome do grupo deve ser único (se fornecido).
+
+#### Resultado Esperado
+- Grupo atualizado com sucesso.
+- Em caso de erro, mensagem de erro: "Grupo não encontrado", "Nome já existe" ou "Dados inválidos".
+
+### 3.6 DELETE /grupos/:id
+
+#### Caso de Uso
+- Remover grupo do sistema.
+
+#### Regras de Negócio
+- Apenas usuários autenticados podem acessar.
+- Requer permissão de administrador.
+- ID do grupo deve ser válido.
+- Grupo não pode ter usuários associados.
+
+#### Resultado Esperado
+- Grupo removido com sucesso.
+- Em caso de erro, mensagem de erro: "Grupo não encontrado" ou "Grupo em uso".
+
+## 4. Equipamentos
+
+### 4.1 POST /equipamentos
 
 #### Caso de Uso
 Criar um novo equipamento para locação.
@@ -47,246 +397,230 @@ Criar um novo equipamento para locação.
 #### Resultado Esperado
 Equipamento criado, aguardando aprovação.
 
-### 2.2 GET /equipamentos
+### 4.2 GET /equipamentos
 
 #### Caso de Uso
-Listar equipamentos cadastrados.
+Listar equipamentos disponíveis para locação com filtros.
 
 #### Regras de Negócio
-- Filtros: categoria, faixa de valor.
-- Paginação: parâmetros page e limite, limite máximo 100.
-- Status pendente: restrito a administradores.
-- Não retorna equipamentos inativos ou pendentes para usuários comuns.
+- Usuário deve estar autenticado.
+- Retorna apenas equipamentos aprovados.
+- Filtros: categoria, preço, localização, disponibilidade.
+- Paginação de resultados.
 
 #### Resultado Esperado
-Lista paginada de equipamentos.
+Lista de equipamentos conforme filtros aplicados.
 
-### 2.3 GET /equipamentos/:id
+### 4.3 GET /equipamentos/:id
 
 #### Caso de Uso
-Obter equipamento por ID.
+Visualizar detalhes de um equipamento específico.
 
 #### Regras de Negócio
-- ID deve ser válido.
-- Retorna apenas equipamentos com qualquer status para o usuário dono do equipamento.
+- Usuário deve estar autenticado.
+- ID do equipamento deve ser válido.
+- Retorna informações completas do equipamento.
 
 #### Resultado Esperado
-Equipamento específico.
+Dados detalhados do equipamento solicitado.
 
-### 2.4 PATCH /equipamentos/:id
+### 4.4 PUT /equipamentos/:id
 
 #### Caso de Uso
-Atualizar equipamento.
+Atualizar informações de um equipamento existente.
 
 #### Regras de Negócio
-- ID deve ser válido.
-- Apenas locador pode editar.
-- Permite atualizar apenas valor diária e quantidade disponível.
-- Equipamento pendente e inativo não podem ser atualizados.
+- Usuário deve ser o proprietário do equipamento ou admin.
+- Todos os campos são validados.
+- Alterações passam por nova aprovação se necessário.
 
 #### Resultado Esperado
-Equipamento atualizado.
+Equipamento atualizado com sucesso.
 
-### 2.6 PATCH /equipamentos/:id/aprovar
+### 4.5 DELETE /equipamentos/:id
 
 #### Caso de Uso
-Aprovar equipamento pendente.
+Remover equipamento do sistema.
 
 #### Regras de Negócio
-- ID deve ser válido.
-- Apenas administradores podem aprovar.
-- Equipamento deve estar pendente.
+- Apenas proprietário ou admin podem remover.
+- Equipamento não pode ter reservas ativas.
+- Remoção das fotos associadas.
 
 #### Resultado Esperado
-Equipamento aprovado.
+Equipamento removido com sucesso.
 
-### 2.7 PATCH /equipamentos/:id/reprovar
+### 4.6 POST /equipamentos/:id/foto
 
 #### Caso de Uso
-Reprovar equipamento pendente.
+Fazer upload de foto para o equipamento.
 
 #### Regras de Negócio
-- ID deve ser válido.
-- Apenas administradores podem reprovar.
-- Equipamento deve estar pendente.
-- Equipamento deve ser excluído do banco após reprovação.
+- Apenas proprietário ou admin podem adicionar fotos.
+- Formatos aceitos: JPG, PNG, WEBP.
+- Compressão automática aplicada.
+- Limite de fotos por equipamento.
 
 #### Resultado Esperado
-Equipamento reprovado e excluído.
+Foto adicionada com sucesso ao equipamento.
 
-### 2.8 POST /equipamentos/:id/fotos
+### 4.7 GET /equipamentos/:id/foto
 
 #### Caso de Uso
-Adicionar foto a equipamento.
+Obter foto do equipamento.
 
 #### Regras de Negócio
-- ID deve ser válido.
-- Apenas locador pode adicionar.
-- Foto: JPEG, PNG ou RIFF.
+- Acesso público para visualização.
+- Retorna primeira foto ou foto padrão.
 
 #### Resultado Esperado
-Foto adicionada ao equipamento.
+Imagem do equipamento retornada.
 
-## 3. Reservas
-
-### 3.1 POST /reservas
+### 4.8 DELETE /equipamentos/:id/foto
 
 #### Caso de Uso
-- Criar uma nova reserva de equipamento com base nas informações fornecidas pelo usuário.
+Remover foto do equipamento.
 
 #### Regras de Negócio
-- O usuário solicitante deve estar cadastrado.
-- Campos obrigatórios: `dataInicial`, `dataFinal`, `quantidadeEquipamento`, `valorEquipamento`, `enderecoEquipamento`, `equipamento`, `usuario`.
-- `quantidadeEquipamento` deve ser um número inteiro positivo.
-- `dataInicial` e `dataFinal` devem ser datas válidas.
-- `dataInicial` não pode ser no passado
-- Verificar se `equipamento` existe.
-- Retornar erro se equipamento não existir
-- Não permitir reservas sobrepostas para o mesmo equipamento no período solicitado.
+- Apenas proprietário ou admin podem remover.
+- Remoção do arquivo físico do servidor.
+- Manter pelo menos uma foto.
 
 #### Resultado Esperado
-- Reserva criada com status "pendente" até a aprovação do locador.
+Foto removida com sucesso.
 
-### 3.2 GET /reservas
+## 5. Reservas
+
+### 5.1 GET /reservas
 
 #### Caso de Uso
-- Listar reservas do usuário ou dos seus equipamentos.
+Listar reservas do usuário ou todas (se admin).
 
 #### Regras de Negócio
-- Filtrar por status.
-- Filtrar por datas.
-- Filtrar por usuário e equipamento.
+- Usuário deve estar autenticado.
+- Usuários comuns veem apenas suas reservas.
+- Admins veem todas as reservas.
+- Filtros: status, data, equipamento.
 
 #### Resultado Esperado
-- Lista dos equipamentos reservados. 
+Lista de reservas conforme permissões e filtros.
 
-### 3.3 GET /reservas/:id
+### 5.2 GET /reservas/:id
 
 #### Caso de Uso
-- Obter os detalhes de uma reserva específica com base no identificador único (id) fornecido.
+Visualizar detalhes de uma reserva específica.
 
 #### Regras de Negócio
-- O parâmetro :id deve ser um valor válido.
-- Caso o :id seja inválido (formato incorreto ou vazio), retornar erro.
+- Usuário deve estar autenticado.
+- Acesso apenas se for proprietário da reserva ou admin.
+- ID da reserva deve ser válido.
 
 #### Resultado Esperado
-- Retorna os dados completos de uma reserva específica em formato JSON.
-- Em caso de erro, retorna o código de status apropriado.
+Dados detalhados da reserva solicitada.
 
-### 3.4 PATCH /reservas/:id
+### 5.3 POST /reservas
 
 #### Caso de Uso
-- Atualizar parcialmente os dados de uma reserva específica com base no identificador único (id) fornecido
+Criar nova reserva de equipamento.
 
 #### Regras de Negócio
-- O parâmetro :id deve ser um valor válido.
-- Caso o :id seja inválido (formato incorreto ou vazio), retornar erro.
-- Verificar se existe uma reserva associada ao :id fornecido.
+- Usuário deve estar autenticado.
+- Equipamento deve estar disponível.
+- Datas devem ser válidas e futuras.
+- Verificação de conflitos de horário.
 
 #### Resultado Esperado
-- Dados completos da reserva atualizada em JSON.    
-- Códigos de erro apropriados com mensagens claras.
+Reserva criada com sucesso.
 
-## 4. Usuario
-
-### 4.1 GET /usuario/:id
+### 5.4 PUT /reservas/:id
 
 #### Caso de Uso
-- Obter detalhes de um usuário específico.
+Atualizar reserva existente.
 
 #### Regras de Negócio
-- Validação de Existência: verificar se o usuário existe.
-- Controle de Permissão: o próprio usuário ou administradores podem visualizar.
+- Apenas proprietário da reserva pode alterar.
+- Alterações permitidas apenas antes do início.
+- Revalidação de disponibilidade.
 
 #### Resultado Esperado
-- Detalhamento completo: nome, e-mail, status, foto.
-- Erro caso não encontrado ou sem permissão.
+Reserva atualizada com sucesso.
 
-### 4.2 PATCH /usuario/:id
+### 5.5 DELETE /reservas/:id
 
 #### Caso de Uso
-- Atualizar informações do usuário.
+Cancelar reserva existente.
 
 #### Regras de Negócio
-- Garantir a existência do usuário.
-- Garantir que os dados estejam em formato válido. 
+- Apenas proprietário pode cancelar.
+- Cancelamento com antecedência mínima.
+- Aplicação de políticas de cancelamento.
 
 #### Resultado Esperado
-- Dados atualizados com sucesso.
-- Erro em caso de duplicidade ou violação de regras.
+Reserva cancelada com sucesso.
 
-## 5. Avaliações
+## 6. Avaliações
 
-### 5.1 GET /avaliacoes
+### 6.1 GET /avaliacoes
 
 #### Caso de Uso
-- Listar avaliações feitas em um determinado equipamento.
+Listar avaliações dos equipamentos.
 
 #### Regras de Negócio
-- Obrigatório fornecer equipamentoId via query params.
-- Permite ordenação por nota ordenarPorNota=mais-relevantes ou menos-relevantes.
-- Permite filtros como notaMinima e notaMaxima.
+- Usuário deve estar autenticado.
+- Filtros: equipamento, nota, data.
+- Paginação de resultados.
 
 #### Resultado Esperado
-- Lista de avaliações do equipamento especificado com metadados de paginação.
-- Mensagem de nenhuma avaliação encontrada para esse equipamento.
+Lista de avaliações conforme filtros aplicados.
 
-### 5.2 POST /avaliacoes
+### 6.2 GET /avaliacoes/:id
 
 #### Caso de Uso
-- Permitir que um usuário avalie um equipamento após utilizá-lo.
+Visualizar detalhes de uma avaliação específica.
 
 #### Regras de Negócio
-- Um usuário só pode avaliar um mesmo equipamento uma única vez.
-- A nota deve ser um número de 1 a 5.
-- O ID do usuário e do equipamento devem ser válidos.
+- Usuário deve estar autenticado.
+- ID da avaliação deve ser válido.
+- Retorna informações completas da avaliação.
 
 #### Resultado Esperado
-- Avaliação registrada e associada ao equipamento.
-- A nota média do equipamento será recalculada automaticamente.
-- Em caso de erro (como avaliação duplicada), retornar mensagem de erro.   
+Dados detalhados da avaliação solicitada.
 
-### 5.3 PATCH /avaliacoes/:id
+### 6.3 POST /avaliacoes
 
 #### Caso de Uso
-- Permitir que o próprio usuário atualize sua avaliação.
+Criar nova avaliação para equipamento.
 
 #### Regras de Negócio
-- Apenas o autor da avaliação pode editá-la.
-- IDs devem ser válidos.
-- A nota média do equipamento será recalculada após a atualização.
+- Usuário deve ter usado o equipamento.
+- Uma avaliação por usuário por equipamento.
+- Nota deve ser entre 1 e 5.
+- Comentário opcional.
 
 #### Resultado Esperado
-- Avaliação atualizada com sucesso.
-- Média do equipamento ajustada.
-- Em caso de tentativa de edição por outro usuário, retornar mensagem de erro.   
+Avaliação criada com sucesso.
 
-### 5.4 DELETE /avaliacoes/:id
+### 6.4 PUT /avaliacoes/:id
 
 #### Caso de Uso
-- Permitir que o apenas o administrador remova avaliações.
+Atualizar avaliação existente.
 
 #### Regras de Negócio
-- Apenas usuários com permissão de administrador (tipoUsuario: "admin") podem excluir avaliações.
-- O ID da avaliação deve ser válido.
-- A média do equipamento será recalculada após a exclusão.
+- Apenas autor da avaliação pode alterar.
+- Prazo limite para edição.
+- Validação de dados.
 
 #### Resultado Esperado
-- Avaliação removida com sucesso.
-- Equipamento atualizado com nova média.
-- Em caso de acesso não autorizado, retornar mensagem de erro.   
+Avaliação atualizada com sucesso.
 
-## Considerações Finais
+### 6.5 DELETE /avaliacoes/:id
 
-- Segurança: Implementação de mecanismos de autenticação, autorização e registro de logs.
+#### Caso de Uso
+Remover avaliação do sistema.
 
-- Validação e Tratamento de Erros: Validar entradas dos usuários e retornar mensagens de erro claras.
+#### Regras de Negócio
+- Apenas autor ou admin podem remover.
+- Remoção definitiva do sistema.
 
-- Escalabilidade e Performance: Aplicação de filtros, paginação e caching para otimizar o desempenho.
-
-- Documentação e Monitoramento: Manter uma documentação atualizada dos endpoints e monitorar as requisições.
-
-
-
-
-
+#### Resultado Esperado
+Avaliação removida com sucesso.
