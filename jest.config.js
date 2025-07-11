@@ -50,5 +50,5 @@ export default  {
     //   '**/AuthPermission.test.js'
     // ]
     //testMatch:['**/avaliacaoRoutes.test.js']
-    testMatch:['**/Avaliacao.test.js', '**/avaliacaoRoutes.test.js','**/AvaliacaoController.test.js', '**/AvaliacaoService.test.js', '**/AvaliacaoRepository.test.js', '**/AvaliacaoFilterBuilder.test.js']
+    //testMatch:['**/Avaliacao.test.js', '**/avaliacaoRoutes.test.js','**/AvaliacaoController.test.js', '**/AvaliacaoService.test.js', '**/AvaliacaoRepository.test.js', '**/AvaliacaoFilterBuilder.test.js']
 };
