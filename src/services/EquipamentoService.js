@@ -8,7 +8,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 
-const getDirname = () => path.dirname(fileURLToPath(import.meta.url));
+//const getDirname = () => path.dirname(fileURLToPath(import.meta.url));
 
 class EquipamentoService {
   constructor() {
@@ -158,7 +158,7 @@ class EquipamentoService {
     }
 
     const filename = path.basename(foto.url);
-    const uploadsDir = path.join(getDirname(), '..', '..', 'Uploads', 'equipamentos');
+    const uploadsDir = path.join(getDirname(), '..', '..', 'uploads', 'equipamentos');
     const filePath = path.join(uploadsDir, filename);
 
     if (!fs.existsSync(filePath)) {

@@ -2,6 +2,7 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import path from 'path';
+import "../../../src/routes/equipamentoRoutes.js"
 
 dotenv.config();
 
@@ -102,7 +103,7 @@ describe('Rotas de Equipamentos - Integração', () => {
       .field('equiValorDiaria', dados.equiValorDiaria)
       .field('equiQuantidadeDisponivel', dados.equiQuantidadeDisponivel)
       .field('equiCategoria', dados.equiCategoria)
-      .attach('files', path.resolve('Uploads/equipamentos/foto1.jpg'));
+      .attach('files', path.resolve('uploads/equipamentos/foto1.jpg'));
 
     if (res.status !== 201) return null;
     return res.body.data.equipamento;
@@ -244,7 +245,7 @@ describe('Rotas de Equipamentos - Integração', () => {
         .field('equiValorDiaria', dados.equiValorDiaria)
         .field('equiQuantidadeDisponivel', dados.equiQuantidadeDisponivel)
         .field('equiCategoria', dados.equiCategoria)
-        .attach('files', path.resolve('Uploads/equipamentos/foto1.jpg'));
+        .attach('files', path.resolve('uploads/equipamentos/foto1.jpg'));
 
       expect(res.status).toBe(201);
       expect(res.body.data.equipamento).toHaveProperty('_id');
@@ -281,7 +282,7 @@ describe('Rotas de Equipamentos - Integração', () => {
         .field('equiValorDiaria', dados.equiValorDiaria)
         .field('equiQuantidadeDisponivel', dados.equiQuantidadeDisponivel)
         .field('equiCategoria', dados.equiCategoria)
-        .attach('files', path.resolve('Uploads/equipamentos/foto1.jpg'));
+        .attach('files', path.resolve('uploads/equipamentos/foto1.jpg'));
 
       expect(res.status).toBe(400);
       expect(res.body.message).toMatch(/Erro de validação/i);
@@ -682,7 +683,7 @@ describe('PATCH /equipamentos/:id/status', () => {
         .post(`/equipamentos/${equipamento._id}/foto`)
         .set('Authorization', `Bearer ${tokenUser}`)
         .set('Content-Type', 'multipart/form-data')
-        .attach('files', path.resolve('Uploads/equipamentos/foto1.jpg'));
+        .attach('files', path.resolve('uploads/equipamentos/foto1.jpg'));
 
       expect(res.status).toBe(500);
       expect(res.body.message).toMatch(/Erro interno do servidor/i);
@@ -720,7 +721,7 @@ describe('PATCH /equipamentos/:id/status', () => {
         .post(`/equipamentos/${equipamento._id}/foto`)
         .set('Authorization', `Bearer ${tokenOutroUser}`)
         .set('Content-Type', 'multipart/form-data')
-        .attach('files', path.resolve('Uploads/equipamentos/foto1.jpg'));
+        .attach('files', path.resolve('uploads/equipamentos/foto1.jpg'));
 
       expect(res.status).toBe(403);
       expect(res.body.message).toMatch(/dono do equipamento/i);
@@ -732,7 +733,7 @@ describe('PATCH /equipamentos/:id/status', () => {
         .post(`/equipamentos/${id}/foto`)
         .set('Authorization', `Bearer ${tokenUser}`)
         .set('Content-Type', 'multipart/form-data')
-        .attach('files', path.resolve('Uploads/equipamentos/foto1.jpg'));
+        .attach('files', path.resolve('uploads/equipamentos/foto1.jpg'));
 
       expect(res.status).toBe(404);
       expect(res.body.message).toMatch(/não encontrado/i);
@@ -746,7 +747,7 @@ describe('PATCH /equipamentos/:id/status', () => {
       const res = await request(app)
         .post(`/equipamentos/${equipamento._id}/foto`)
         .set('Content-Type', 'multipart/form-data')
-        .attach('files', path.resolve('Uploads/equipamentos/foto1.jpg'));
+        .attach('files', path.resolve('uploads/equipamentos/foto1.jpg'));
 
       expect(res.status).toBe(498);
       expect(res.body.message).toMatch(/não autorizado|token/i);
