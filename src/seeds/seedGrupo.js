@@ -50,7 +50,57 @@ const grupoAdmin = {
         substituir: false,
         modificar: false,
         excluir: true
-    }
+    }, 
+    {
+            rota: "equipamentos",
+            dominio: "localhost",
+            ativo: true,
+            buscar: true,
+            enviar: true,
+            substituir: true,
+            modificar: true,
+            excluir: true
+        },
+        {
+            rota: "equipamentos-id-status",
+            dominio: "localhost",
+            ativo: true,
+            buscar: false,
+            enviar: false,
+            substituir: false,
+            modificar: true,
+            excluir: false
+        },
+        {
+            rota: "equipamentos-id-aprovar",
+            dominio: "localhost",
+            ativo: true,
+            buscar: false,
+            enviar: false,
+            substituir: false,
+            modificar: true,
+            excluir: false
+        },
+        {
+            rota: "equipamentos-id-reprovar",
+            dominio: "localhost",
+            ativo: true,
+            buscar: false,
+            enviar: false,
+            substituir: false,
+            modificar: true,
+            excluir: false
+        },
+        {
+            rota: "equipamentos-id-foto",
+            dominio: "localhost",
+            ativo: true,
+            buscar: false,
+            enviar: true,
+            substituir: false,
+            modificar: false,
+            excluir: false
+        }
     ]
 }
 const grupoModerador = {
@@ -60,6 +110,10 @@ const grupoModerador = {
     nivelPermissao: 50,
     permissoes: [{
         rota: "usuarios",
+<<<<<<< HEAD
+        dominio: "localhost",
+=======
+>>>>>>> c159afa87539525aa21792bed5b0a5b2aaf8b142
         ativo: true,
         buscar: true,
         enviar: true,
@@ -78,13 +132,47 @@ const grupoModerador = {
     },
     {
         rota: "avaliacoes:id",
+<<<<<<< HEAD
+        dominio: "localhost",
+=======
+>>>>>>> c159afa87539525aa21792bed5b0a5b2aaf8b142
         ativo: false,
         buscar: false,
         enviar: false,
         substituir: false,
         modificar: false,
         excluir: true
-    }
+    },
+    {
+            rota: "equipamentos",
+            dominio: "localhost",
+            ativo: true,
+            buscar: true,
+            enviar: false,
+            substituir: false,
+            modificar: false,
+            excluir: false
+        },
+        {
+            rota: "equipamentos-id-aprovar",
+            dominio: "localhost",
+            ativo: true,
+            buscar: false,
+            enviar: false,
+            substituir: false,
+            modificar: true,
+            excluir: false
+        },
+        {
+            rota: "equipamentos-id-reprovar",
+            dominio: "localhost",
+            ativo: true,
+            buscar: false,
+            enviar: false,
+            substituir: false,
+            modificar: true,
+            excluir: false
+        }
     ]
 }
 
@@ -120,7 +208,38 @@ const grupoUsuario = {
         substituir: true,
         modificar: true,
         excluir: true
-    }]
+    },
+    {
+            rota: "equipamentos",
+            dominio: "localhost",
+            ativo: true,
+            buscar: true,
+            enviar: true,
+            substituir: false,
+            modificar: true,
+            excluir: false
+        },
+        {
+            rota: "equipamentos-id-status",
+            dominio: "localhost",
+            ativo: true,
+            buscar: false,
+            enviar: false,
+            substituir: false,
+            modificar: true,
+            excluir: false
+        },
+        // {
+        //     rota: "equipamentos-id-foto",
+        //     dominio: "localhost",
+        //     ativo: true,
+        //     buscar: false,
+        //     enviar: true,
+        //     substituir: false,
+        //     modificar: false,
+        //     excluir: false
+        // }
+    ]
 }
 
 const grupos = [grupoAdmin, grupoModerador, grupoUsuario]

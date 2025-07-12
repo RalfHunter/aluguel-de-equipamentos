@@ -1,4 +1,12 @@
+<<<<<<< HEAD
+<<<<<<<< HEAD:src/tests/unit/repositories/filters/EquipamentoFilterBuilder.test.js
+import EquipamentoFilterBuilder from '../../../../repositories/filters/EquipamentoFilterBuilder';
+========
+import EquipamentoFilterBuilder from '../repositories/filters/EquipamentoFilterBuilderder';
+>>>>>>>> a5025f0e6885dbce0263adcd6fd56f9a116eec62:src/tests/unit/filters/EquipamentoFilterBuilder.test.js
+=======
 import EquipamentoFilterBuilder from '../../../../repositories/filters/EquipamentoFilterBuilder.js';
+>>>>>>> nova-master
 import mongoose from 'mongoose';
 
 jest.mock('../../../../models/Equipamento.js', () => 'mock-equipamento-model');
