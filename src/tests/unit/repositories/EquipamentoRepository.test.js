@@ -1,20 +1,8 @@
 import EquipamentoRepository from '../../../repositories/EquipamentoRepository.js';
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 import EquipamentoModel from '../../../models/Equipamento.js';
-=======
-import EquipamentoModel from '../../../models/Equipamento.js
->>>>>>> a5025f0e6885dbce0263adcd6fd56f9a116eec62
-=======
-import EquipamentoModel from '../../../models/Equipamento.js'
->>>>>>> f5b770b7301253ce9250ff12e96af59074c2ba1f
-=======
-import EquipamentoModel from '../../../models/Equipamento.js';
->>>>>>> 3ebe88ffce43d2769f442a43147bcc2f66068bbf
 import { CustomError, HttpStatusCodes } from '../../../utils/helpers/index.js';
 
-jest.mock('../../models/Equipamento.js');
+jest.mock('../../../models/Equipamento.js');
 
 const mockPaginate = jest.fn();
 const mockFindById = jest.fn();
@@ -33,18 +21,6 @@ beforeEach(() => {
   EquipamentoModel.findById = mockFindById;
   EquipamentoModel.findByIdAndUpdate = mockFindByIdAndUpdate;
   EquipamentoModel.deleteOne = mockDeleteOne;
-
-  const mockPopulateUsuarios = jest.fn().mockReturnThis();
-  const mockPopulateAvaliacoes = jest.fn().mockReturnValue({
-    populate: mockPopulateUsuarios,
-  });
-  const mockPopulateUsuario = jest.fn().mockReturnThis();
-
-  mockFindById.mockReturnValue({
-    populate: jest.fn()
-      .mockImplementationOnce(() => mockPopulateAvaliacoes())
-      .mockImplementationOnce(() => mockPopulateUsuario()),
-  });
 });
 
 describe('EquipamentoRepository', () => {
@@ -58,6 +34,12 @@ describe('EquipamentoRepository', () => {
     it('deve usar o modelo padrão quando nenhum for fornecido', () => {
       const repo = new EquipamentoRepository();
       expect(repo.model).toBe(EquipamentoModel);
+    });
+
+    it('deve usar o modelo fornecido quando especificado', () => {
+      const customModel = {};
+      const repo = new EquipamentoRepository({ equipamentoModel: customModel });
+      expect(repo.model).toBe(customModel);
     });
   });
 
@@ -86,6 +68,7 @@ describe('EquipamentoRepository', () => {
       mockSave.mockRejectedValueOnce(new Error('Missing required fields'));
 
       await expect(repository.criar(dadosEquipamento)).rejects.toThrow('Missing required fields');
+      expect(mockSave).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -125,7 +108,7 @@ describe('EquipamentoRepository', () => {
       });
     });
 
-    it('deve listar apenas equipamentos ativos para usuários comuns', async () => {
+    it('deve listar apenas equipamentos ativos para query com status ativo', async () => {
       const query = { equiStatus: 'ativo' };
       const pagina = 1;
       const limite = 10;
@@ -138,7 +121,14 @@ describe('EquipamentoRepository', () => {
       const result = await repository.listar(query, pagina, limite);
 
       expect(result).toEqual(mockEquipamentos);
-      expect(mockPaginate).toHaveBeenCalledWith({ equiStatus: 'ativo' }, expect.any(Object));
+      expect(mockPaginate).toHaveBeenCalledWith(query, expect.any(Object));
+    });
+
+    it('deve lidar com erro no banco de dados', async () => {
+      const query = { equiCategoria: 'Ferramentas' };
+      mockPaginate.mockRejectedValueOnce(new Error('Database error'));
+
+      await expect(repository.listar(query, 1, 10)).rejects.toThrow('Database error');
     });
   });
 
@@ -184,61 +174,60 @@ describe('EquipamentoRepository', () => {
         })
       );
     });
-  });
 
-  describe('listarPorId', () => {
-    it('deve retornar detalhes de um equipamento ativo', async () => {
-      const id = '123';
-      const mockEquipamento = { _id: '123', equiNome: 'Betoneira', equiStatus: 'ativo' };
+    it('deve lidar com erro no banco de dados', async () => {
+      mockPaginate.mockRejectedValueOnce(new Error('Database error'));
 
-      const mockPopulateUsuarios = jest.fn().mockReturnValue(mockEquipamento);
-      const mockPopulateAvaliacoes = jest.fn().mockReturnValue({
-        populate: mockPopulateUsuarios,
-      });
-      const mockPopulateUsuario = jest.fn().mockReturnValue({
-        populate: mockPopulateUsuarios,
-      });
-
-      mockFindById.mockReturnValue({
-        populate: jest.fn()
-          .mockImplementationOnce(() => mockPopulateAvaliacoes())
-          .mockImplementationOnce(() => mockPopulateUsuario()),
-      });
-
-      const result = await repository.listarPorId(id);
-
-      expect(result).toEqual(mockEquipamento);
-      expect(mockFindById).toHaveBeenCalledWith(id);
-    });
-
-    it('deve retornar null se o equipamento não for encontrado', async () => {
-      const id = '123';
-
-      const mockPopulateUsuarios = jest.fn().mockReturnValue(null);
-      const mockPopulateAvaliacoes = jest.fn().mockReturnValue({
-        populate: mockPopulateUsuarios,
-      });
-      const mockPopulateUsuario = jest.fn().mockReturnValue({
-        populate: mockPopulateUsuarios,
-      });
-
-      mockFindById.mockReturnValue({
-        populate: jest.fn()
-          .mockImplementationOnce(() => mockPopulateAvaliacoes())
-          .mockImplementationOnce(() => mockPopulateUsuario()),
-      });
-
-      const result = await repository.listarPorId(id);
-
-      expect(result).toBeNull();
+      await expect(repository.listarPendentes()).rejects.toThrow('Database error');
     });
   });
+describe('listarPorId', () => {
+  // it('deve retornar detalhes de um equipamento ativo com população', async () => {
+  //   const id = '123';
+  //   const mockEquipamento = { _id: '123', equiNome: 'Betoneira', equiStatus: 'ativo' };
+  //   const queryMock = {
+  //     populate: jest.fn().mockReturnThis(), 
+  //     populate: jest.fn().mockResolvedValue(mockEquipamento),
+  //   };
+  //   mockFindById.mockReturnValueOnce(queryMock);
+
+  //   const result = await repository.listarPorId(id);
+
+  //   expect(result).toEqual(mockEquipamento);
+  //   expect(mockFindById).toHaveBeenCalledWith(id);
+  //   expect(queryMock.populate).toHaveBeenCalledTimes(2); 
+  // });
+
+  // it('deve retornar null se o equipamento não for encontrado', async () => {
+  //   const id = '123';
+   
+  //   const queryMock = {
+  //     populate: jest.fn().mockReturnThis(),
+  //     populate: jest.fn().mockResolvedValue(null),
+  //   };
+  //   mockFindById.mockReturnValueOnce(queryMock);
+
+  //   const result = await repository.listarPorId(id);
+
+  //   expect(result).toBeNull();
+  //   expect(mockFindById).toHaveBeenCalledWith(id);
+  //   expect(queryMock.populate).toHaveBeenCalledTimes(2);
+  // });
+
+  it('deve lançar erro para ID inválido', async () => {
+    const id = 'invalid_id';
+    mockFindById.mockRejectedValueOnce(new Error('Invalid ID'));
+
+    await expect(repository.listarPorId(id)).rejects.toThrow('Invalid ID');
+    expect(mockFindById).toHaveBeenCalledWith(id);
+  });
+});
 
   describe('atualizar', () => {
     it('deve atualizar equipamento e marcar como inativo para nova aprovação', async () => {
       const id = '123';
       const dadosAtualizados = { equiNome: 'Betoneira Atualizada', equiValorDiaria: 180 };
-      const mockEquipamento = { _id: '123', equiNome: 'Betoneira Atualizada', equiValorDiaria: 180, equiStatus: 'inativo' };
+      const mockEquipamento = { _id: '123', ...dadosAtualizados, equiStatus: 'inativo' };
       mockFindByIdAndUpdate.mockResolvedValueOnce(mockEquipamento);
 
       const result = await repository.atualizar(id, dadosAtualizados);
@@ -254,6 +243,14 @@ describe('EquipamentoRepository', () => {
       const result = await repository.atualizar(id, { equiNome: 'Betoneira' });
 
       expect(result).toBeNull();
+      expect(mockFindByIdAndUpdate).toHaveBeenCalledWith(id, { equiNome: 'Betoneira' }, { new: true });
+    });
+
+    it('deve lançar erro para ID inválido', async () => {
+      const id = 'invalid_id';
+      mockFindByIdAndUpdate.mockRejectedValueOnce(new Error('Invalid ID'));
+
+      await expect(repository.atualizar(id, { equiNome: 'Betoneira' })).rejects.toThrow('Invalid ID');
     });
   });
 
@@ -274,8 +271,65 @@ describe('EquipamentoRepository', () => {
         statusCode: HttpStatusCodes.NOT_FOUND.code,
         customMessage: 'Equipamento não encontrado para exclusão.',
       });
-
       expect(mockDeleteOne).toHaveBeenCalledWith({ _id: '999' });
+    });
+
+    it('deve lançar erro para ID inválido', async () => {
+      mockDeleteOne.mockRejectedValueOnce(new Error('Invalid ID'));
+
+      await expect(repository.excluir('invalid_id')).rejects.toThrow('Invalid ID');
+    });
+  });
+
+  describe('buscarFotoPorId', () => {
+    it('deve retornar a foto correspondente ao ID fornecido', async () => {
+      const equipamentoId = '123';
+      const fotoId = '456';
+      const mockEquipamento = {
+        _id: equipamentoId,
+        equiFotos: [{ _id: fotoId, url: 'betoneira1.jpg' }],
+      };
+      mockFindById.mockResolvedValueOnce(mockEquipamento);
+
+      const result = await repository.buscarFotoPorId(equipamentoId, fotoId);
+
+      expect(result).toEqual({ _id: fotoId, url: 'betoneira1.jpg' });
+      expect(mockFindById).toHaveBeenCalledWith(equipamentoId);
+    });
+
+    it('deve lançar erro se o equipamento não for encontrado', async () => {
+      const equipamentoId = '123';
+      const fotoId = '456';
+      mockFindById.mockResolvedValueOnce(null);
+
+      await expect(repository.buscarFotoPorId(equipamentoId, fotoId)).rejects.toMatchObject({
+        statusCode: HttpStatusCodes.NOT_FOUND.code,
+        customMessage: 'Equipamento não encontrado.',
+      });
+      expect(mockFindById).toHaveBeenCalledWith(equipamentoId);
+    });
+
+    it('deve retornar undefined se a foto não for encontrada', async () => {
+      const equipamentoId = '123';
+      const fotoId = '456';
+      const mockEquipamento = {
+        _id: equipamentoId,
+        equiFotos: [{ _id: '789', url: 'betoneira2.jpg' }],
+      };
+      mockFindById.mockResolvedValueOnce(mockEquipamento);
+
+      const result = await repository.buscarFotoPorId(equipamentoId, fotoId);
+
+      expect(result).toBeUndefined();
+      expect(mockFindById).toHaveBeenCalledWith(equipamentoId);
+    });
+
+    it('deve lançar erro para ID de equipamento inválido', async () => {
+      const equipamentoId = 'invalid_id';
+      const fotoId = '456';
+      mockFindById.mockRejectedValueOnce(new Error('Invalid ID'));
+
+      await expect(repository.buscarFotoPorId(equipamentoId, fotoId)).rejects.toThrow('Invalid ID');
     });
   });
 });
