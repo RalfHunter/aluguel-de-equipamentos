@@ -358,7 +358,12 @@ describe('usuarioRoute', () => {
             .post(`/usuarios/${userLogado?._id}/foto`)
             .set('Authorization', `Bearer ${userLogado.accessToken}`)
             .attach('file', img, 'imagem-pequena.png')
-            .expect(200)
+            
+            if (res.status !== 200) {
+                console.log('Error response:', res.body)
+            }
+            
+            expect(res.status).toBe(200)
             expect(res.body?.message).toEqual('Requisição bem-sucedida'),
             expect(res.body?.data?.message).toEqual('Foto atualizada com sucesso.')
             expect(res.body?.data?.dados?.id).toEqual(userLogado?._id)
@@ -399,10 +404,44 @@ describe('usuarioRoute', () => {
     });
     describe('get getFoto', ()=>{
         it('deve ter sucesso ao buscar foto', async()=>{
+            // Primeiro, fazer upload de uma foto para poder testá-la
+            const img = await criarImagem()
+            await request(app)
+                .post(`/usuarios/${userLogado?._id}/foto`)
+                .set('Authorization', `Bearer ${userLogado.accessToken}`)
+                .attach('file', img, 'imagem-teste.png')
+                .expect(200)
+            
+            // Agora buscar a foto
             const res = await request(app)
             .get(`/usuarios/${userLogado?._id}/foto`)
             .set('Authorization', `Bearer ${userLogado.accessToken}`)
-            expect(res.body).toBeInstanceOf(Buffer)
+            expect(res.status).toBe(200)
+            expect(res.headers['content-type']).toMatch(/image/)
+        });
+        
+        it('deve falhar ao buscar foto quando usuário não tem foto', async()=>{
+            // Para este teste, vamos usar um usuário existente que sabemos que não tem foto
+            // Em vez de criar um usuário temporário, vamos usar o moderador que já existe
+            // mas primeiro garantir que ele não tem foto removendo se existir
+            
+            try {
+                // Tentar remover foto se existir (pode falhar se não houver foto, o que é ok)
+                await request(app)
+                    .delete(`/usuarios/${moderador._id}/foto`)
+                    .set('Authorization', `Bearer ${moderador.accessToken}`)
+            } catch (error) {
+                // Ignorar erro se foto não existir
+            }
+            
+            // Agora tentar buscar foto que não deve existir
+            const res = await request(app)
+                .get(`/usuarios/${moderador._id}/foto`)
+                .set('Authorization', `Bearer ${moderador.accessToken}`)
+                .expect(404)
+                
+            expect(res.body?.message).toEqual('Foto não encontrada.')
+            expect(res.body?.data).toBeNull()
         });
         it('deve falhar ao buscar foto sem id persistente no banco', async()=>{
             const res = await request(app)
@@ -522,6 +561,8 @@ describe('usuarioRoute', () => {
             .set('Authorization', `Bearer ${moderador?.accessToken}`)
             .expect(200)
             expect(res.body?.message).toEqual('Usuário excluído com sucesso.')
+            delete userTemp?.CPF
+            expect(res.body?.data).toMatchObject(userTemp)
             console.log(res.body)
             // expect(res.body?.data).toMatchObject(userTemp)
             // console.log(userTemp)
