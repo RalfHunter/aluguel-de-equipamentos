@@ -205,48 +205,6 @@ const usuariosRoutes = {
         }
     },
 
-    "/usuarios/": {
-        patch: {
-            tags: ["Usuários"],
-            summary: "Atualiza o perfil do usuário logado",
-            description: `
-                + Caso de uso: 
-                    - Atualização do próprio perfil pelo usuário autenticado.
-                
-                + Função de Negócio:
-                    - Permitir ao usuário modificar seus próprios dados básicos.
-                    + Recebe no corpo da requisição:
-                        - Objeto conforme **UsuarioPatch** com os campos a alterar.
-
-                + Regras de Negócio:
-                    - Usuário deve estar autenticado.
-                    - Usuário só pode alterar seu próprio perfil.
-                    - Campos sensíveis como email e grupos não podem ser alterados pelo próprio usuário.
-                    - Garantir unicidade de campos como telefone.
-
-                + Resultado Esperado:
-                    - HTTP 200 OK com corpo conforme **UsuarioDetalhes**, refletindo as alterações.
-            `,
-            security: [{ bearerAuth: [] }],
-            requestBody: {
-                content: {
-                    "application/json": {
-                        schema: {
-                            $ref: "#/components/schemas/UsuarioPatch"
-                        }
-                    }
-                }
-            },
-            responses: {
-                200: commonResponses[200]("#/components/schemas/UsuarioDetalhes"),
-                400: commonResponses[400](),
-                401: commonResponses[401](),
-                403: commonResponses[403](),
-                500: commonResponses[500]()
-            }
-        }
-    },
-
     "/usuarios/{id}/status": {
         patch: {
             tags: ["Usuários"],

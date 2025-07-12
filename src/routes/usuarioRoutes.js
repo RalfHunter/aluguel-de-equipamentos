@@ -12,7 +12,6 @@ const usuarioController = new UsuarioController()
 router
     .get("/usuarios", AuthMiddleware, AuthPermission, asyncWrapper(usuarioController.listar.bind(usuarioController)))
     .get("/usuarios/:id",AuthMiddleware, AuthPermission, asyncWrapper(usuarioController.listar.bind(usuarioController)))
-    .patch("/usuarios/",AuthMiddleware, asyncWrapper(usuarioController.updateUsuario.bind(usuarioController)))
     .patch("/usuarios/:id",AuthMiddleware, AuthPermission, asyncWrapper(usuarioController.alterarStatus.bind(usuarioController)))
     .post("/usuarios", AuthMiddleware, AuthPermission, asyncWrapper(usuarioController.cadastrarUsuario.bind(usuarioController)))
     .post("/usuarios/:id/foto", AuthMiddleware, uploadUsuario.single('file'), compressUserImage, MulterErrorHandler, asyncWrapper(usuarioController.fotoUpload.bind(usuarioController)))

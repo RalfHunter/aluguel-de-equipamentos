@@ -6,12 +6,13 @@ import { it } from '@jest/globals';
 import fs from 'fs';
 
 jest.mock('../../../repositories/UsuarioRepository.js');
-jest.mock('fs');
 
 describe('UsuarioService', () => {
     let usuarioService;
     let repositoryMock;
     let req, res;
+    let existsSyncSpy, unlinkSyncSpy;
+    
     beforeEach(() => {
         req = { params: {}, body: {}, query: {} };
         res = {
@@ -21,12 +22,14 @@ describe('UsuarioService', () => {
 
         repositoryMock = new UsuarioRepository();
         usuarioService = new UsuarioService(repositoryMock);
+        
+        // Criar spies para fs functions
+        existsSyncSpy = jest.spyOn(fs, 'existsSync');
+        unlinkSyncSpy = jest.spyOn(fs, 'unlinkSync');
     });
     afterEach(() => {
+        jest.restoreAllMocks();
         jest.clearAllMocks();
-        // Reset fs mocks
-        fs.existsSync.mockReset();
-        fs.unlinkSync.mockReset();
     });
     describe('listar', () => {
         it('deve listar todos os clientes', async () => {
@@ -418,19 +421,13 @@ describe('UsuarioService', () => {
             };
             
             usuarioService.model.buscarPorId.mockResolvedValue(mockUser);
-            
-            // Mock do fs.existsSync para retornar true
-            const fs = require('fs');
-            jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+            existsSyncSpy.mockReturnValue(true);
             
             const resultado = await usuarioService.getFoto(userId);
             
             expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
-            expect(fs.existsSync).toHaveBeenCalledWith(mockUser.fotoUsuario);
+            expect(existsSyncSpy).toHaveBeenCalledWith(mockUser.fotoUsuario);
             expect(resultado).toBe(mockUser.fotoUsuario);
-            
-            // Limpar o mock
-            fs.existsSync.mockRestore();
         });
 
         it('deve lançar erro quando foto não existe no sistema de arquivos', async () => {
@@ -442,10 +439,7 @@ describe('UsuarioService', () => {
             };
             
             usuarioService.model.buscarPorId.mockResolvedValue(mockUser);
-            
-            // Mock do fs.existsSync para retornar false
-            const fs = require('fs');
-            jest.spyOn(fs, 'existsSync').mockReturnValue(false);
+            existsSyncSpy.mockReturnValue(false);
             
             await expect(usuarioService.getFoto(userId))
                 .rejects.toThrow(CustomError);
@@ -454,10 +448,7 @@ describe('UsuarioService', () => {
                 .rejects.toThrow('Foto não encontrada.');
             
             expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
-            expect(fs.existsSync).toHaveBeenCalledWith(mockUser.fotoUsuario);
-            
-            // Limpar o mock
-            fs.existsSync.mockRestore();
+            expect(existsSyncSpy).toHaveBeenCalledWith(mockUser.fotoUsuario);
         });
 
         it('deve propagar erro quando usuário não é encontrado', async () => {
@@ -877,15 +868,15 @@ describe('UsuarioService', () => {
 
             usuarioService.model.buscarPorId.mockResolvedValue(mockUser);
             usuarioService.model.deletarUsuario.mockResolvedValue(mockDeletedUser);
-            fs.existsSync.mockReturnValue(true);
-            fs.unlinkSync.mockReturnValue(undefined);
+            existsSyncSpy.mockReturnValue(true);
+            unlinkSyncSpy.mockReturnValue(undefined);
 
             const resultado = await usuarioService.deletarUsuario(reqData, userId);
 
             expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
             expect(usuarioService.model.deletarUsuario).toHaveBeenCalledWith(userId);
-            expect(fs.existsSync).toHaveBeenCalledWith(mockDeletedUser.fotoUsuario);
-            expect(fs.unlinkSync).toHaveBeenCalledWith(mockDeletedUser.fotoUsuario);
+            expect(existsSyncSpy).toHaveBeenCalledWith(mockDeletedUser.fotoUsuario);
+            expect(unlinkSyncSpy).toHaveBeenCalledWith(mockDeletedUser.fotoUsuario);
             expect(resultado).toEqual(mockDeletedUser);
         });
 
@@ -913,14 +904,14 @@ describe('UsuarioService', () => {
 
             usuarioService.model.buscarPorId.mockResolvedValue(mockUser);
             usuarioService.model.deletarUsuario.mockResolvedValue(mockDeletedUser);
-            fs.existsSync.mockReturnValue(false);
+            existsSyncSpy.mockReturnValue(false);
 
             const resultado = await usuarioService.deletarUsuario(reqData, userId);
 
             expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
             expect(usuarioService.model.deletarUsuario).toHaveBeenCalledWith(userId);
-            expect(fs.existsSync).toHaveBeenCalledWith(mockDeletedUser.fotoUsuario);
-            expect(fs.unlinkSync).not.toHaveBeenCalled();
+            expect(existsSyncSpy).toHaveBeenCalledWith(mockDeletedUser.fotoUsuario);
+            expect(unlinkSyncSpy).not.toHaveBeenCalled();
             expect(resultado).toEqual(mockDeletedUser);
         });
 
@@ -953,8 +944,8 @@ describe('UsuarioService', () => {
 
             expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
             expect(usuarioService.model.deletarUsuario).toHaveBeenCalledWith(userId);
-            expect(fs.existsSync).not.toHaveBeenCalled();
-            expect(fs.unlinkSync).not.toHaveBeenCalled();
+            expect(existsSyncSpy).not.toHaveBeenCalled();
+            expect(unlinkSyncSpy).not.toHaveBeenCalled();
             expect(resultado).toEqual(mockDeletedUser);
         });
 
@@ -985,8 +976,8 @@ describe('UsuarioService', () => {
 
             usuarioService.model.buscarPorId.mockResolvedValue(mockUser);
             usuarioService.model.deletarUsuario.mockResolvedValue(mockDeletedUser);
-            fs.existsSync.mockReturnValue(true);
-            fs.unlinkSync.mockImplementation(() => {
+            existsSyncSpy.mockReturnValue(true);
+            unlinkSyncSpy.mockImplementation(() => {
                 throw new Error('Erro ao remover arquivo');
             });
 
@@ -994,8 +985,8 @@ describe('UsuarioService', () => {
 
             expect(usuarioService.model.buscarPorId).toHaveBeenCalledWith(userId);
             expect(usuarioService.model.deletarUsuario).toHaveBeenCalledWith(userId);
-            expect(fs.existsSync).toHaveBeenCalledWith(mockDeletedUser.fotoUsuario);
-            expect(fs.unlinkSync).toHaveBeenCalledWith(mockDeletedUser.fotoUsuario);
+            expect(existsSyncSpy).toHaveBeenCalledWith(mockDeletedUser.fotoUsuario);
+            expect(unlinkSyncSpy).toHaveBeenCalledWith(mockDeletedUser.fotoUsuario);
             expect(consoleSpy).toHaveBeenCalledWith('Erro ao remover foto do usuário:', expect.any(Error));
             expect(resultado).toEqual(mockDeletedUser);
 
