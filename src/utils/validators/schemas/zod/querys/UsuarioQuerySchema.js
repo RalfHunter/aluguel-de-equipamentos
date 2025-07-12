@@ -7,6 +7,10 @@ export const UsuarioIdSchema = z.string().refine((id) => id!==undefined && id.tr
 .refine((id) => mongoose.Types.ObjectId.isValid(id), {
     message: "ID inválido",
 });
+export const objectIdMongo = z
+  .string()
+  .regex(/^[a-fA-F0-9]{24}$/, { message: "ID inválido" })
+  .transform((val) => new mongoose.Types.ObjectId(val));
 const regexCPF = /^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/
 export const UsuarioQuerySchema = z.object({
     nome: z

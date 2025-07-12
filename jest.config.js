@@ -17,7 +17,7 @@ export default  {
     // testMatch:['**/UsuarioController.test.js']
     // testMatch:['**/AuthMiddleware.test.js']]
     // testMatch:['**/usuarioRouter.test.js']
-    testMatch:['**/equipamentoRoutes.test.js']
+    //testMatch:['**/equipamentoRoutes.test.js']
     // testMatch:['**/UsuarioService.test.js']
     // testMatch:['**/UsuarioRepository.test.js']
     // testMatch:['**/GrupoFilterBuilder.test.js']
@@ -73,4 +73,5 @@ export default  {
     // testMatch:['**/Grupo.test.js']
     //testMatch:['**/Reserva.test.js']
     // testMatch:['**/ReservaController.test.js', '**/ReservaService.test.js', '**/ReservaRepository.test.js', '**/ReservaFilterBuilder.test.js']
+
 };
