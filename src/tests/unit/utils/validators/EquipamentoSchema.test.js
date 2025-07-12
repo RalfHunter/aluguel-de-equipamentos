@@ -1,4 +1,8 @@
+<<<<<<<< HEAD:src/tests/unit/utils/validators/EquipamentoSchema.test.js
+import { equipamentoSchema, equipamentoUpdateSchema } from '../../../../utils/validators/schemas/zod/EquipamentoSchema.js';
+========
 import { equipamentoSchema, equipamentoUpdateSchema } from '../../../../../../utils/validators/schemas/zod/EquipamentoSchema.js';
+>>>>>>>> nova-master:src/tests/unit/utils/validators/Schema/zod/EquipamentoSchema.test.js
 import mongoose from 'mongoose';
 
 describe('equipamentoSchema', () => {

@@ -10,7 +10,7 @@ class Usuario {
             telefone:{type:String, required:true, unique:true},
             senha:{type:String, required:true, select:false},
             dataNascimento:{type:Date, required: true},
-            CPF:{type:String, required:true, unique:true},
+            CPF:{type:String, required:true, unique:true, select:false},
             notaMediaAvaliacao:{type:Number},
             ativo: {type: Boolean, required: true, default:true},
             fotoUsuario:{type:String},

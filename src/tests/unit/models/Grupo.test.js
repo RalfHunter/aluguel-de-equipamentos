@@ -38,7 +38,6 @@ describe('Modelo de Grupo', () => {
             permissoes: [
                 {
                     rota: "usuarios",
-                    dominio: "localhost",
                     ativo: true,
                     buscar: true,
                     enviar: true,
@@ -48,7 +47,6 @@ describe('Modelo de Grupo', () => {
                 },
                 {
                     rota: "equipamentos",
-                    dominio: "api.exemplo.com",
                     ativo: true,
                     buscar: true,
                     enviar: false,
@@ -198,7 +196,6 @@ describe('Modelo de Grupo', () => {
 
         const savedGrupo = await Grupo.findById(grupo._id);
         const permissao = savedGrupo.permissoes[0];
-        expect(permissao.dominio).toBe("localhost");
         expect(permissao.ativo).toBe(true);
         expect(permissao.buscar).toBe(false);
         expect(permissao.enviar).toBe(false);
@@ -207,7 +204,7 @@ describe('Modelo de Grupo', () => {
         expect(permissao.excluir).toBe(false);
     });
 
-    it('Não deve permitir permissões duplicadas (rota + domínio)', async () => {
+    it('Não deve permitir permissões duplicadas (mesma rota)', async () => {
         const grupoData = {
             nome: "Teste Duplicata",
             descricao: "Teste de permissões duplicadas",
@@ -215,35 +212,31 @@ describe('Modelo de Grupo', () => {
             permissoes: [
                 {
                     rota: "usuarios",
-                    dominio: "localhost",
                     buscar: true
                 },
                 {
                     rota: "usuarios",
-                    dominio: "localhost",
                     enviar: true
                 }
             ]
         };
 
         const grupo = new Grupo(grupoData);
-        await expect(grupo.save()).rejects.toThrow('Permissões duplicadas encontradas: rota + domínio devem ser únicos dentro de cada grupo.');
+        await expect(grupo.save()).rejects.toThrow('Permissões duplicadas encontradas: cada rota deve ser única dentro de cada grupo.');
     });
 
-    it('Deve permitir a mesma rota em domínios diferentes', async () => {
+    it('Deve permitir rotas diferentes no mesmo grupo', async () => {
         const grupoData = {
-            nome: "Teste Dominios Diferentes",
-            descricao: "Teste de mesma rota em domínios diferentes",
+            nome: "Teste Rotas Diferentes",
+            descricao: "Teste de rotas diferentes",
             nivelPermissao: 1,
             permissoes: [
                 {
                     rota: "usuarios",
-                    dominio: "localhost",
                     buscar: true
                 },
                 {
-                    rota: "usuarios",
-                    dominio: "api.exemplo.com",
+                    rota: "equipamentos",
                     enviar: true
                 }
             ]
@@ -254,24 +247,22 @@ describe('Modelo de Grupo', () => {
 
         const savedGrupo = await Grupo.findById(grupo._id);
         expect(savedGrupo.permissoes).toHaveLength(2);
-        expect(savedGrupo.permissoes[0].dominio).toBe("localhost");
-        expect(savedGrupo.permissoes[1].dominio).toBe("api.exemplo.com");
+        expect(savedGrupo.permissoes[0].rota).toBe("usuarios");
+        expect(savedGrupo.permissoes[1].rota).toBe("equipamentos");
     });
 
-    it('Deve permitir rotas diferentes no mesmo domínio', async () => {
+    it('Deve permitir rotas diferentes no mesmo grupo', async () => {
         const grupoData = {
-            nome: "Teste Rotas Diferentes",
-            descricao: "Teste de rotas diferentes no mesmo domínio",
+            nome: "Teste Rotas Diferentes 2",
+            descricao: "Teste de rotas diferentes",
             nivelPermissao: 1,
             permissoes: [
                 {
                     rota: "usuarios",
-                    dominio: "localhost",
                     buscar: true
                 },
                 {
                     rota: "equipamentos",
-                    dominio: "localhost",
                     enviar: true
                 }
             ]
@@ -293,7 +284,6 @@ describe('Modelo de Grupo', () => {
             nivelPermissao: 1,
             permissoes: [
                 {
-                    dominio: "localhost",
                     buscar: true
                 }
             ]

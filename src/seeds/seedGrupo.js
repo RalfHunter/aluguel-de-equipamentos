@@ -8,7 +8,6 @@ const grupoAdmin = {
     nivelPermissao: 0,
     permissoes: [{
         rota: "grupos",
-        dominio: "locahost",
         ativo: true,
         buscar: true,
         enviar: true,
@@ -18,7 +17,6 @@ const grupoAdmin = {
     },
     {
         rota: "usuarios",
-        dominio: "locahost",
         ativo: true,
         buscar: true,
         enviar: true,
@@ -28,7 +26,6 @@ const grupoAdmin = {
     },
     {
         rota: "usuarios-id-foto",
-        dominio: "locahost",
         ativo: true,
         buscar: true,
         enviar: true,
@@ -38,7 +35,6 @@ const grupoAdmin = {
     },
     {
         rota: 'perfil',
-        dominio: 'localhost',
         ativo: true,
         buscar: true,
         enviar: true,
@@ -47,14 +43,63 @@ const grupoAdmin = {
         excluir: false
     },
     {
-        rota: "avaliacoes:id",
-        dominio: "locahost",
+        rota: "avaliacoes-id",
         ativo: false,
         buscar: false,
         enviar: false,
         substituir: false,
         modificar: false,
         excluir: true
+    },
+    {
+        rota: "equipamentos",
+        dominio: "localhost",
+        ativo: true,
+        buscar: true,
+        enviar: true,
+        substituir: true,
+        modificar: true,
+        excluir: true
+    },
+    {
+        rota: "equipamentos-id-status",
+        dominio: "localhost",
+        ativo: true,
+        buscar: false,
+        enviar: false,
+        substituir: false,
+        modificar: true,
+        excluir: false
+    },
+    {
+        rota: "equipamentos-id-aprovar",
+        dominio: "localhost",
+        ativo: true,
+        buscar: false,
+        enviar: false,
+        substituir: false,
+        modificar: true,
+        excluir: false
+    },
+    {
+        rota: "equipamentos-id-reprovar",
+        dominio: "localhost",
+        ativo: true,
+        buscar: false,
+        enviar: false,
+        substituir: false,
+        modificar: true,
+        excluir: false
+    },
+    {
+        rota: "equipamentos-id-foto",
+        dominio: "localhost",
+        ativo: true,
+        buscar: false,
+        enviar: true,
+        substituir: false,
+        modificar: false,
+        excluir: false
     }
     ]
 }
@@ -65,7 +110,7 @@ const grupoModerador = {
     nivelPermissao: 50,
     permissoes: [{
         rota: "usuarios",
-        dominio: "locahost",
+        dominio: "localhost",
         ativo: true,
         buscar: true,
         enviar: true,
@@ -75,7 +120,6 @@ const grupoModerador = {
     },
     {
         rota: 'perfil',
-        dominio: 'localhost',
         ativo: true,
         buscar: false,
         enviar: true,
@@ -84,14 +128,44 @@ const grupoModerador = {
         excluir: false
     },
     {
-        rota: "avaliacoes:id",
-        dominio: "locahost",
+        rota: "avaliacoes-id",
+        dominio: "localhost",
         ativo: false,
         buscar: false,
         enviar: false,
         substituir: false,
         modificar: false,
         excluir: true
+    },
+    {
+        rota: "equipamentos",
+        dominio: "localhost",
+        ativo: true,
+        buscar: true,
+        enviar: false,
+        substituir: false,
+        modificar: false,
+        excluir: false
+    },
+    {
+        rota: "equipamentos-id-aprovar",
+        dominio: "localhost",
+        ativo: true,
+        buscar: false,
+        enviar: false,
+        substituir: false,
+        modificar: true,
+        excluir: false
+    },
+    {
+        rota: "equipamentos-id-reprovar",
+        dominio: "localhost",
+        ativo: true,
+        buscar: false,
+        enviar: false,
+        substituir: false,
+        modificar: true,
+        excluir: false
     }
     ]
 }
@@ -104,7 +178,6 @@ const grupoUsuario = {
     nivelPermissao: 100,
     permissoes: [{
         rota: 'usuarios',
-        dominio: 'localhost',
         ativo: true,
         buscar: false,
         enviar: true,
@@ -114,7 +187,6 @@ const grupoUsuario = {
     },
     {
         rota: 'perfil',
-        dominio: 'localhost',
         ativo: true,
         buscar: true,
         enviar: true,
@@ -124,14 +196,44 @@ const grupoUsuario = {
     },
     {
         rota: 'usuarios-id-foto',
-        dominio: 'localhost',
         ativo: true,
         buscar: true,
         enviar: true,
         substituir: true,
         modificar: true,
         excluir: true
-    }]
+    },
+    {
+        rota: "equipamentos",
+        dominio: "localhost",
+        ativo: true,
+        buscar: true,
+        enviar: true,
+        substituir: false,
+        modificar: true,
+        excluir: false
+    },
+    {
+        rota: "equipamentos-id-status",
+        dominio: "localhost",
+        ativo: true,
+        buscar: false,
+        enviar: false,
+        substituir: false,
+        modificar: true,
+        excluir: false
+    },
+        // {
+        //     rota: "equipamentos-id-foto",
+        //     dominio: "localhost",
+        //     ativo: true,
+        //     buscar: false,
+        //     enviar: true,
+        //     substituir: false,
+        //     modificar: false,
+        //     excluir: false
+        // }
+    ]
 }
 
 const grupos = [grupoAdmin, grupoModerador, grupoUsuario]

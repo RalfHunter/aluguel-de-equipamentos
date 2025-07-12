@@ -211,7 +211,7 @@ describe('UsuarioRepository', () => {
 
             // Verificar que as funções foram chamadas corretamente
             expect(mockPopulate).toHaveBeenCalledWith('grupos')
-            expect(mockSelect).toHaveBeenCalledWith('+refreshToken +accessToken')
+            expect(mockSelect).toHaveBeenCalledWith('+refreshToken +accessToken +CPF')
             // Verificar que retornou um resultado
             expect(resultado).toBeDefined()
         });

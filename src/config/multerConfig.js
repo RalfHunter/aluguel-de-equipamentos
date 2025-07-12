@@ -3,12 +3,15 @@ import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 
+// Caminho onde as imagens dos equipamentos serão salvas
 const diretorio = 'uploads/equipamentos';
 
+// Garante que o diretório exista
 if (!fs.existsSync(diretorio)) {
   fs.mkdirSync(diretorio, { recursive: true });
 }
 
+// Configuração do armazenamento dos arquivos
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, diretorio);
@@ -20,10 +23,11 @@ const storage = multer.diskStorage({
   }
 });
 
+// Configuração final do multer
 const upload = multer({
   storage,
   limits: {
-    fileSize: 25 * 1024 * 1024, 
+    fileSize: 25 * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
     const extensao = path.extname(file.originalname).toLowerCase();

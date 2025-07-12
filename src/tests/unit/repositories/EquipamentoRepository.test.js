@@ -1,5 +1,17 @@
 import EquipamentoRepository from '../../../repositories/EquipamentoRepository.js';
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+import EquipamentoModel from '../../../models/Equipamento.js';
+=======
+import EquipamentoModel from '../../../models/Equipamento.js
+>>>>>>> a5025f0e6885dbce0263adcd6fd56f9a116eec62
+=======
 import EquipamentoModel from '../../../models/Equipamento.js'
+>>>>>>> f5b770b7301253ce9250ff12e96af59074c2ba1f
+=======
+import EquipamentoModel from '../../../models/Equipamento.js';
+>>>>>>> 3ebe88ffce43d2769f442a43147bcc2f66068bbf
 import { CustomError, HttpStatusCodes } from '../../../utils/helpers/index.js';
 
 jest.mock('../../models/Equipamento.js');

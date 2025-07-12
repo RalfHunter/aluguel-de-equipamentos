@@ -37,8 +37,9 @@ describe('AuthPermission integrado', () => {
     jwt.verify.mockReturnValue({ id: 'user123' });
     UsuarioRepository.prototype.buscarPorId.mockResolvedValue({
       grupos: [{
+        ativo: true,
         nivelPermissao: 1,
-        permissoes: [{ rota: 'usuarios', buscar: true }]
+        permissoes: [{ rota: 'usuarios', ativo: true, buscar: true }]
       }]
     });
 
@@ -92,8 +93,9 @@ describe('AuthPermission integrado', () => {
     jwt.verify.mockReturnValue({ id: 'user123' });
     UsuarioRepository.prototype.buscarPorId.mockResolvedValue({
       grupos: [{
+        ativo: true,
         nivelPermissao: 1,
-        permissoes: [{ rota: 'outros', buscar: true }]
+        permissoes: [{ rota: 'outros', ativo: true, buscar: true }]
       }]
     });
 
@@ -111,8 +113,9 @@ describe('AuthPermission integrado', () => {
     jwt.verify.mockReturnValue({ id: 'user123' });
     UsuarioRepository.prototype.buscarPorId.mockResolvedValue({
       grupos: [{
+        ativo: true,
         nivelPermissao: 1,
-        permissoes: [{ rota: 'usuarios', buscar: true }]
+        permissoes: [{ rota: 'usuarios', ativo: true, buscar: true }]
       }]
     });
 
@@ -129,9 +132,9 @@ describe('AuthPermission integrado', () => {
     jwt.verify.mockReturnValue({ id: 'user123' });
     UsuarioRepository.prototype.buscarPorId.mockResolvedValue({
       grupos: [
-        { nivelPermissao: 1, permissoes: [{ rota: 'usuarios', buscar: true }] },
-        { nivelPermissao: 5, permissoes: [{ rota: 'usuarios', buscar: true }] },
-        { nivelPermissao: 3, permissoes: [{ rota: 'usuarios', buscar: true }] }
+        { ativo: true, nivelPermissao: 1, permissoes: [{ rota: 'usuarios', ativo: true, buscar: true }] },
+        { ativo: true, nivelPermissao: 5, permissoes: [{ rota: 'usuarios', ativo: true, buscar: true }] },
+        { ativo: true, nivelPermissao: 3, permissoes: [{ rota: 'usuarios', ativo: true, buscar: true }] }
       ]
     });
 
@@ -146,8 +149,9 @@ describe('AuthPermission integrado', () => {
     jwt.verify.mockReturnValue({ id: 'user123' });
     UsuarioRepository.prototype.buscarPorId.mockResolvedValue({
       grupos: [{
+        ativo: true,
         nivelPermissao: 1,
-        permissoes: [{ rota: 'usuarios-id-foto', buscar: true }]
+        permissoes: [{ rota: 'usuarios-id-foto', ativo: true, buscar: true }]
       }]
     });
 
@@ -161,8 +165,9 @@ describe('AuthPermission integrado', () => {
     jwt.verify.mockReturnValue({ id: 'user123' });
     UsuarioRepository.prototype.buscarPorId.mockResolvedValue({
       grupos: [{
+        ativo: true,
         nivelPermissao: 1,
-        permissoes: [{ rota: 'usuarios', buscar: true }]
+        permissoes: [{ rota: 'usuarios', ativo: true, buscar: true }]
       }]
     });
 
@@ -177,8 +182,9 @@ describe('AuthPermission integrado', () => {
     jwt.verify.mockReturnValue({ id: 'user123' });
     UsuarioRepository.prototype.buscarPorId.mockResolvedValue({
       grupos: [{
+        ativo: true,
         nivelPermissao: 1,
-        permissoes: [{ rota: 'usuarios', buscar: true }]
+        permissoes: [{ rota: 'usuarios', ativo: true, buscar: true }]
       }]
     });
 
@@ -200,12 +206,13 @@ describe('AuthPermission integrado', () => {
       jest.clearAllMocks();
       req.method = method;
       
-      const permissaoObj = { rota: 'usuarios' };
+      const permissaoObj = { rota: 'usuarios', ativo: true };
       permissaoObj[permission] = true;
 
       jwt.verify.mockReturnValue({ id: 'user123' });
       UsuarioRepository.prototype.buscarPorId.mockResolvedValue({
         grupos: [{
+          ativo: true,
           nivelPermissao: 1,
           permissoes: [permissaoObj]
         }]
@@ -222,8 +229,9 @@ describe('AuthPermission integrado', () => {
     jwt.verify.mockReturnValue({ id: 'user123' });
     UsuarioRepository.prototype.buscarPorId.mockResolvedValue({
       grupos: [{
+        ativo: true,
         nivelPermissao: 1,
-        permissoes: [{ rota: 'usuarios', buscar: true, enviar: false }]
+        permissoes: [{ rota: 'usuarios', ativo: true, buscar: true, enviar: false }]
       }]
     });
 

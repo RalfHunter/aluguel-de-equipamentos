@@ -1,4 +1,4 @@
-import avaliacaoRoutes from "../../routes/avaliacaoRoutes.js";
+import "../../../src/routes/avaliacaoRoutes.js"
 import request from "supertest";
 import mongoose from "mongoose";
 

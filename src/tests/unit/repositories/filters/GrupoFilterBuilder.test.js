@@ -1,5 +1,5 @@
 // @ts-nocheck
-import GrupoFilterBuilder from "../../../repositories/filters/GrupoFilterBuilder.js";
+import GrupoFilterBuilder from "../../../../repositories/filters/GrupoFilterBuilder.js";
 
 describe('GrupoFilterBuilder', () => {
     let grupoFilterBuilder;

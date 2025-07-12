@@ -1,4 +1,8 @@
+<<<<<<<< HEAD:src/tests/unit/utils/validators/querys/EquipamentoQuerySchema.test.js
+import { EquipamentoIdSchema, EquipamentoQuerySchema } from '../../../../../utils/validators/schemas/zod/querys/EquipamentoQuerySchema';
+========
 import { EquipamentoIdSchema, EquipamentoQuerySchema } from '../../../../../../../utils/validators/schemas/zod/querys/EquipamentoQuerySchema.js';
+>>>>>>>> nova-master:src/tests/unit/utils/validators/Schema/zod/querys/EquipamentoQuerySchema.test.js
 import mongoose from 'mongoose';
 
 describe('EquipamentoQuerySchema', () => {
