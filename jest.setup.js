@@ -38,7 +38,7 @@ jest.mock('image-size', () => jest.fn(() => ({ width: 800, height: 600 })));
 
 beforeAll(() => {
     jest.spyOn(console, 'error').mockImplementation(() => { });
-    jest.spyOn(console, 'log').mockImplementation(() => { });
+    // jest.spyOn(console, 'log').mockImplementation(() => { });
 });
 
 afterAll(() => {
