@@ -1,506 +1,611 @@
-import { afterEach, beforeEach, describe, expect, jest, it } from '@jest/globals';
 import EquipamentoController from '../../../controllers/EquipamentoController.js';
-import EquipamentoService from '../services/EquipamentoService.js.js';
+import EquipamentoService from '../../../services/EquipamentoService.js';
+import { equipamentoSchema, equipamentoUpdateSchema, equipamentoStatusSchema } from '../../../utils/validators/schemas/zod/EquipamentoSchema.js';
+import { EquipamentoQuerySchema, EquipamentoIdSchema } from '../../../utils/validators/schemas/zod/querys/EquipamentoQuerySchema.js';
 import { CommonResponse, HttpStatusCodes } from '../../../utils/helpers/index.js';
-import { equipamentoSchema, equipamentoUpdateSchema } from '../validators/schemas/zod/EquipamentoSchema.js.js';
-import { EquipamentoQuerySchema, EquipamentoIdSchema } from '../validators/schemas/zod/querys/EquipamentoQuerySchema.js.js';
-import Usuario from '../models/Usuario.js.js';
-import fs from 'fs';
-import sizeOf from 'image-size';
+import Usuario from '../../../models/Usuario.js';
 
-// Mock dependencies
-jest.mock('../../services/EquipamentoService.js');
-jest.mock('../../utils/helpers/index.js', () => ({
-  CommonResponse: {
-    success: jest.fn(),
-    created: jest.fn(),
-    error: jest.fn(),
-  },
-  HttpStatusCodes: {
-    FORBIDDEN: { code: 403 },
-    BAD_REQUEST: { code: 400 },
-  },
+jest.mock('../../../services/EquipamentoService.js');
+jest.mock('../../../utils/validators/schemas/zod/EquipamentoSchema.js');
+jest.mock('../../../utils/validators/schemas/zod/querys/EquipamentoQuerySchema.js');
+jest.mock('../../../utils/helpers/index.js', () => ({
+    CommonResponse: {
+        created: jest.fn().mockImplementation((res, data) => {
+            res.status(201).json(data);
+            return res;
+        }),
+        success: jest.fn().mockImplementation((res, data, status = 200, mensagem = '') => {
+            res.status(status).json({ data, mensagem });
+            return res;
+        }),
+        error: jest.fn().mockImplementation((res, code, mensagem) => {
+            res.status(code).json({ mensagem });
+            return res;
+        }),
+    },
+    HttpStatusCodes: {
+        BAD_REQUEST: { code: 400 },
+        UNAUTHORIZED: { code: 401 },
+        FORBIDDEN: { code: 403 },
+        NOT_FOUND: { code: 404 },
+        INTERNAL_SERVER_ERROR: { code: 500 },
+    },
 }));
-jest.mock('../../utils/validators/schemas/zod/EquipamentoSchema.js', () => ({
-  equipamentoSchema: { parse: jest.fn() },
-  equipamentoUpdateSchema: { parse: jest.fn() },
-}));
-jest.mock('../../utils/validators/schemas/zod/querys/EquipamentoQuerySchema.js', () => ({
-  EquipamentoQuerySchema: { parseAsync: jest.fn() },
-  EquipamentoIdSchema: { parse: jest.fn() },
-}));
-jest.mock('../../models/Usuario.js');
-jest.mock('fs');
-jest.mock('image-size');
+jest.mock('../../../models/Usuario.js');
 
 describe('EquipamentoController', () => {
-  let controller;
-  let req, res;
+    let controller, req, res, serviceMock;
 
-  const mockResponse = () => {
-    const res = {};
-    res.status = jest.fn().mockReturnValue(res);
-    res.json = jest.fn().mockReturnValue(res);
-    return res;
-  };
-
-  beforeEach(() => {
-    controller = new EquipamentoController();
-    req = { params: {}, body: {}, query: {}, user_id: 'userId', protocol: 'http', get: jest.fn().mockReturnValue('localhost') };
-    res = mockResponse();
-
-    controller.service = new EquipamentoService();
-    controller._processarImagemParaFoto = jest.fn(() => ({
-      url: 'http://localhost/uploads/equipamentos/foto.jpg',
-      largura: 100,
-      altura: 100,
-      tamanhoMb: 0.1,
-    }));
-  });
-
-  afterEach(() => jest.clearAllMocks());
-
-  describe('listar', () => {
-    it('deve listar equipamentos com query válida', async () => {
-      req.query = { categoria: 'câmera' };
-      EquipamentoQuerySchema.parseAsync.mockResolvedValue(req.query);
-      const dados = [{ _id: '1', nome: 'Câmera' }];
-      controller.service.listar.mockResolvedValue(dados);
-
-      await controller.listar(req, res);
-
-      expect(controller.service.listar).toHaveBeenCalledWith(req.query);
-      expect(CommonResponse.success).toHaveBeenCalledWith(res, dados);
+    beforeEach(() => {
+        controller = new EquipamentoController();
+        req = {
+            body: {},
+            params: {},
+            query: {},
+            user_id: 'userId',
+            files: [],
+            protocol: 'http',
+            get: jest.fn().mockReturnValue('localhost'),
+        };
+        res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+            setHeader: jest.fn().mockReturnThis(),
+            sendFile: jest.fn(),
+        };
+        serviceMock = {
+            listar: jest.fn(),
+            listarPorId: jest.fn(),
+            criar: jest.fn(),
+            atualizar: jest.fn(),
+            aprovar: jest.fn(),
+            reprovar: jest.fn(),
+            atualizarStatus: jest.fn(),
+            adicionarVariasFotos: jest.fn(),
+            ListarFoto: jest.fn(),
+        };
+        EquipamentoService.mockImplementation(() => serviceMock);
+        controller = new EquipamentoController(); 
+        controller._processarImagemParaFoto = jest.fn(() => ({
+            url: 'http://localhost/uploads/equipamentos/foto.jpg',
+            largura: 100,
+            altura: 100,
+            tamanhoMb: 0.1,
+        }));
+        Usuario.findById.mockImplementation(() => ({
+            populate: jest.fn().mockResolvedValue({ grupos: [{ nivelPermissao: 10 }] }),
+        }));
+        jest.clearAllMocks();
     });
 
-    it('deve listar equipamentos sem query', async () => {
-      const dados = [{ _id: '1', nome: 'Câmera' }];
-      controller.service.listar.mockResolvedValue(dados);
+    describe('listar', () => {
+        it('deve listar equipamentos sem filtros', async () => {
+            serviceMock.listar.mockResolvedValue([{ nome: 'Câmera' }]);
+            await controller.listar(req, res);
+            expect(serviceMock.listar).toHaveBeenCalledWith({
+                usuarioId: 'userId',
+                $or: [
+                    { equiStatus: 'ativo' },
+                    { equiStatus: 'pendente', equiUsuario: 'userId' },
+                    { equiStatus: 'inativo', equiUsuario: 'userId' },
+                ],
+            });
+            expect(CommonResponse.success).toHaveBeenCalledWith(res, [{ nome: 'Câmera' }]);
+        });
 
-      await controller.listar(req, res);
+        it('deve validar query se presente', async () => {
+            req.query = { categoria: 'câmera' };
+            EquipamentoQuerySchema.parseAsync.mockResolvedValue(req.query);
+            serviceMock.listar.mockResolvedValue([{ nome: 'Câmera' }]);
+            await controller.listar(req, res);
+            expect(EquipamentoQuerySchema.parseAsync).toHaveBeenCalledWith(req.query);
+            expect(serviceMock.listar).toHaveBeenCalledWith({
+                categoria: 'câmera',
+                usuarioId: 'userId',
+                $or: [
+                    { equiStatus: 'ativo' },
+                    { equiStatus: 'pendente', equiUsuario: 'userId' },
+                    { equiStatus: 'inativo', equiUsuario: 'userId' },
+                ],
+            });
+            expect(CommonResponse.success).toHaveBeenCalledWith(res, [{ nome: 'Câmera' }]);
+        });
 
-      expect(controller.service.listar).toHaveBeenCalledWith({});
-      expect(CommonResponse.success).toHaveBeenCalledWith(res, dados);
+        it('deve retornar erro 400 para query inválida', async () => {
+            req.query = { categoria: 123 };
+            EquipamentoQuerySchema.parseAsync.mockRejectedValue({ name: 'ZodError' });
+            await expect(controller.listar(req, res)).rejects.toMatchObject({ name: 'ZodError' });
+            expect(CommonResponse.error).not.toHaveBeenCalled();
+        });
+
+        it('deve retornar erro 403 para pendentes sem permissão', async () => {
+            req.query = { status: 'pendente' };
+            EquipamentoQuerySchema.parseAsync.mockResolvedValue(req.query);
+            await controller.listar(req, res);
+            expect(CommonResponse.error).toHaveBeenCalledWith(
+                res,
+                403,
+                'Acesso restrito a administradores ou moderadores para filtrar equipamentos pendentes.'
+            );
+        });
+
+        it('deve listar pendentes para admin', async () => {
+            req.query = { status: 'pendente' };
+            EquipamentoQuerySchema.parseAsync.mockResolvedValue(req.query);
+            Usuario.findById.mockReturnValue({
+                populate: jest.fn().mockResolvedValue({ grupos: [{ nivelPermissao: 0 }] }),
+            });
+            serviceMock.listar.mockResolvedValue([{ nome: 'Câmera', equiStatus: 'pendente' }]);
+            await controller.listar(req, res);
+            expect(serviceMock.listar).toHaveBeenCalledWith({ status: 'pendente', equiStatus: 'pendente', usuarioId: 'userId' });
+            expect(CommonResponse.success).toHaveBeenCalledWith(res, [{ nome: 'Câmera', equiStatus: 'pendente' }]);
+        });
+
+        it('deve retornar erro 401 para inativos sem autenticação', async () => {
+            req.query = { status: 'inativo' };
+            req.user_id = null;
+            EquipamentoQuerySchema.parseAsync.mockResolvedValue(req.query);
+            await controller.listar(req, res);
+            expect(CommonResponse.error).toHaveBeenCalledWith(res, 401, 'Usuário não autenticado.');
+        });
     });
 
-    it('deve rejeitar se query inválida', async () => {
-      req.query = { categoria: 123 };
-      const error = new Error('Erro de validação');
-      error.name = 'ZodError';
-      EquipamentoQuerySchema.parseAsync.mockRejectedValue(error);
+    describe('listarPorId', () => {
+        it('deve listar equipamento por id válido', async () => {
+            req.params = { id: '1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            serviceMock.listarPorId.mockResolvedValue({ _id: '1', nome: 'Câmera', equiStatus: 'ativo', equiUsuario: 'userId' });
+            await controller.listarPorId(req, res);
+            expect(EquipamentoIdSchema.parse).toHaveBeenCalledWith('1');
+            expect(serviceMock.listarPorId).toHaveBeenCalledWith('1', 'userId');
+            expect(CommonResponse.success).toHaveBeenCalledWith(res, { _id: '1', nome: 'Câmera', equiStatus: 'ativo', equiUsuario: 'userId' });
+        });
 
-      await controller.listar(req, res);
+        it('deve retornar erro 400 para id inválido', async () => {
+            req.params = { id: 'invalido' };
+            EquipamentoIdSchema.parse.mockImplementation(() => { throw { name: 'ZodError' }; });
+            await expect(controller.listarPorId(req, res)).rejects.toMatchObject({ name: 'ZodError' });
+            expect(CommonResponse.error).not.toHaveBeenCalled();
+        });
 
-      expect(CommonResponse.error).toHaveBeenCalledWith(res, 400, expect.any(String));
+        it('deve retornar erro 404 para equipamento inexistente', async () => {
+            req.params = { id: '1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            serviceMock.listarPorId.mockResolvedValue(null);
+            await controller.listarPorId(req, res);
+            expect(CommonResponse.error).toHaveBeenCalledWith(res, 404, 'Equipamento não encontrado.');
+        });
+
+        it('deve retornar erro 403 para equipamento não ativo e usuário não dono', async () => {
+            req.params = { id: '1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            serviceMock.listarPorId.mockResolvedValue({ _id: '1', equiStatus: 'pendente', equiUsuario: 'outroUserId' });
+            await controller.listarPorId(req, res);
+            expect(CommonResponse.error).toHaveBeenCalledWith(res, 403, 'Acesso restrito a equipamentos ativos ou próprios.');
+        });
+
+        it('deve retornar erro 403 para usuário não autenticado e equipamento não ativo', async () => {
+            req.params = { id: '1' };
+            req.user_id = null;
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            serviceMock.listarPorId.mockResolvedValue({ _id: '1', equiStatus: 'pendente' });
+            await controller.listarPorId(req, res);
+            expect(CommonResponse.error).toHaveBeenCalledWith(res, 403, 'Acesso restrito a equipamentos ativos para usuários não autenticados.');
+        });
     });
 
-    it('deve retornar erro 403 se filtrar pendentes e usuário não for admin', async () => {
-      req.query = { status: 'pendente' };
-      EquipamentoQuerySchema.parseAsync.mockResolvedValue(req.query);
-      Usuario.findById.mockResolvedValue({ tipoUsuario: 'comum' });
+    describe('criar', () => {
+        it('deve criar equipamento com dados válidos e fotos', async () => {
+            req.body = { nome: 'Câmera', equiValorDiaria: '100.50', equiQuantidadeDisponivel: '5', categoria: '1' };
+            req.files = [{ mimetype: 'image/jpeg', path: 'path/to/foto.jpg', originalname: 'foto.jpg', size: 1024, filename: 'foto.jpg' }];
+            const parsedData = {
+                nome: 'Câmera',
+                equiValorDiaria: 100.5,
+                equiQuantidadeDisponivel: 5,
+                categoria: '1',
+                equiUsuario: 'userId',
+                equiFotos: [{ url: 'http://localhost/uploads/equipamentos/foto.jpg', largura: 100, altura: 100, tamanhoMb: 0.1 }],
+                equiStatus: 'pendente',
+            };
+            equipamentoSchema.parse.mockReturnValue(parsedData);
+            serviceMock.criar.mockResolvedValue({ _id: '1', ...parsedData });
+            await controller.criar(req, res);
+            expect(equipamentoSchema.parse).toHaveBeenCalledWith(expect.objectContaining({
+                nome: 'Câmera',
+                equiUsuario: 'userId',
+                equiFotos: expect.any(Array),
+                equiStatus: 'pendente',
+            }));
+            expect(serviceMock.criar).toHaveBeenCalledWith(parsedData);
+            expect(CommonResponse.created).toHaveBeenCalledWith(res, {
+                mensagem: 'Equipamento cadastrado. Aguardando aprovação.',
+                equipamento: { _id: '1', ...parsedData },
+            });
+        });
 
-      await controller.listar(req, res);
+        it('deve criar equipamento sem fotos', async () => {
+            req.body = { nome: 'Câmera', equiValorDiaria: '100.50', equiQuantidadeDisponivel: '5', categoria: '1' };
+            const parsedData = {
+                nome: 'Câmera',
+                equiValorDiaria: 100.5,
+                equiQuantidadeDisponivel: 5,
+                categoria: '1',
+                equiUsuario: 'userId',
+                equiFotos: [],
+                equiStatus: 'pendente',
+            };
+            equipamentoSchema.parse.mockReturnValue(parsedData);
+            serviceMock.criar.mockResolvedValue({ _id: '1', ...parsedData });
+            await controller.criar(req, res);
+            expect(equipamentoSchema.parse).toHaveBeenCalledWith(expect.objectContaining({
+                nome: 'Câmera',
+                equiUsuario: 'userId',
+                equiFotos: [],
+                equiStatus: 'pendente',
+            }));
+            expect(serviceMock.criar).toHaveBeenCalledWith(parsedData);
+            expect(CommonResponse.created).toHaveBeenCalledWith(res, {
+                mensagem: 'Equipamento cadastrado. Aguardando aprovação.',
+                equipamento: { _id: '1', ...parsedData },
+            });
+        });
 
-      expect(EquipamentoQuerySchema.parseAsync).toHaveBeenCalledWith(req.query);
-      expect(Usuario.findById).toHaveBeenCalledWith('userId');
-      expect(CommonResponse.error).toHaveBeenCalledWith(res, 403, 'Acesso restrito a administradores para filtrar equipamentos pendentes.');
-      expect(controller.service.listar).not.toHaveBeenCalled();
+        it('deve retornar erro 400 para dados inválidos', async () => {
+            req.body = { equiValorDiaria: 'invalido' };
+            equipamentoSchema.parse.mockImplementation(() => { throw { name: 'ZodError' }; });
+            await expect(controller.criar(req, res)).rejects.toMatchObject({ name: 'ZodError' });
+            expect(CommonResponse.error).not.toHaveBeenCalled();
+        });
+
+        it('deve retornar erro 401 para usuário não autenticado', async () => {
+            req.user_id = null;
+            await controller.criar(req, res);
+            expect(CommonResponse.error).toHaveBeenCalledWith(res, 401, 'Usuário não autenticado.');
+        });
     });
 
-    it('deve listar pendentes se usuário for admin', async () => {
-      req.query = { status: 'pendente' };
-      EquipamentoQuerySchema.parseAsync.mockResolvedValue(req.query);
-      const equipamentos = [{ _id: '1', nome: 'Câmera', status: 'pendente' }];
-      Usuario.findById.mockResolvedValue({ tipoUsuario: 'admin' });
-      controller.service.listar.mockResolvedValue(equipamentos);
+    describe('atualizar', () => {
+        it('deve atualizar equipamento com dados válidos', async () => {
+            req.params = { id: '1' };
+            req.body = { nome: 'Câmera Atualizada' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            equipamentoUpdateSchema.parse.mockReturnValue({ nome: 'Câmera Atualizada' });
+            serviceMock.listarPorId.mockResolvedValue({ _id: '1', equiUsuario: 'userId' });
+            serviceMock.atualizar.mockResolvedValue({ _id: '1', nome: 'Câmera Atualizada' });
+            await controller.atualizar(req, res);
+            expect(EquipamentoIdSchema.parse).toHaveBeenCalledWith('1');
+            expect(equipamentoUpdateSchema.parse).toHaveBeenCalledWith(req.body);
+            expect(serviceMock.atualizar).toHaveBeenCalledWith('1', { nome: 'Câmera Atualizada' });
+            expect(CommonResponse.success).toHaveBeenCalledWith(res, { _id: '1', nome: 'Câmera Atualizada' }, 200, 'Equipamento atualizado com sucesso.');
+        });
 
-      await controller.listar(req, res);
+        it('deve retornar erro 400 para id inválido', async () => {
+            req.params = { id: 'invalido' };
+            EquipamentoIdSchema.parse.mockImplementation(() => { throw { name: 'ZodError' }; });
+            await expect(controller.atualizar(req, res)).rejects.toMatchObject({ name: 'ZodError' });
+            expect(CommonResponse.error).not.toHaveBeenCalled();
+        });
 
-      expect(EquipamentoQuerySchema.parseAsync).toHaveBeenCalledWith(req.query);
-      expect(Usuario.findById).toHaveBeenCalledWith('userId');
-      expect(controller.service.listar).toHaveBeenCalledWith(req.query);
-      expect(CommonResponse.success).toHaveBeenCalledWith(res, equipamentos);
-    });
-  });
+        it('deve retornar erro 401 para usuário não autenticado', async () => {
+            req.params = { id: '1' };
+            req.user_id = null;
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            await controller.atualizar(req, res);
+            expect(CommonResponse.error).toHaveBeenCalledWith(res, 401, 'Usuário não autenticado.');
+        });
 
-  describe('listarPorId', () => {
-    it('deve listar equipamento por ID válido', async () => {
-      const id = 'abc123';
-      req.params.id = id;
-      EquipamentoIdSchema.parse.mockReturnValue(id);
-      const equipamento = { _id: id, nome: 'Câmera' };
-      controller.service.listarPorId.mockResolvedValue(equipamento);
+        it('deve retornar erro 404 para equipamento inexistente', async () => {
+            req.params = { id: '1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            serviceMock.listarPorId.mockResolvedValue(null);
+            await controller.atualizar(req, res);
+            expect(CommonResponse.error).toHaveBeenCalledWith(res, 404, 'Equipamento não encontrado.');
+        });
 
-      await controller.listarPorId(req, res);
+        it('deve retornar erro 403 para usuário não dono', async () => {
+            req.params = { id: '1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            serviceMock.listarPorId.mockResolvedValue({ _id: '1', equiUsuario: 'outroUserId' });
+            await controller.atualizar(req, res);
+            expect(CommonResponse.error).toHaveBeenCalledWith(res, 403, 'Apenas o dono do equipamento pode atualizá-lo.');
+        });
 
-      expect(EquipamentoIdSchema.parse).toHaveBeenCalledWith(id);
-      expect(controller.service.listarPorId).toHaveBeenCalledWith(id, 'userId');
-      expect(CommonResponse.success).toHaveBeenCalledWith(res, equipamento);
-    });
-
-    it('deve lançar erro se ID for inválido', async () => {
-      req.params.id = 'idInvalido';
-      const error = new Error('ID inválido');
-      error.name = 'ZodError';
-      EquipamentoIdSchema.parse.mockImplementation(() => { throw error; });
-
-      await controller.listarPorId(req, res);
-
-      expect(CommonResponse.error).toHaveBeenCalledWith(res, 400, expect.any(String));
-    });
-  });
-
-  describe('criar', () => {
-    it('deve criar equipamento com fotos', async () => {
-      req.body = { equiValorDiaria: '100.50', equiQuantidadeDisponivel: '5' };
-      req.files = [
-        { mimetype: 'image/jpeg', path: 'path/to/foto.jpg', originalname: 'foto.jpg', size: 1024, filename: 'foto.jpg' },
-      ];
-      const dadosProcessados = {
-        equiValorDiaria: 100.50,
-        equiQuantidadeDisponivel: 5,
-      };
-      const equipamento = { _id: 'abc123', ...dadosProcessados };
-      equipamentoSchema.parse.mockReturnValue({ ...dadosProcessados, equiUsuario: 'userId', equiFotos: [controller._processarImagemParaFoto()] });
-      controller.service.criar.mockResolvedValue(equipamento);
-
-      await controller.criar(req, res);
-
-      expect(controller._processarImagemParaFoto).toHaveBeenCalledWith(req.files[0], req);
-      expect(equipamentoSchema.parse).toHaveBeenCalledWith({
-        ...dadosProcessados,
-        equiUsuario: 'userId',
-        equiFotos: [controller._processarImagemParaFoto()],
-      });
-      expect(controller.service.criar).toHaveBeenCalledWith({
-        ...dadosProcessados,
-        equiUsuario: 'userId',
-        equiFotos: [controller._processarImagemParaFoto()],
-      });
-      expect(CommonResponse.created).toHaveBeenCalledWith(res, {
-        mensagem: 'Equipamento cadastrado. Aguardando aprovação.',
-        equipamento,
-      });
+        it('deve retornar erro 400 para dados inválidos', async () => {
+            req.params = { id: '1' };
+            req.body = { nome: 123 };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            equipamentoUpdateSchema.parse.mockImplementation(() => { throw { name: 'ZodError' }; });
+            serviceMock.listarPorId.mockResolvedValue({ _id: '1', equiUsuario: 'userId' });
+            await expect(controller.atualizar(req, res)).rejects.toMatchObject({ name: 'ZodError' });
+            expect(CommonResponse.error).not.toHaveBeenCalled();
+        });
     });
 
-    it('deve criar equipamento sem fotos', async () => {
-      req.body = { equiValorDiaria: '100.50', equiQuantidadeDisponivel: '5' };
-      req.files = [];
-      const dadosProcessados = {
-        equiValorDiaria: 100.50,
-        equiQuantidadeDisponivel: 5,
-      };
-      const equipamento = { _id: 'abc123', ...dadosProcessados };
-      equipamentoSchema.parse.mockReturnValue({ ...dadosProcessados, equiUsuario: 'userId', equiFotos: [] });
-      controller.service.criar.mockResolvedValue(equipamento);
+    describe('aprovar', () => {
+        it('deve aprovar equipamento com usuário admin', async () => {
+            req.params = { id: '1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            Usuario.findById.mockReturnValue({
+                populate: jest.fn().mockResolvedValue({ grupos: [{ nivelPermissao: 0 }] }),
+            });
+            serviceMock.aprovar.mockResolvedValue({ _id: '1', equiStatus: 'aprovado' });
+            await controller.aprovar(req, res);
+            expect(EquipamentoIdSchema.parse).toHaveBeenCalledWith('1');
+            expect(serviceMock.aprovar).toHaveBeenCalledWith('1', 'userId');
+            expect(CommonResponse.success).toHaveBeenCalledWith(res, { _id: '1', equiStatus: 'aprovado' }, 200, 'Equipamento aprovado com sucesso.');
+        });
 
-      await controller.criar(req, res);
+        it('deve retornar erro 403 para usuário não admin', async () => {
+            req.params = { id: '1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            await controller.aprovar(req, res);
+            expect(CommonResponse.error).toHaveBeenCalledWith(res, 403, 'Acesso restrito a administradores ou moderadores.');
+        });
 
-      expect(controller._processarImagemParaFoto).not.toHaveBeenCalled();
-      expect(equipamentoSchema.parse).toHaveBeenCalledWith({
-        ...dadosProcessados,
-        equiUsuario: 'userId',
-        equiFotos: [],
-      });
-      expect(controller.service.criar).toHaveBeenCalledWith({
-        ...dadosProcessados,
-        equiUsuario: 'userId',
-        equiFotos: [],
-      });
-      expect(CommonResponse.created).toHaveBeenCalledWith(res, {
-        mensagem: 'Equipamento cadastrado. Aguardando aprovação.',
-        equipamento,
-      });
+        it('deve retornar erro 400 para id inválido', async () => {
+            req.params = { id: 'invalido' };
+            EquipamentoIdSchema.parse.mockImplementation(() => { throw { name: 'ZodError' }; });
+            Usuario.findById.mockReturnValue({
+                populate: jest.fn().mockResolvedValue({ grupos: [{ nivelPermissao: 0 }] }),
+            });
+            await expect(controller.aprovar(req, res)).rejects.toMatchObject({ name: 'ZodError' });
+            expect(CommonResponse.error).not.toHaveBeenCalled();
+        });
     });
 
-    it('deve lançar erro se dados forem inválidos', async () => {
-      req.body = { equiValorDiaria: 'invalido', equiQuantidadeDisponivel: 'invalido' };
-      req.files = [];
-      const error = new Error('Dados inválidos');
-      error.name = 'ZodError';
-      equipamentoSchema.parse.mockImplementation(() => { throw error; });
+    describe('reprovar', () => {
+        it('deve reprovar equipamento com usuário admin', async () => {
+            req.params = { id: '1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            Usuario.findById.mockReturnValue({
+                populate: jest.fn().mockResolvedValue({ grupos: [{ nivelPermissao: 0 }] }),
+            });
+            serviceMock.reprovar.mockResolvedValue({ _id: '1', equiStatus: 'reprovado' });
+            await controller.reprovar(req, res);
+            expect(EquipamentoIdSchema.parse).toHaveBeenCalledWith('1');
+            expect(serviceMock.reprovar).toHaveBeenCalledWith('1', 'userId');
+            expect(CommonResponse.success).toHaveBeenCalledWith(res, { _id: '1', equiStatus: 'reprovado' }, 200, 'Equipamento reprovado e excluído com sucesso.');
+        });
 
-      await controller.criar(req, res);
+        it('deve retornar erro 403 para usuário não admin', async () => {
+            req.params = { id: '1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            await controller.reprovar(req, res);
+            expect(CommonResponse.error).toHaveBeenCalledWith(res, 403, 'Acesso restrito a administradores ou moderadores.');
+        });
 
-      expect(CommonResponse.error).toHaveBeenCalledWith(res, 400, expect.any(String));
-    });
-  });
-
-  describe('atualizar', () => {
-    it('deve atualizar equipamento com dados válidos', async () => {
-      const id = 'abc123';
-      req.params.id = id;
-      req.body = { nome: 'Câmera Atualizada' };
-      EquipamentoIdSchema.parse.mockReturnValue(id);
-      equipamentoUpdateSchema.parse.mockReturnValue(req.body);
-      const equipamento = { _id: id, nome: 'Câmera Atualizada' };
-      controller.service.atualizar.mockResolvedValue(equipamento);
-
-      await controller.atualizar(req, res);
-
-      expect(EquipamentoIdSchema.parse).toHaveBeenCalledWith(id);
-      expect(equipamentoUpdateSchema.parse).toHaveBeenCalledWith(req.body);
-      expect(controller.service.atualizar).toHaveBeenCalledWith(id, req.body);
-      expect(CommonResponse.success).toHaveBeenCalledWith(res, equipamento, 200, 'Equipamento atualizado com sucesso.');
-    });
-
-    it('deve lançar erro se ID for inválido', async () => {
-      req.params.id = 'idInvalido';
-      const error = new Error('ID inválido');
-      error.name = 'ZodError';
-      EquipamentoIdSchema.parse.mockImplementation(() => { throw error; });
-
-      await controller.atualizar(req, res);
-
-      expect(CommonResponse.error).toHaveBeenCalledWith(res, 400, expect.any(String));
+        it('deve retornar erro 400 para id inválido', async () => {
+            req.params = { id: 'invalido' };
+            EquipamentoIdSchema.parse.mockImplementation(() => { throw { name: 'ZodError' }; });
+            Usuario.findById.mockReturnValue({
+                populate: jest.fn().mockResolvedValue({ grupos: [{ nivelPermissao: 0 }] }),
+            });
+            await expect(controller.reprovar(req, res)).rejects.toMatchObject({ name: 'ZodError' });
+            expect(CommonResponse.error).not.toHaveBeenCalled();
+        });
     });
 
-    it('deve lançar erro se dados forem inválidos', async () => {
-      const id = 'abc123';
-      req.params.id = id;
-      req.body = { nome: 123 };
-      EquipamentoIdSchema.parse.mockReturnValue(id);
-      const error = new Error('Dados inválidos');
-      error.name = 'ZodError';
-      equipamentoUpdateSchema.parse.mockImplementation(() => { throw error; });
+    describe('atualizarStatus', () => {
+        it('deve atualizar status com dados válidos', async () => {
+            req.params = { id: '1' };
+            req.body = { status: 'ativo' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            equipamentoStatusSchema.parse.mockReturnValue({ status: 'ativo' });
+            serviceMock.atualizarStatus.mockResolvedValue({ _id: '1', equiStatus: 'ativo' });
+            await controller.atualizarStatus(req, res);
+            expect(EquipamentoIdSchema.parse).toHaveBeenCalledWith('1');
+            expect(equipamentoStatusSchema.parse).toHaveBeenCalledWith({ status: 'ativo' });
+            expect(serviceMock.atualizarStatus).toHaveBeenCalledWith('1', 'userId', 'ativo');
+            expect(CommonResponse.success).toHaveBeenCalledWith(res, { _id: '1', equiStatus: 'ativo' }, 200, 'Equipamento ativado com sucesso.');
+        });
 
-      await controller.atualizar(req, res);
+        it('deve retornar erro 400 para id inválido', async () => {
+            req.params = { id: 'invalido' };
+            req.body = { status: 'ativo' };
+            EquipamentoIdSchema.parse.mockImplementation(() => { throw { name: 'ZodError' }; });
+            await expect(controller.atualizarStatus(req, res)).rejects.toMatchObject({ name: 'ZodError' });
+            expect(CommonResponse.error).not.toHaveBeenCalled();
+        });
 
-      expect(CommonResponse.error).toHaveBeenCalledWith(res, 400, expect.any(String));
-    });
-  });
+        it('deve retornar erro 400 para status inválido', async () => {
+            req.params = { id: '1' };
+            req.body = { status: 'invalido' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            equipamentoStatusSchema.parse.mockImplementation(() => { throw { name: 'ZodError' }; });
+            await expect(controller.atualizarStatus(req, res)).rejects.toMatchObject({ name: 'ZodError' });
+            expect(CommonResponse.error).not.toHaveBeenCalled();
+        });
 
-  describe('aprovar', () => {
-    it('deve aprovar equipamento se usuário for admin', async () => {
-      const id = 'abc123';
-      req.params.id = id;
-      EquipamentoIdSchema.parse.mockReturnValue(id);
-      Usuario.findById.mockResolvedValue({ tipoUsuario: 'admin' });
-      const equipamento = { _id: id, status: 'aprovado' };
-      controller.service.aprovar.mockResolvedValue(equipamento);
-
-      await controller.aprovar(req, res);
-
-      expect(Usuario.findById).toHaveBeenCalledWith('userId');
-      expect(EquipamentoIdSchema.parse).toHaveBeenCalledWith(id);
-      expect(controller.service.aprovar).toHaveBeenCalledWith(id);
-      expect(CommonResponse.success).toHaveBeenCalledWith(res, equipamento, 200, 'Equipamento aprovado com sucesso.');
-    });
-
-    it('deve retornar erro se usuário não for admin', async () => {
-      req.params.id = 'abc123';
-      Usuario.findById.mockResolvedValue({ tipoUsuario: 'comum' });
-
-      await controller.aprovar(req, res);
-
-      expect(CommonResponse.error).toHaveBeenCalledWith(res, 403, 'Acesso restrito a administradores.');
-      expect(controller.service.aprovar).not.toHaveBeenCalled();
-    });
-
-    it('deve lançar erro se ID for inválido', async () => {
-      req.params.id = 'idInvalido';
-      Usuario.findById.mockResolvedValue({ tipoUsuario: 'admin' });
-      const error = new Error('ID inválido');
-      error.name = 'ZodError';
-      EquipamentoIdSchema.parse.mockImplementation(() => { throw error; });
-
-      await controller.aprovar(req, res);
-
-      expect(CommonResponse.error).toHaveBeenCalledWith(res, 400, expect.any(String));
-    });
-  });
-
-  describe('reprovar', () => {
-    it('deve reprovar equipamento se usuário for admin', async () => {
-      const id = 'abc123';
-      req.params.id = id;
-      EquipamentoIdSchema.parse.mockReturnValue(id);
-      Usuario.findById.mockResolvedValue({ tipoUsuario: 'admin' });
-      const resultado = { _id: id, status: 'reprovado' };
-      controller.service.reprovar.mockResolvedValue(resultado);
-
-      await controller.reprovar(req, res);
-
-      expect(Usuario.findById).toHaveBeenCalledWith('userId');
-      expect(EquipamentoIdSchema.parse).toHaveBeenCalledWith(id);
-      expect(controller.service.reprovar).toHaveBeenCalledWith(id);
-      expect(CommonResponse.success).toHaveBeenCalledWith(res, resultado, 200, 'Equipamento reprovado e excluído com sucesso.');
+        it('deve retornar erro 401 para usuário não autenticado', async () => {
+            req.params = { id: '1' };
+            req.body = { status: 'ativo' };
+            req.user_id = null;
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            equipamentoStatusSchema.parse.mockReturnValue({ status: 'ativo' });
+            await controller.atualizarStatus(req, res);
+            expect(CommonResponse.error).toHaveBeenCalledWith(res, 401, 'Usuário não autenticado.');
+        });
     });
 
-    it('deve retornar erro se usuário não for admin', async () => {
-      req.params.id = 'abc123';
-      Usuario.findById.mockResolvedValue({ tipoUsuario: 'comum' });
+    describe('adicionarFotos', () => {
+        it('deve adicionar fotos com dados válidos', async () => {
+            req.params = { id: '1' };
+            req.files = [{ mimetype: 'image/jpeg', path: 'path/to/foto.jpg', originalname: 'foto.jpg', size: 1024, filename: 'foto.jpg' }];
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            serviceMock.listarPorId.mockResolvedValue({ _id: '1', equiUsuario: 'userId' });
+            serviceMock.adicionarVariasFotos.mockResolvedValue({
+                _id: '1',
+                equiFotos: [{ url: 'http://localhost/uploads/equipamentos/foto.jpg', largura: 100, altura: 100, tamanhoMb: 0.1 }],
+            });
+            await controller.adicionarFotos(req, res);
+            expect(EquipamentoIdSchema.parse).toHaveBeenCalledWith('1');
+            expect(serviceMock.adicionarVariasFotos).toHaveBeenCalledWith('1', expect.any(Array));
+            expect(CommonResponse.success).toHaveBeenCalledWith(res, expect.any(Object), 200, 'Fotos adicionadas com sucesso.');
+        });
 
-      await controller.reprovar(req, res);
+        it('deve retornar erro 400 para id inválido', async () => {
+            req.params = { id: 'invalido' };
+            req.files = [{ mimetype: 'image/jpeg', path: 'path/to/foto.jpg', originalname: 'foto.jpg', size: 1024, filename: 'foto.jpg' }];
+            EquipamentoIdSchema.parse.mockImplementation(() => { throw { name: 'ZodError' }; });
+            await expect(controller.adicionarFotos(req, res)).rejects.toMatchObject({ name: 'ZodError' });
+            expect(CommonResponse.error).not.toHaveBeenCalled();
+        });
 
-      expect(CommonResponse.error).toHaveBeenCalledWith(res, 403, 'Acesso restrito a administradores.');
-      expect(controller.service.reprovar).not.toHaveBeenCalled();
+        it('deve retornar erro 400 para nenhuma foto enviada', async () => {
+            req.params = { id: '1' };
+            req.files = [];
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            await controller.adicionarFotos(req, res);
+            expect(CommonResponse.error).toHaveBeenCalledWith(res, 400, 'Nenhuma foto foi enviada.');
+        });
+
+        it('deve retornar erro 401 para usuário não autenticado', async () => {
+            req.params = { id: '1' };
+            req.files = [{ mimetype: 'image/jpeg', path: 'path/to/foto.jpg', originalname: 'foto.jpg', size: 1024, filename: 'foto.jpg' }];
+            req.user_id = null;
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            await controller.adicionarFotos(req, res);
+            expect(CommonResponse.error).toHaveBeenCalledWith(res, 401, 'Usuário não autenticado.');
+        });
+
+        it('deve retornar erro 404 para equipamento inexistente', async () => {
+            req.params = { id: '1' };
+            req.files = [{ mimetype: 'image/jpeg', path: 'path/to/foto.jpg', originalname: 'foto.jpg', size: 1024, filename: 'foto.jpg' }];
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            serviceMock.listarPorId.mockResolvedValue(null);
+            await controller.adicionarFotos(req, res);
+            expect(CommonResponse.error).toHaveBeenCalledWith(res, 404, 'Equipamento não encontrado.');
+        });
+
+        it('deve retornar erro 403 para usuário não dono', async () => {
+            req.params = { id: '1' };
+            req.files = [{ mimetype: 'image/jpeg', path: 'path/to/foto.jpg', originalname: 'foto.jpg', size: 1024, filename: 'foto.jpg' }];
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            serviceMock.listarPorId.mockResolvedValue({ _id: '1', equiUsuario: 'outroUserId' });
+            await controller.adicionarFotos(req, res);
+            expect(CommonResponse.error).toHaveBeenCalledWith(res, 403, 'Apenas o dono do equipamento pode adicionar fotos.');
+        });
     });
 
-    it('deve lançar erro se ID for inválido', async () => {
-      req.params.id = 'idInvalido';
-      Usuario.findById.mockResolvedValue({ tipoUsuario: 'admin' });
-      const error = new Error('ID inválido');
-      error.name = 'ZodError';
-      EquipamentoIdSchema.parse.mockImplementation(() => { throw error; });
+    describe('ListarFoto', () => {
+        it('deve listar foto com dados válidos', async () => {
+            req.params = { id: '1', fotoId: 'foto1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            serviceMock.listarPorId.mockResolvedValue({ _id: '1', equiUsuario: 'userId', equiStatus: 'ativo' });
+            serviceMock.ListarFoto.mockResolvedValue({ filePath: '/path/to/foto.jpg', contentType: 'image/jpeg' });
+            await controller.ListarFoto(req, res);
+            expect(EquipamentoIdSchema.parse).toHaveBeenCalledWith('1');
+            expect(EquipamentoIdSchema.parse).toHaveBeenCalledWith('foto1');
+            expect(serviceMock.ListarFoto).toHaveBeenCalledWith('1', 'foto1');
+            expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'image/jpeg');
+            expect(res.sendFile).toHaveBeenCalledWith('/path/to/foto.jpg');
+        });
 
-      await controller.reprovar(req, res);
+        it('deve retornar erro 400 para id inválido', async () => {
+            req.params = { id: 'invalido', fotoId: 'foto1' };
+            EquipamentoIdSchema.parse.mockImplementation(() => { throw { name: 'ZodError' }; });
+            await expect(controller.ListarFoto(req, res)).rejects.toMatchObject({ name: 'ZodError' });
+            expect(CommonResponse.error).not.toHaveBeenCalled();
+        });
 
-      expect(CommonResponse.error).toHaveBeenCalledWith(res, 400, expect.any(String));
-    });
-  });
+        it('deve retornar erro 400 para fotoId inválido', async () => {
+            req.params = { id: '1', fotoId: 'invalido' };
+            EquipamentoIdSchema.parse.mockImplementationOnce(() => '1').mockImplementation(() => { throw { name: 'ZodError' }; });
+            await expect(controller.ListarFoto(req, res)).rejects.toMatchObject({ name: 'ZodError' });
+            expect(CommonResponse.error).not.toHaveBeenCalled();
+        });
 
-  describe('adicionarFoto', () => {
-    it('deve adicionar foto com id válido e arquivo válido', async () => {
-      const id = 'abc123';
-      req.params.id = id;
-      req.file = { mimetype: 'image/jpeg', path: 'path/to/foto.jpg', originalname: 'foto.jpg', size: 1024, filename: 'foto.jpg' };
-      EquipamentoIdSchema.parse.mockReturnValue(id);
-      const novaFoto = controller._processarImagemParaFoto(req.file, req);
-      const equipamento = { _id: id, equiFotos: [novaFoto] };
-      controller.service.adicionarFoto.mockResolvedValue(equipamento);
+        it('deve retornar erro 401 para usuário não autenticado', async () => {
+            req.params = { id: '1', fotoId: 'foto1' };
+            req.user_id = null;
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            await controller.ListarFoto(req, res);
+            expect(CommonResponse.error).toHaveBeenCalledWith(res, 401, 'Usuário não autenticado.');
+        });
 
-      await controller.adicionarFoto(req, res);
+        it('deve retornar erro 404 para equipamento inexistente', async () => {
+            req.params = { id: '1', fotoId: 'foto1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            serviceMock.listarPorId.mockResolvedValue(null);
+            await controller.ListarFoto(req, res);
+            expect(CommonResponse.error).toHaveBeenCalledWith(res, 404, 'Equipamento não encontrado.');
+        });
 
-      expect(EquipamentoIdSchema.parse).toHaveBeenCalledWith(id);
-      expect(controller._processarImagemParaFoto).toHaveBeenCalledWith(req.file, req);
-      expect(controller.service.adicionarFoto).toHaveBeenCalledWith(id, novaFoto);
-      expect(CommonResponse.success).toHaveBeenCalledWith(res, equipamento, 200, 'Foto adicionada com sucesso.');
-    });
-
-    it('deve retornar erro se nenhuma foto for enviada', async () => {
-      req.params.id = 'abc123';
-      req.file = null;
-
-      await controller.adicionarFoto(req, res);
-
-      expect(CommonResponse.error).toHaveBeenCalledWith(res, 400, 'Nenhuma foto foi enviada.');
-    });
-
-    it('deve lançar erro se id for inválido', async () => {
-      req.params.id = 'idInvalido';
-      req.file = { mimetype: 'image/jpeg', path: 'path/to/foto.jpg', originalname: 'foto.jpg', size: 1024, filename: 'foto.jpg' };
-      const error = new Error('ID inválido');
-      error.name = 'ZodError';
-      EquipamentoIdSchema.parse.mockImplementation(() => { throw error; });
-
-      await controller.adicionarFoto(req, res);
-
-      expect(CommonResponse.error).toHaveBeenCalledWith(res, 400, expect.any(String));
-    });
-  });
-
-  describe('_obterDimensoesImagem', () => {
-    it('deve retornar dimensões de uma imagem válida', () => {
-      controller._validarHeaderImagem = jest.fn(() => true);
-      const caminhoArquivo = 'path/to/valid/image.jpg';
-      fs.existsSync.mockReturnValue(true);
-      fs.statSync.mockReturnValue({ size: 1024 });
-      fs.readFileSync.mockReturnValue(Buffer.from([0xFF, 0xD8, 0xFF, 0xE0]));
-      sizeOf.mockReturnValue({ width: 100, height: 100 });
-
-      const dimensoes = controller._obterDimensoesImagem(caminhoArquivo);
-
-      expect(dimensoes).toEqual({ width: 100, height: 100 });
+        it('deve retornar erro 403 para equipamento não ativo e usuário não dono', async () => {
+            req.params = { id: '1', fotoId: 'foto1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            serviceMock.listarPorId.mockResolvedValue({ _id: '1', equiUsuario: 'outroUserId', equiStatus: 'pendente' });
+            await controller.ListarFoto(req, res);
+            expect(CommonResponse.error).toHaveBeenCalledWith(res, 403, 'Acesso restrito a equipamentos ativos ou próprios.');
+        });
     });
 
-    it('deve lançar erro se arquivo não existir', () => {
-      fs.existsSync.mockReturnValue(false);
+    describe('erros inesperados', () => {
+        it('deve retornar erro 500 para falha inesperada em criar', async () => {
+            req.body = { nome: 'Câmera', equiValorDiaria: '100.50', equiQuantidadeDisponivel: '5', categoria: '1' };
+            equipamentoSchema.parse.mockReturnValue({ nome: 'Câmera', equiValorDiaria: 100.5, equiQuantidadeDisponivel: 5, categoria: '1', equiUsuario: 'userId', equiFotos: [], equiStatus: 'pendente' });
+            serviceMock.criar.mockRejectedValue({ status: 500 });
+            await expect(controller.criar(req, res)).rejects.toEqual(expect.objectContaining({ status: 500 }));
+        });
 
-      expect(() => controller._obterDimensoesImagem('path/to/invalid/image.jpg')).toThrow('Arquivo não encontrado');
+        it('deve retornar erro 500 para falha inesperada em listar', async () => {
+            serviceMock.listar.mockRejectedValue({ status: 500 });
+            await expect(controller.listar(req, res)).rejects.toEqual(expect.objectContaining({ status: 500 }));
+        });
+
+        it('deve retornar erro 500 para falha inesperada em atualizar', async () => {
+            req.params = { id: '1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            equipamentoUpdateSchema.parse.mockReturnValue({ nome: 'Câmera' });
+            serviceMock.listarPorId.mockResolvedValue({ _id: '1', equiUsuario: 'userId' });
+            serviceMock.atualizar.mockRejectedValue({ status: 500 });
+            await expect(controller.atualizar(req, res)).rejects.toEqual(expect.objectContaining({ status: 500 }));
+        });
+
+        it('deve retornar erro 500 para falha inesperada em aprovar', async () => {
+            req.params = { id: '1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            Usuario.findById.mockReturnValue({
+                populate: jest.fn().mockResolvedValue({ grupos: [{ nivelPermissao: 0 }] }),
+            });
+            serviceMock.aprovar.mockRejectedValue({ status: 500 });
+            await expect(controller.aprovar(req, res)).rejects.toEqual(expect.objectContaining({ status: 500 }));
+        });
+
+        it('deve retornar erro 500 para falha inesperada em reprovar', async () => {
+            req.params = { id: '1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            Usuario.findById.mockReturnValue({
+                populate: jest.fn().mockResolvedValue({ grupos: [{ nivelPermissao: 0 }] }),
+            });
+            serviceMock.reprovar.mockRejectedValue({ status: 500 });
+            await expect(controller.reprovar(req, res)).rejects.toEqual(expect.objectContaining({ status: 500 }));
+        });
+
+        it('deve retornar erro 500 para falha inesperada em atualizarStatus', async () => {
+            req.params = { id: '1' };
+            req.body = { status: 'ativo' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            equipamentoStatusSchema.parse.mockReturnValue({ status: 'ativo' });
+            serviceMock.atualizarStatus.mockRejectedValue({ status: 500 });
+            await expect(controller.atualizarStatus(req, res)).rejects.toEqual(expect.objectContaining({ status: 500 }));
+        });
+
+        it('deve retornar erro 500 para falha inesperada em adicionarFotos', async () => {
+            req.params = { id: '1' };
+            req.files = [{ mimetype: 'image/jpeg', path: 'path/to/foto.jpg', originalname: 'foto.jpg', size: 1024, filename: 'foto.jpg' }];
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            serviceMock.listarPorId.mockResolvedValue({ _id: '1', equiUsuario: 'userId' });
+            serviceMock.adicionarVariasFotos.mockRejectedValue({ status: 500 });
+            await expect(controller.adicionarFotos(req, res)).rejects.toEqual(expect.objectContaining({ status: 500 }));
+        });
+
+        it('deve retornar erro 500 para falha inesperada em ListarFoto', async () => {
+            req.params = { id: '1', fotoId: 'foto1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            serviceMock.listarPorId.mockResolvedValue({ _id: '1', equiUsuario: 'userId', equiStatus: 'ativo' });
+            serviceMock.ListarFoto.mockRejectedValue({ status: 500 });
+            await expect(controller.ListarFoto(req, res)).rejects.toEqual(expect.objectContaining({ status: 500 }));
+        });
     });
-
-    it('deve lançar erro se arquivo estiver vazio', () => {
-      fs.existsSync.mockReturnValue(true);
-      fs.statSync.mockReturnValue({ size: 0 });
-
-      expect(() => controller._obterDimensoesImagem('path/to/empty/image.jpg')).toThrow('Arquivo está vazio');
-    });
-
-    it('deve lançar erro se imagem não for válida', () => {
-      fs.existsSync.mockReturnValue(true);
-      fs.statSync.mockReturnValue({ size: 1024 });
-      fs.readFileSync.mockReturnValue(Buffer.from([0x00, 0x00, 0x00])); 
-
-      expect(() => controller._obterDimensoesImagem('path/to/invalid/image.jpg')).toThrow('Arquivo não é uma imagem válida');
-    });
-    it('deve lançar erro se dimensões não forem obtidas', () => {
-      controller._validarHeaderImagem = jest.fn(() => true); 
-      fs.existsSync.mockReturnValue(true);
-      fs.statSync.mockReturnValue({ size: 1024 });
-      fs.readFileSync.mockReturnValue(Buffer.from([0xFF, 0xD8, 0xFF, 0xE0]));
-      sizeOf.mockReturnValue({});
-
-      expect(() => controller._obterDimensoesImagem('path/to/image.jpg'))
-        .toThrow('Não foi possível obter dimensões válidas');
-    });
-
-  });
-
-  describe('_validarHeaderImagem', () => {
-    it('deve validar header JPEG', () => {
-      const buffer = Buffer.from([0xFF, 0xD8, 0xFF, 0xE0]); 
-      expect(controller._validarHeaderImagem(buffer)).toBe(true);
-    });
-
-    it('deve validar header PNG', () => {
-      const buffer = Buffer.from([0x89, 0x50, 0x4E, 0x47]); 
-      expect(controller._validarHeaderImagem(buffer)).toBe(true);
-    });
-
-    it('deve validar header RIFF', () => {
-      const buffer = Buffer.from([0x52, 0x49, 0x46, 0x46]); 
-      expect(controller._validarHeaderImagem(buffer)).toBe(true);
-    });
-
-
-    it('deve retornar false para buffer inválido', () => {
-      const buffer = Buffer.from([0x00, 0x00, 0x00, 0x00]);
-      expect(controller._validarHeaderImagem(buffer)).toBe(false);
-    });
-
-    it('deve retornar false para buffer muito curto', () => {
-      const buffer = Buffer.from([0xFF, 0xD8]);
-      expect(controller._validarHeaderImagem(buffer)).toBe(false);
-    });
-
-    it('deve retornar false para não-buffer', () => {
-      expect(controller._validarHeaderImagem('not a buffer')).toBe(false);
-    });
-  });
-
-  describe('_validarArquivoImagem', () => {
-    it('deve validar arquivo de imagem válido', () => {
-      const file = { mimetype: 'image/jpeg', path: 'path/to/foto.jpg', originalname: 'foto.jpg', size: 1024 };
-      expect(() => controller._validarArquivoImagem(file)).not.toThrow();
-    });
-
-    it('deve lançar erro se mimetype não for imagem', () => {
-      const file = { mimetype: 'text/plain', path: 'path/to/foto.jpg', originalname: 'foto.jpg', size: 1024 };
-      expect(() => controller._validarArquivoImagem(file)).toThrow('Arquivo foto.jpg não é uma imagem válida.');
-    });
-
-    it('deve lançar erro se arquivo estiver vazio', () => {
-      const file = { mimetype: 'image/jpeg', path: 'path/to/foto.jpg', originalname: 'foto.jpg', size: 0 };
-      expect(() => controller._validarArquivoImagem(file)).toThrow('Arquivo foto.jpg está vazio ou corrompido.');
-    });
-
-    it('deve lançar erro se arquivo exceder tamanho máximo', () => {
-      const file = { mimetype: 'image/jpeg', path: 'path/to/foto.jpg', originalname: 'foto.jpg', size: 6 * 1024 * 1024 };
-      expect(() => controller._validarArquivoImagem(file)).toThrow('Arquivo foto.jpg excede o tamanho máximo de 5MB.');
-    });
-  });
-
-  describe('_processarDadosFormulario', () => {
-    it('deve processar dados do formulário corretamente', () => {
-      const body = { equiValorDiaria: '100.50', equiQuantidadeDisponivel: '5', nome: 'Câmera' };
-      const resultado = controller._processarDadosFormulario(body);
-
-      expect(resultado).toEqual({
-        equiValorDiaria: 100.50,
-        equiQuantidadeDisponivel: 5,
-        nome: 'Câmera',
-      });
-    });
-  });
 });

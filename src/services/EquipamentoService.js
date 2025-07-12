@@ -158,7 +158,8 @@ class EquipamentoService {
     }
 
     const filename = path.basename(foto.url);
-    const uploadsDir = path.join(getDirname(), '..', '..', 'uploads', 'equipamentos');
+    const uploadsDir = path.resolve(process.cwd(), 'uploads/equipamentos');
+
     const filePath = path.join(uploadsDir, filename);
 
     if (!fs.existsSync(filePath)) {
