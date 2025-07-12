@@ -98,7 +98,7 @@ class DbConnect {
         } catch (error) {
             logger.error(`Erro ao desconectar do banco de dados em ${new Date().toISOString()}: ${error.message}`);
             if (process.env.NODE_ENV !== 'test') {
-                SendMail.enviaEmailErrorDbConect(error, new URL(import.meta.url).pathname, new Date());
+               // SendMail.enviaEmailErrorDbConect(error, new URL(import.meta.url).pathname, new Date());
             }
             throw error; // Re-lança o erro para permitir que o aplicativo lide com a falha de desconexão
         }

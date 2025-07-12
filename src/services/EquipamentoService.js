@@ -8,12 +8,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 
-const getDirname = () => path.dirname(fileURLToPath(import.meta.url));
+//const getDirname = () => path.dirname(fileURLToPath(import.meta.url));
 
 class EquipamentoService {
   constructor() {
     this.repository = new EquipamentoRepository();
-    this.resailaModel = Reserva;
+    this.reservaModel = Reserva;
   }
 
   async listar(filtros) {
@@ -40,12 +40,14 @@ class EquipamentoService {
   async criar(dados) {
     this._validarCamposObrigatorios(dados);
     this._validarFotosObrigatorias(dados);
-    
+
     const dadosComStatus = {
       ...dados,
       equiStatus: 'pendente'
     };
-    
+
+    console.log('Dados antes de criar:', dadosComStatus); // Adicione este log
+
     return await this.repository.criar(dadosComStatus);
   }
 
@@ -102,8 +104,10 @@ class EquipamentoService {
   }
 
   async atualizarStatus(id, usuarioId, novoStatus) {
+    console.log(`AtualizarStatus chamado para equipamento ${id} por usuário ${usuarioId} com novoStatus: ${novoStatus}`);
     const equipamento = await this.repository.listarPorId(id);
     if (!equipamento) throw new CustomError({ statusCode: HttpStatusCodes.NOT_FOUND.code, customMessage: 'Equipamento não encontrado.' });
+    console.log(`Equipamento antes de atualizar: ${equipamento.equiStatus}`);
     const donoId = equipamento.equiUsuario?._id?.toString() || equipamento.equiUsuario?.toString();
     if (!donoId || donoId !== usuarioId) throw new CustomError({ statusCode: HttpStatusCodes.FORBIDDEN.code, customMessage: 'Apenas o dono do equipamento pode alterar seu status.' });
     if (equipamento.equiStatus === 'pendente') throw new CustomError({ statusCode: HttpStatusCodes.FORBIDDEN.code, customMessage: 'Não é possível alterar o status de um equipamento pendente.' });
@@ -114,6 +118,7 @@ class EquipamentoService {
         statusReserva: { $in: ['pendente', 'confirmada'] },
         $or: [{ dataInicial: { $lte: new Date() }, dataFinal: { $gte: new Date() } }, { dataInicial: { $gte: new Date() } }],
       });
+      console.log(`Reservas ativas encontradas: ${reservasAtivas}`);
       if (reservasAtivas > 0) throw new CustomError({ statusCode: HttpStatusCodes.CONFLICT.code, customMessage: 'Não é possível inativar equipamento com reservas ativas.' });
     }
     if ((novoStatus === 'ativo' && equipamento.equiStatus !== 'inativo') || (novoStatus === 'inativo' && equipamento.equiStatus !== 'ativo')) {
@@ -121,23 +126,24 @@ class EquipamentoService {
     }
     equipamento.equiStatus = novoStatus;
     await equipamento.save();
+    console.log(`Equipamento após atualizar: ${equipamento.equiStatus}`);
     return equipamento;
   }
 
-async adicionarFotos(id, novasFotos) {
-  const equipamento = await this._buscarEquipamentoExistente(id);
+  async adicionarFotos(id, novasFotos) {
+    const equipamento = await this._buscarEquipamentoExistente(id);
 
-  if (!Array.isArray(novasFotos) || novasFotos.length === 0) {
-    throw new CustomError({
-      statusCode: HttpStatusCodes.BAD_REQUEST.code,
-      customMessage: 'Nenhuma foto válida fornecida.',
-    });
+    if (!Array.isArray(novasFotos) || novasFotos.length === 0) {
+      throw new CustomError({
+        statusCode: HttpStatusCodes.BAD_REQUEST.code,
+        customMessage: 'Nenhuma foto válida fornecida.',
+      });
+    }
+
+    equipamento.equiFotos.push(...novasFotos);
+    await equipamento.save();
+    return equipamento;
   }
-
-  equipamento.equiFotos.push(...novasFotos);
-  await equipamento.save();
-  return equipamento;
-}
 
 
   async ListarFoto(id, fotoId) {
@@ -152,7 +158,7 @@ async adicionarFotos(id, novasFotos) {
     }
 
     const filename = path.basename(foto.url);
-    const uploadsDir = path.join(getDirname(), '..', '..', 'Uploads', 'equipamentos');
+    const uploadsDir = path.join(getDirname(), '..', '..', 'uploads', 'equipamentos');
     const filePath = path.join(uploadsDir, filename);
 
     if (!fs.existsSync(filePath)) {
@@ -191,10 +197,10 @@ async adicionarFotos(id, novasFotos) {
       .comFaixaDeValor(filtros.minValor, filtros.maxValor);
 
     if (status === 'pendente') {
-      builder.comStatus('pendente');  
+      builder.comStatus('pendente');
     } else if (status === 'inativo' && usuarioId) {
       builder.comStatus('inativo');
-      builder.filtros.equiUsuario = usuarioId; 
+      builder.filtros.equiUsuario = usuarioId;
     } else if (usuarioId) {
       builder.filtros.$or = [
         { equiStatus: 'ativo' },
@@ -202,7 +208,7 @@ async adicionarFotos(id, novasFotos) {
         { equiStatus: 'inativo', equiUsuario: usuarioId }
       ];
     } else {
-      builder.comStatus('ativo'); 
+      builder.comStatus('ativo');
     }
 
     const query = builder.build();
