@@ -246,65 +246,67 @@ class EquipamentoController {
     return CommonResponse.success(res, equipamento, 200, `Equipamento ${status === 'ativo' ? 'ativado' : 'inativado'} com sucesso.`);
   }
 
- async adicionarFotos(req, res) {
-  const { id } = req.params;
-  const files = req.files;
-  const usuarioId = req.user_id?.toString();
+  async adicionarFotos(req, res) {
+    const { id } = req.params;
+    const files = req.files;
+    const usuarioId = req.user_id?.toString();
 
-  if (!usuarioId) {
-    return CommonResponse.error(res, HttpStatusCodes.UNAUTHORIZED.code, 'unauthorized', null, [], 'Token não informado ou inválido.');
+    EquipamentoIdSchema.parse(id);
+
+    if (!usuarioId) {
+      return CommonResponse.error(res, HttpStatusCodes.UNAUTHORIZED.code, 'unauthorized', null, [], 'Usuário não autenticado.');
+    }
+
+    if (!files || !Array.isArray(files) || files.length === 0) {
+      return CommonResponse.error(res, HttpStatusCodes.BAD_REQUEST.code, 'bad_request', null, [], 'Nenhuma foto foi enviada.');
+    }
+
+    const equipamento = await this.service.listarPorId(id, usuarioId);
+    if (!equipamento) {
+      return CommonResponse.error(res, HttpStatusCodes.NOT_FOUND.code, 'not_found', null, [], 'Equipamento não encontrado.');
+    }
+
+    if (equipamento.equiUsuario?.toString() !== usuarioId) {
+      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'forbidden', null, [], 'Apenas o dono do equipamento pode adicionar fotos.');
+    }
+
+    const novasFotos = files.map(file => this._processarImagemParaFoto(file, req));
+
+    const equipamentoAtualizado = await this.service.adicionarVariasFotos(id, novasFotos);
+
+    return CommonResponse.success(res, equipamentoAtualizado, 200, 'Fotos adicionadas com sucesso.');
   }
 
-  EquipamentoIdSchema.parse(id);
+  async ListarFoto(req, res) {
+    const { id, fotoId } = req.params;
+    const usuarioId = req.user_id?.toString();
 
-  if (!files || !Array.isArray(files) || files.length === 0) {
-    return CommonResponse.error(res, HttpStatusCodes.BAD_REQUEST.code, 'bad_request', null, [], 'Nenhuma foto foi enviada.');
+    EquipamentoIdSchema.parse(id);
+    EquipamentoIdSchema.parse(fotoId);
+
+    if (!usuarioId) {
+      return CommonResponse.error(res, HttpStatusCodes.UNAUTHORIZED.code, 'unauthorized', null, [], 'Usuário não autenticado.');
+    }
+
+    const equipamento = await this.service.listarPorId(id, null);
+
+    if (!equipamento) {
+      return CommonResponse.error(res, HttpStatusCodes.NOT_FOUND.code, 'not_found', null, [], 'Equipamento não encontrado.');
+    }
+
+    const isOwner = equipamento.equiUsuario?.toString() === usuarioId;
+    const usuario = await Usuario.findById(usuarioId).populate('grupos');
+    const isAdminOrMod = usuario && usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao));
+
+    if (!isOwner && !isAdminOrMod && equipamento.equiStatus !== 'ativo') {
+      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'forbidden', null, [], 'Acesso restrito a equipamentos ativos ou próprios.');
+    }
+
+    const { filePath, contentType } = await this.service.ListarFoto(id, fotoId);
+
+    res.setHeader('Content-Type', contentType);
+    return res.sendFile(filePath);
   }
-
-  const equipamento = await this.service.listarPorId(id, usuarioId);
-  if (!equipamento) {
-    return CommonResponse.error(res, HttpStatusCodes.NOT_FOUND.code, 'not_found', null, [], 'Equipamento não encontrado.');
-  }
-
-  if (equipamento.equiUsuario?.toString() !== usuarioId) {
-    return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'forbidden', null, [], 'Apenas o dono do equipamento pode adicionar fotos.');
-  }
-
-  const novasFotos = files.map(file => this._processarImagemParaFoto(file, req));
-
-  const equipamentoAtualizado = await this.service.adicionarVariasFotos(id, novasFotos);
-
-  return CommonResponse.success(res, equipamentoAtualizado, 200, 'Fotos adicionadas com sucesso.');
-}
- async ListarFoto(req, res) {
-  const { id, fotoId } = req.params;
-  const usuarioId = req.user_id?.toString();
-
-  EquipamentoIdSchema.parse(id);
-  EquipamentoIdSchema.parse(fotoId);
-
-  if (!usuarioId) {
-    return CommonResponse.error(res, HttpStatusCodes.UNAUTHORIZED.code, 'unauthorized', null, [], 'Token não informado ou inválido.');
-  }
-
-  const equipamento = await this.service.listarPorId(id, null);
-  if (!equipamento) {
-    return CommonResponse.error(res, HttpStatusCodes.NOT_FOUND.code, 'not_found', null, [], 'Equipamento não encontrado.');
-  }
-
-  const isOwner = equipamento.equiUsuario?.toString() === usuarioId;
-  const usuario = await Usuario.findById(usuarioId).populate('grupos');
-  const isAdminOrMod = usuario && usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao));
-
-  if (!isOwner && !isAdminOrMod && equipamento.equiStatus.toLowerCase() !== 'ativo') {
-    return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'forbidden', null, [], 'Acesso restrito a equipamentos ativos ou próprios.');
-  }
-
-  const { filePath, contentType } = await this.service.ListarFoto(id, fotoId);
-
-  res.setHeader('Content-Type', contentType);
-  return res.sendFile(filePath);
-}
 }
 
 export default EquipamentoController;

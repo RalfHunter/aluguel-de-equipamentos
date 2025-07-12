@@ -852,7 +852,6 @@ describe('PATCH /equipamentos/:id/status', () => {
 
         // console.log(userLoginRes.body);
 
-
       const fotoId = equipamento.equiFotos[0]._id;
       const res = await request(app)
         .get(`/equipamentos/${equipamento._id}/foto/${fotoId}`)
