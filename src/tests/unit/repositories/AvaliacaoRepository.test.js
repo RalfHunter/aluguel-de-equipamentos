@@ -23,8 +23,6 @@ let mockFilterBuilderInstance;
 jest.mock('../../../repositories/filters/AvaliacaoFilterBuilder.js', () => {
     const filterBuilderMock = {
         comOrdemNota: jest.fn().mockReturnThis(),
-        comNotaMinima: jest.fn().mockReturnThis(),
-        comNotaMaxima: jest.fn().mockReturnThis(),
         build: jest.fn().mockReturnValue({
         filtros: { nota: { $gte: 3 } },
         ordenacao: { nota: -1 },
@@ -62,6 +60,32 @@ describe('AvaliacaoRepository', () => {
     });
 
     describe('listar', () => {
+        it('deve listar avaliações com sucesso', async () => {
+            mongoose.Types.ObjectId.isValid.mockReturnValue(true);
+        
+            Avaliacao.paginate = jest.fn().mockResolvedValue('result_paginate');
+        
+            const req = { query: { equipamentoId: '1234567890abcdef12345678', page: '2', limit: '5' } };
+        
+            const result = await avaliacaoRepository.listar(req);
+        
+            expect(AvaliacaoFilterBuilder).toHaveBeenCalledWith(req.query);
+            expect(result).toBe('result_paginate');
+            expect(Avaliacao.paginate).toHaveBeenCalledWith(
+              expect.objectContaining({ equipamentos: '1234567890abcdef12345678' }),
+              expect.objectContaining({ page: 2, limit: 5 })
+            );
+          });
+        
+          it('deve lançar erro se paginate falhar', async () => {
+            mongoose.Types.ObjectId.isValid.mockReturnValue(true);
+            Avaliacao.paginate = jest.fn().mockRejectedValue(new Error('paginate fail'));
+        
+            const req = { query: { equipamentoId: '1234567890abcdef12345678' } };
+        
+            await expect(avaliacaoRepository.listar(req)).rejects.toThrow('paginate fail');
+          });
+
         it('deve lançar erro para equipamentoId inválido', async () => {
             mongoose.Types.ObjectId.isValid.mockReturnValue(false);
 
@@ -174,9 +198,18 @@ describe('AvaliacaoRepository', () => {
                 })
             );
         });
+        
     });
 
     describe('recalcularMedia', () => {
+        it('deve lançar erro se findById falhar', async () => {
+            Equipamento.findById.mockReturnValue({
+              populate: jest.fn().mockRejectedValue(new Error('find fail')),
+            });
+        
+            await expect(avaliacaoRepository.recalcularMedia('id')).rejects.toThrow('find fail');
+        });
+
         it('deve recalcular a média de notas de um equipamento', async () => {
             const equipamentoId = 'abcdef1234567890abcdef12';
             const mockEquipamento = {

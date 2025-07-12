@@ -295,7 +295,7 @@ describe('usuarioRoute', () => {
                 expect(res.body?.data?.ativo).toEqual(userLogado?.ativo)
                 expect(res.body?.data?.fotoUsuario).toEqual(userLogado?.fotoUsuario)
                 expect(res.body?.errors).toHaveLength(0)
-                
+                userLogado.nome = res.body?.data?.nome
             
         });
        it('deve retornar erro ter campos unicos duplicados no banco, neste caso, email', async()=>{

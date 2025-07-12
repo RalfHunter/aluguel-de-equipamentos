@@ -8,6 +8,8 @@ export default  {
       "/utils/logger.js",
       "utils/helpers/HttpStatusCodes.js"
     ],
+    // testMatch:['**/AuthController.test.js', '**/AuthService.test.js', '**/authRoutes.test.js']
+    // testMatch:['**/multerUserConfig.test.js']
     // testMatch:['**/messages.test.js']
     // testMatch:['**/AuthController.test.js']
     // testMatch:['**/AuthService.test.js']
@@ -21,9 +23,10 @@ export default  {
     // testMatch:['**/GrupoFilterBuilder.test.js']
     //testMatch:['**/UsuarioRepository.test.js']
     // testMatch:['**/AuthMiddleware.test.js']
+    // testMatch:['**/AuthPermission.test.js']
     // testMatch:['**/errorHandler.test.js']
     // testMatch:['**/GrupoSchema.test.js']
-    // testMatch:['**/usuarioRoutes.test.js']
+    // testMatch:['**/usuarioRoutes.test.js'] 
     // testMatch:['**/authRoutes.test.js']
     // testMatch:['**/GrupoController.test.js']
     // testMatch:['**/GrupoService.test.js']
@@ -34,6 +37,7 @@ export default  {
     // testMatch:['**/CustomError.test.js']
     // testMatch:['**/utils/**/*.test.js']
     // testMatch:['**/MulterErrorHandler.test.js', '**/AuthPermission.test.js', '**/AuthMiddleware.test.js', '**/multerUserConfig.test.js', '**/multerConfig.test.js']
+    // testMatch:['**/LoginSchema.test.js']
     // testMatch:
     // ['**/AuthController.test.js', 
     //   '**/AuthService.test.js',
@@ -47,11 +51,26 @@ export default  {
     //   '**/GrupoService.test.js',
     //   '**/GrupoRepository.test.js',
     //   '**/UsuarioSchema.test.js',
-    //   '**/ValidatorUsuario.test.js',
     //   '**/UsuarioFilterBuilder.test.js',
     //   '**/Grupo.test.js',
-    //   '**/AuthPermission.test.js'
+    //   '**/AuthPermission.test.js',
+    //   '**/errorHandler.test.js',
+    //   '**/ValidatorUsuario.test.js',
+    //   '**/GrupoSchema.test.js',
+    //   '**/UsuarioQuerySchema.test.js',
+    //   '**/GrupoQuerySchema.test.js',
+    //   '**/CustomError.test.js',
+    //   '**/CommonResponse.test.js',
+    //   '**/HttpStatusCodes.test.js',
+    //   '**/index.test.js',
+    //   '**/messages.test.js',
+    //   '**/randomPastDate.test.js',
+    //   '**/StatusService.test.js',
+    //   '**/LoginSchema.test.js'
     // ]
+    // testMatch:['**/GrupoQuerySchema.test.js']
+    // testMatch:['**/errorHandler.test.js']
+    // testMatch:['**/Grupo.test.js']
     //testMatch:['**/Reserva.test.js']
     // testMatch:['**/ReservaController.test.js', '**/ReservaService.test.js', '**/ReservaRepository.test.js', '**/ReservaFilterBuilder.test.js']
 };

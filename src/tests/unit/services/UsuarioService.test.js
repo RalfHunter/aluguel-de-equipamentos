@@ -179,13 +179,14 @@ describe('UsuarioService', () => {
                 email: "novo@gmail.com",
                 fotoUsuario: "http://lorempixel.com/780/560"
             }
+            const id = '67959501ea0999e0a0fa9f58'
             req.body = mockData
-            req.params = { id: '67959501ea0999e0a0fa9f58' }
+            req.params = { id }
             usuarioService.model.buscarPorEmail.mockResolvedValue(null)
             usuarioService.model.buscarPorTelefone.mockResolvedValue(null)
-            usuarioService.model.updateUsuario.mockResolvedValue({ ...req.params, ...mockData })
-            const resultado = await usuarioService.updateUsuario({ ...req.params }, { mockData })
-            expect(resultado).toEqual({ ...req.params, ...mockData })
+            usuarioService.model.updateUsuario.mockResolvedValue({ _id: id, ...mockData })
+            const resultado = await usuarioService.updateUsuario(id, mockData)
+            expect(resultado).toEqual({ _id: id, ...mockData })
         });
         it('deve atualizar parte dos dados de um usuário com credenciais válidas', async () => {
             const mockData = {
@@ -194,15 +195,15 @@ describe('UsuarioService', () => {
                 telefone: "(69) 8888-7777",
                 fotoUsuario: "http://lorempixel.com/780/560"
             }
-            const mockDataAtualazido = mockData
-            mockDataAtualazido.nome = "Novo Nome"
-            req.body = mockDataAtualazido
-            req.params = { id: '67959501ea0999e0a0fa9f58' }
+            const mockDataAtualizado = { ...mockData, nome: "Novo Nome" }
+            const id = '67959501ea0999e0a0fa9f58'
+            req.body = mockDataAtualizado
+            req.params = { id }
             usuarioService.model.buscarPorEmail.mockResolvedValue(null)
             usuarioService.model.buscarPorTelefone.mockResolvedValue(null)
-            usuarioService.model.updateUsuario.mockResolvedValue({ ...req.params, ...mockDataAtualazido })
-            const resultado = await usuarioService.updateUsuario({ ...req.params }, mockDataAtualazido.nome)
-            expect(resultado).toEqual({ ...req.params, ...mockDataAtualazido })
+            usuarioService.model.updateUsuario.mockResolvedValue({ _id: id, ...mockDataAtualizado })
+            const resultado = await usuarioService.updateUsuario(id, mockDataAtualizado)
+            expect(resultado).toEqual({ _id: id, ...mockDataAtualizado })
         });
         it('deve retornar um erro ao tentar atualizar o email já persistente em outro usuário', async () => {
             const mockData = {
@@ -211,7 +212,8 @@ describe('UsuarioService', () => {
                 telefone: "(69) 8888-7777",
                 fotoUsuario: "http://lorempixel.com/780/560"
             }
-            req.params = { id: '67959501ea0999e0a0fa9f58' }
+            const id = '67959501ea0999e0a0fa9f58'
+            req.params = { id }
             usuarioService.model.buscarPorEmail.mockRejectedValue(new CustomError({
                 statusCode: 409,
                 errorType: "Conflict",
@@ -219,8 +221,8 @@ describe('UsuarioService', () => {
                 customMessage: messages.error.resourceConflict("Usuário", "E-mail")
             }))
             usuarioService.model.buscarPorTelefone.mockResolvedValue(null)
-            await expect(usuarioService.updateUsuario(req.params, mockData)).rejects.toThrow(CustomError)
-            // await expect(usuarioService.updateUsuario(req.params, mockData)).rejects.toThrowErrorMatchingInlineSnapshot(`"Conflito de recurso em Usuário contém E-mail."`)
+            await expect(usuarioService.updateUsuario(id, mockData)).rejects.toThrow(CustomError)
+            // await expect(usuarioService.updateUsuario(id, mockData)).rejects.toThrowErrorMatchingInlineSnapshot(`"Conflito de recurso em Usuário contém E-mail."`)
         });
         it('deve retornar um erro ao tentar atualizar o telefone já persistente em outro usuário', async () => {
             const mockData = {
@@ -229,7 +231,8 @@ describe('UsuarioService', () => {
                 telefone: "(69) 8888-7777",
                 fotoUsuario: "http://lorempixel.com/780/560"
             }
-            req.params = { id: '67959501ea0999e0a0fa9f58' }
+            const id = '67959501ea0999e0a0fa9f58'
+            req.params = { id }
             usuarioService.model.buscarPorEmail.mockResolvedValue(null)
             usuarioService.model.buscarPorTelefone.mockRejectedValue(new CustomError({
                 statusCode: 409,
@@ -237,8 +240,8 @@ describe('UsuarioService', () => {
                 details: [],
                 customMessage: messages.error.resourceConflict("Usuário", "Telefone")
             }))
-            await expect(usuarioService.updateUsuario(req.params, mockData)).rejects.toThrow(CustomError)
-            // await expect(usuarioService.updateUsuario(req.params, mockData)).rejects.toThrowErrorMatchingInlineSnapshot(`"Conflito de recurso em Usuário contém Telefone."`)
+            await expect(usuarioService.updateUsuario(id, mockData)).rejects.toThrow(CustomError)
+            // await expect(usuarioService.updateUsuario(id, mockData)).rejects.toThrowErrorMatchingInlineSnapshot(`"Conflito de recurso em Usuário contém Telefone."`)
         });
     });
     describe('alterarStatus', () => {
@@ -598,9 +601,9 @@ describe('UsuarioService', () => {
             expect(resultado).toEqual({
                 nome: 'João Silva Atualizado',
                 email: 'joao@teste.com',
-                CPF: '123.456.789-00',
                 telefone: '(69) 88888-8888',
                 dataNascimento: '1990-01-01',
+                CPF: '123.456.789-00',
                 fotoUsuario: 'uploads/usuarios/foto.jpg',
                 notaMedia: 4.5,
                 grupos: ['Administrador', 'Usuario']
@@ -657,9 +660,9 @@ describe('UsuarioService', () => {
             expect(resultado).toEqual({
                 nome: 'João Silva Novo Nome',
                 email: 'joao@teste.com',
-                CPF: '123.456.789-00',
                 telefone: undefined,
                 dataNascimento: '1990-01-01',
+                CPF: '123.456.789-00',
                 fotoUsuario: 'uploads/usuarios/foto.jpg',
                 notaMedia: 4.5,
                 grupos: ['Usuario']

@@ -1,10 +1,9 @@
-import { json } from 'express'
+
 import AuthController from '../../../controllers/AuthController.js'
-import AuthService from '../../../services/AuthService.js'
-import { CommonResponse, CustomError, messages } from '../../../utils/helpers/index.js'
-import { tr } from '@faker-js/faker'
+
+import { CustomError, messages } from '../../../utils/helpers/index.js'
 import jwt from 'jsonwebtoken'
-import { promisify } from 'util'
+
 
 
 jest.mock('../../../services/AuthService.js')

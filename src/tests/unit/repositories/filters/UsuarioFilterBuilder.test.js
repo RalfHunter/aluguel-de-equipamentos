@@ -76,12 +76,12 @@ describe('UsuarioFilterBuilder', () =>{
 })
 =======
 // @ts-nocheck
-import UsuarioFilterBuilder from "../../../repositories/filters/UsuarioFilterBuilder.js";
-import Usuario from "../../../models/Usuario.js";
-import GrupoRepository from "../../../repositories/GrupoRepository.js";
+import UsuarioFilterBuilder from "../../../../repositories/filters/UsuarioFilterBuilder.js";
+import Usuario from "../../../../models/Usuario.js";
+import GrupoRepository from "../../../../repositories/GrupoRepository.js";
 
-jest.mock("../../../models/Usuario.js");
-jest.mock("../../../repositories/GrupoRepository.js");
+jest.mock("../../../../models/Usuario.js");
+jest.mock("../../../../repositories/GrupoRepository.js");
 
 describe('UsuarioFilterBuilder', () => {
     let usuarioFilterBuilder;

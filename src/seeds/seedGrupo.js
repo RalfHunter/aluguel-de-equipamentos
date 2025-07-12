@@ -8,7 +8,6 @@ const grupoAdmin = {
     nivelPermissao: 0,
     permissoes: [{
         rota: "grupos",
-        dominio: "locahost",
         ativo: true,
         buscar: true,
         enviar: true,
@@ -18,7 +17,6 @@ const grupoAdmin = {
     },
     {
         rota: "usuarios",
-        dominio: "locahost",
         ativo: true,
         buscar: true,
         enviar: true,
@@ -28,7 +26,6 @@ const grupoAdmin = {
     },
     {
         rota: "usuarios-id-foto",
-        dominio: "locahost",
         ativo: true,
         buscar: true,
         enviar: true,
@@ -38,7 +35,6 @@ const grupoAdmin = {
     },
     {
         rota: 'perfil',
-        dominio: 'localhost',
         ativo: true,
         buscar: true,
         enviar: true,
@@ -48,7 +44,6 @@ const grupoAdmin = {
     },
     {
         rota: "avaliacoes:id",
-        dominio: "locahost",
         ativo: false,
         buscar: false,
         enviar: false,
@@ -115,7 +110,10 @@ const grupoModerador = {
     nivelPermissao: 50,
     permissoes: [{
         rota: "usuarios",
+<<<<<<< HEAD
         dominio: "localhost",
+=======
+>>>>>>> c159afa87539525aa21792bed5b0a5b2aaf8b142
         ativo: true,
         buscar: true,
         enviar: true,
@@ -125,7 +123,6 @@ const grupoModerador = {
     },
     {
         rota: 'perfil',
-        dominio: 'localhost',
         ativo: true,
         buscar: false,
         enviar: true,
@@ -135,7 +132,10 @@ const grupoModerador = {
     },
     {
         rota: "avaliacoes:id",
+<<<<<<< HEAD
         dominio: "localhost",
+=======
+>>>>>>> c159afa87539525aa21792bed5b0a5b2aaf8b142
         ativo: false,
         buscar: false,
         enviar: false,
@@ -184,7 +184,6 @@ const grupoUsuario = {
     nivelPermissao: 100,
     permissoes: [{
         rota: 'usuarios',
-        dominio: 'localhost',
         ativo: true,
         buscar: false,
         enviar: true,
@@ -194,7 +193,6 @@ const grupoUsuario = {
     },
     {
         rota: 'perfil',
-        dominio: 'localhost',
         ativo: true,
         buscar: true,
         enviar: true,
@@ -204,7 +202,6 @@ const grupoUsuario = {
     },
     {
         rota: 'usuarios-id-foto',
-        dominio: 'localhost',
         ativo: true,
         buscar: true,
         enviar: true,

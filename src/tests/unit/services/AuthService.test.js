@@ -1,5 +1,5 @@
 import AuthService from '../../../services/AuthService.js';
-import UsuarioRepository from '../../../repositories/UsuarioRepository.js'
+
 import CustomError from '../../../utils/helpers/CustomError.js';
 import messages from "../../../utils/helpers/messages.js"
 import jwt from 'jsonwebtoken';
@@ -40,6 +40,7 @@ describe('AuthService - carregatokens', () => {
             buscarPorCodigoRecuperacao: jest.fn(),
             buscarPorTokenUnico: jest.fn(),
             atualizar: jest.fn(),
+            alterar: jest.fn(),
             atualizarSenha: jest.fn(),
             removeToken: jest.fn(),
             armazenarTokens: jest.fn()
@@ -118,10 +119,12 @@ describe('AuthService - carregatokens', () => {
                 nota: 0,
                 email: "Witney_Saraiva75@hotmail.com"
             }
+            service.repository.buscarPorId.mockResolvedValue(mockData)
             service.repository.removeToken.mockResolvedValue(mockData)
             const resultado = await service.revoke(mockData.id)
+            expect(service.repository.buscarPorId).toHaveBeenCalledWith(mockData.id)
             expect(service.repository.removeToken).toHaveBeenCalledWith(mockData.id)
-            expect(resultado).toEqual({ data: mockData })
+            expect(resultado).toEqual({ message: "Tokens revogados com sucesso." })
         });
         it('falha ao realizar revoke, id passado não existe', async () => {
             const mockData = {
@@ -138,13 +141,13 @@ describe('AuthService - carregatokens', () => {
                 customMessage: messages.error.resourceNotFound('Usuário')
             }))
             await expect(service.revoke(null)).rejects.toMatchObject({
-                statusCode: 404,
-                errorType: 'resourceNotFound',
-                field: "Usuário",
+                statusCode: 400,
+                errorType: 'validationError',
+                field: "id",
                 details: [],
-                customMessage: 'Recurso não encontrado em Usuário.'
+                customMessage: 'ID do usuário é obrigatório para revogar tokens.'
             });
-            expect(service.repository.removeToken).toHaveBeenCalledWith(null)
+            // Não deveria chamar o repository quando a validação falha
         });
     });
     describe('logout', () => {
@@ -157,10 +160,12 @@ describe('AuthService - carregatokens', () => {
                 ativo: true,
                 status: "ativo"
             }
+            service.repository.buscarPorId.mockResolvedValue(mockData)
             service.repository.removeToken.mockResolvedValue(mockData)
-            const resultado = await service.logout(mockData.id)
+            const resultado = await service.logout(mockData.id, 'valid-token')
+            expect(service.repository.buscarPorId).toHaveBeenCalledWith(mockData.id)
             expect(service.repository.removeToken).toHaveBeenCalledWith(mockData.id)
-            expect(resultado).toEqual({ data: mockData })
+            expect(resultado).toEqual({ message: "Logout realizado com sucesso." })
         });
         it('falha ao realizar revoke, id passado não existe', async () => {
             const mockData = {
@@ -179,13 +184,13 @@ describe('AuthService - carregatokens', () => {
                 customMessage: messages.error.resourceNotFound('Usuário')
             }))
             await expect(service.logout(null)).rejects.toMatchObject({
-                statusCode: 404,
-                errorType: 'resourceNotFound',
-                field: "Usuário",
+                statusCode: 400,
+                errorType: 'validationError',
+                field: "id",
                 details: [],
-                customMessage: 'Recurso não encontrado em Usuário.'
+                customMessage: 'ID do usuário é obrigatório para logout.'
             });
-            expect(service.repository.removeToken).toHaveBeenCalledWith(null)
+            // Não deveria chamar o repository quando a validação falha
         });
     });
     describe('login', () => {
@@ -439,7 +444,7 @@ describe('AuthService - carregatokens', () => {
                 nome: 'Usuario',
                 email: 'usuario@gmail.com',
                 senha: '$2b$08$g3EwTL5DLNQDtzqYaJs/COncY6TNqmkuxjyXS6HfxTYqX0YNTtsia',
-                refreshToken: null,
+                refreshToken: 'valid-token',
                 accessToken: null,
                 ativo: true,
                 status: "ativo"
@@ -450,7 +455,7 @@ describe('AuthService - carregatokens', () => {
                     nome: 'Usuario',
                     email: 'usuario@gmail.com',
                     senha: '$2b$08$g3EwTL5DLNQDtzqYaJs/COncY6TNqmkuxjyXS6HfxTYqX0YNTtsia',
-                    refreshToken: null,
+                    refreshToken: 'valid-token',
                     accessToken: null,
                     ativo: true,
                 status: "ativo"
@@ -458,7 +463,7 @@ describe('AuthService - carregatokens', () => {
             })
             service.TokenUtil.generateAccessToken.mockResolvedValue(true)
 
-            await expect(service.refresh(mockData.id, null)).resolves.toMatchObject({ user: mockData })
+            await expect(service.refresh(mockData._id, 'valid-token')).resolves.toMatchObject({ user: mockData })
         });
         it('deve gerar novo refreshToken se SINGLE_SESSION_REFRESH_TOKEN for true', async () => {
             process.env.SINGLE_SESSION_REFRESH_TOKEN = 'true';
@@ -485,7 +490,7 @@ describe('AuthService - carregatokens', () => {
         });
         it('erro ao realizar refresh, usuário é null', async () => {
             service.repository.buscarPorId.mockResolvedValue(null)
-            await expect(service.refresh(id, token)).rejects.toThrowErrorMatchingInlineSnapshot(`"Recurso não encontrado"`)
+            await expect(service.refresh(id, token)).rejects.toThrowErrorMatchingInlineSnapshot(`"Usuário não encontrado para renovação de token."`)
             expect(service.repository.buscarPorId).toHaveBeenCalledWith(id, { includeTokens: true })
         });
         it('erro ao relizar refresh, usuário com refreshToken diferente de token', async () => {
@@ -507,7 +512,7 @@ describe('AuthService - carregatokens', () => {
                 expect(err.statusCode).toEqual(401)
                 expect(err.errorType).toEqual('invalidToken')
                 expect(err.field).toEqual('Token')
-                expect(err.customMessage).toContain('Token')
+                expect(err.customMessage).toContain('Refresh token inválido')
             }
         })
 
@@ -546,7 +551,7 @@ describe('AuthService - carregatokens', () => {
                 expect(err).toBeInstanceOf(CustomError)
                 expect(err.statusCode).toEqual(404)
                 expect(err.errorType).toEqual('notFound')
-                expect(err.customMessage).toEqual('Recurso não encontrado')
+                expect(err.customMessage).toEqual('Email não encontrado no sistema.')
             }
             expect(service.repository.buscarPorEmailCadastrado).toHaveBeenCalledWith(req.body.email)
         });
@@ -568,7 +573,7 @@ describe('AuthService - carregatokens', () => {
             } catch (err) {
                 expect(err).toBeInstanceOf(CustomError)
                 expect(err.statusCode).toEqual(403)
-                expect(err.errorType).toEqual('unauthorized')
+                expect(err.errorType).toEqual('forbidden')
                 expect(err.customMessage).toEqual("Se sua conta foi desativada, ela não pode mais ser acessada. Para dúvidas, entre em contato com o suporte.")
             }
             expect(service.repository.buscarPorEmailCadastrado).toHaveBeenCalledWith(req.body.email)
@@ -630,6 +635,7 @@ describe('AuthService - carregatokens', () => {
             const mockUsuario = {
                 _id: usuarioId,
                 email: 'usuario@gmail.com',
+                ativo: true,
                 exp_tokenUnico_recuperacao: new Date(Date.now() + 60 * 60 * 1000) // 1 hora no futuro
             };
 
@@ -672,6 +678,7 @@ describe('AuthService - carregatokens', () => {
             const mockUsuario = {
                 _id: usuarioId,
                 email: 'usuario@gmail.com',
+                ativo: true,
                 exp_tokenUnico_recuperacao: new Date(Date.now() - 60 * 60 * 1000) // 1 hora no passado
             };
 
@@ -694,6 +701,7 @@ describe('AuthService - carregatokens', () => {
             const mockUsuario = {
                 _id: usuarioId,
                 email: 'usuario@gmail.com',
+                ativo: true,
                 exp_tokenUnico_recuperacao: new Date(Date.now() + 60 * 60 * 1000)
             };
 
@@ -716,12 +724,125 @@ describe('AuthService - carregatokens', () => {
 
             service.TokenUtil.decodePasswordRecoveryToken.mockRejectedValue(new Error('Token inválido'));
 
-            await expect(service.atualizarSenhaToken(tokenRecuperacao, senhaBody)).rejects.toThrow('Token inválido');
+            await expect(service.atualizarSenhaToken(tokenRecuperacao, senhaBody)).rejects.toThrow('Erro ao validar token de recuperação.');
 
             expect(service.TokenUtil.decodePasswordRecoveryToken).toHaveBeenCalledWith(
                 tokenRecuperacao,
                 process.env.JWT_SECRET_PASSWORD_RECOVERY
             );
         });
-    })
+        it('deve falhar se a senha for nula no body', async () => {
+            const tokenRecuperacao = 'token-valido';
+            const senhaBody = { senha: null }; // Senha nula
+
+            await expect(service.atualizarSenhaToken(tokenRecuperacao, senhaBody)).rejects.toMatchObject({
+                statusCode: 400,
+                field: 'senha',
+                customMessage: 'Nova senha é obrigatória.'
+            });
+        });
+
+        it('deve falhar se o usuário não estiver ativo no atualizarSenhaToken', async () => {
+            const tokenRecuperacao = 'token-valido';
+            const senhaBody = { senha: 'NovaSenha@123' };
+            const usuarioId = '123';
+
+            const mockUsuario = {
+                _id: usuarioId,
+                email: 'usuario@gmail.com',
+                ativo: false, // Usuário inativo
+                exp_tokenUnico_recuperacao: new Date(Date.now() + 60 * 60 * 1000)
+            };
+
+            service.TokenUtil.decodePasswordRecoveryToken.mockResolvedValue(usuarioId);
+            service.repository.buscarPorTokenUnico.mockResolvedValue(mockUsuario);
+
+            await expect(service.atualizarSenhaToken(tokenRecuperacao, senhaBody)).rejects.toMatchObject({
+                statusCode: 403,
+                field: 'Status',
+                customMessage: 'Usuário desativado. Não é possível alterar a senha.'
+            });
+        });
+
+        it('deve lidar com erro ao limpar token após atualização da senha', async () => {
+            const tokenRecuperacao = 'token-valido';
+            const senhaBody = { senha: 'NovaSenha@123' };
+            const usuarioId = '123';
+
+            const mockUsuario = {
+                _id: usuarioId,
+                email: 'usuario@gmail.com',
+                ativo: true,
+                exp_tokenUnico_recuperacao: new Date(Date.now() + 60 * 60 * 1000)
+            };
+
+            const mockUsuarioAtualizado = {
+                _id: usuarioId,
+                email: 'usuario@gmail.com',
+                senha: 'hashedPassword'
+            };
+
+            service.TokenUtil.decodePasswordRecoveryToken.mockResolvedValue(usuarioId);
+            service.repository.buscarPorTokenUnico.mockResolvedValue(mockUsuario);
+            service.repository.atualizarSenha.mockResolvedValue(mockUsuarioAtualizado);
+            // Simula erro ao limpar o token - isso deve apenas gerar um warning
+            service.repository.alterar.mockRejectedValue(new Error('Erro ao limpar token'));
+
+            // Deve ainda retornar sucesso, mesmo com erro ao limpar token
+            const result = await service.atualizarSenhaToken(tokenRecuperacao, senhaBody);
+
+            expect(result).toEqual({ message: 'Senha atualizada com sucesso.' });
+            expect(service.repository.atualizarSenha).toHaveBeenCalledWith(usuarioId, expect.any(String));
+        });
+        it('deve falhar se token for string "null"', async () => {
+            const tokenRecuperacao = 'null'; // String "null"
+            const senhaBody = { senha: 'NovaSenha@123' };
+
+            await expect(service.atualizarSenhaToken(tokenRecuperacao, senhaBody)).rejects.toMatchObject({
+                statusCode: 400,
+                field: 'token',
+                customMessage: 'Token de recuperação é obrigatório.'
+            });
+        });
+
+        it('deve falhar se token for string "undefined"', async () => {
+            const tokenRecuperacao = 'undefined'; // String "undefined"
+            const senhaBody = { senha: 'NovaSenha@123' };
+
+            await expect(service.atualizarSenhaToken(tokenRecuperacao, senhaBody)).rejects.toMatchObject({
+                statusCode: 400,
+                field: 'token',
+                customMessage: 'Token de recuperação é obrigatório.'
+            });
+        });
+
+        it('deve falhar se senhaBody for null', async () => {
+            const tokenRecuperacao = 'token-valido';
+            const senhaBody = null; // senhaBody nulo
+
+            await expect(service.atualizarSenhaToken(tokenRecuperacao, senhaBody)).rejects.toMatchObject({
+                statusCode: 400,
+                field: 'senha',
+                customMessage: 'Nova senha é obrigatória.'
+            });
+        });
+
+        it('deve tratar erro JsonWebTokenError no atualizarSenhaToken', async () => {
+            const tokenRecuperacao = 'token-invalido';
+            const senhaBody = { senha: 'NovaSenha@123' };
+
+            const jwtError = new Error('Token malformado');
+            jwtError.name = 'JsonWebTokenError';
+
+            service.TokenUtil.decodePasswordRecoveryToken.mockRejectedValue(jwtError);
+
+            await expect(service.atualizarSenhaToken(tokenRecuperacao, senhaBody)).rejects.toMatchObject({
+                statusCode: 401,
+                field: 'token',
+                customMessage: 'Token de recuperação inválido ou malformado.'
+            });
+        });
+
+
+    });
 });
