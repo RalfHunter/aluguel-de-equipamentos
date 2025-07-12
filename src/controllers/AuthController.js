@@ -5,7 +5,7 @@ import { promisify } from 'util';
 import { CommonResponse, CustomError, HttpStatusCodes, errorHandler, messages, StatusService, asyncWrapper } from '../utils/helpers/index.js';
 import { LoginSchema } from '../utils/validators/schemas/zod/LoginSchema.js';
 import {UsuarioUpdateSchema } from '../utils/validators/schemas/zod/UsuarioSchema.js';
-import { objectIdMongo} from '../utils/validators/schemas/zod/querys/UsuarioQuerySchema.js';
+import { UsuarioIdSchema} from '../utils/validators/schemas/zod/querys/UsuarioQuerySchema.js';
 import { RequestAuthorizationSchema } from '../utils/validators/schemas/zod/querys/RequestAuthorizationSchema.js';
 
 import AuthService from '../services/AuthService.js';
@@ -47,7 +47,7 @@ class AuthController {
   revoke = async (req, res) => {
     // Extrai ID do usuario a ter o token revogado do body
     const id = req.body.id;
-    objectIdMongo.parse(id)
+    UsuarioIdSchema.parse(id)
     // remove o token do banco de dados e retorna uma resposta de sucesso
     const data = await this.service.revoke(id);
     return CommonResponse.success(res);
