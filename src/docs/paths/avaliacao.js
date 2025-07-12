@@ -98,13 +98,13 @@ const avaliacaoRoutes = {
       security: [{ bearerAuth: [] }],
       parameters: [
         {
-            name: "usuarioId",
-            in: "query",
-            required: true,
-            schema: {
-              type: "string",
-            },
-            description: "ID do usuário que irá avaliar",
+          name: "usuarioId",
+          in: "query",
+          required: true,
+          schema: {
+            type: "string",
+          },
+          description: "ID do usuário que irá avaliar",
         },
         {
           name: "equipamentoId",
@@ -183,14 +183,14 @@ const avaliacaoRoutes = {
           description: "ID da avaliação a ser atualizada",
         },
         {
-            name: "usuarioId",
-            in: "query",
-            required: true,
-            schema: {
-              type: "string",
-            },
-            description: "ID do usuário que irá atualizar",
+          name: "usuarioId",
+          in: "query",
+          required: true,
+          schema: {
+            type: "string",
           },
+          description: "ID do usuário que irá atualizar",
+        },
       ],
       requestBody: {
         required: true,
@@ -249,15 +249,6 @@ const avaliacaoRoutes = {
           },
           description: "ID da avaliação a ser excluída",
         },
-        {
-            name: "usuarioId",
-            in: "query",
-            required: true,
-            schema: {
-              type: "string",
-            },
-            description: "ID do usuário",
-          },
       ],
       responses: {
         200: {

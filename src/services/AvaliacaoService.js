@@ -108,15 +108,15 @@ class AvaliacaoService {
             });
         }
     
-        const usuario = await Usuario.findById(usuarioId);
-        if (!usuario) {
-            throw new CustomError({
-                statusCode: 403,
-                errorType: 'unauthorized',
-                field: 'Usuario',
-                customMessage: 'Apenas administradores podem remover avaliações.',
-            });
-        }
+        // const usuario = await Usuario.findById(usuarioId);
+        // if (!usuario) {
+        //     throw new CustomError({
+        //         statusCode: 403,
+        //         errorType: 'unauthorized',
+        //         field: 'Usuario',
+        //         customMessage: 'Apenas administradores podem remover avaliações.',
+        //     });
+        // }
     
         const resultado = await this.repository.remover(avaliacaoId, usuarioId);
         return resultado;

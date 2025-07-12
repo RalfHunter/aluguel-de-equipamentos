@@ -6,10 +6,7 @@ import { faker } from "@faker-js/faker";
 import getGlobalFakeMapping from "./globalFakeMapping.js";
 import Grupo from "../models/Grupo.js";
 
-
 // await DbConect.conectar();
-
-
 
 export async function gerarSenhaHash(senhaPura){
     return bcrypt.hashSync(senhaPura, 8);

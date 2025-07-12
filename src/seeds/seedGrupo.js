@@ -43,8 +43,8 @@ const grupoAdmin = {
         excluir: false
     },
     {
-        rota: "avaliacoes-id",
-        ativo: false,
+        rota: "avaliacoes",
+        ativo: true,
         buscar: false,
         enviar: false,
         substituir: false,
@@ -128,9 +128,8 @@ const grupoModerador = {
         excluir: false
     },
     {
-        rota: "avaliacoes-id",
-        dominio: "localhost",
-        ativo: false,
+        rota: "avaliacoes",
+        ativo: true,
         buscar: false,
         enviar: false,
         substituir: false,
