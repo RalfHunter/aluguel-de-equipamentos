@@ -4,11 +4,14 @@ import EquipamentoFilterBuilder from '../repositories/filters/EquipamentoFilterB
 import { CustomError, HttpStatusCodes, messages } from '../utils/helpers/index.js';
 import Reserva from '../models/Reserva.js';
 import Usuario from '../models/Usuario.js';
+<<<<<<< HEAD
+=======
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 
 //const getDirname = () => path.dirname(fileURLToPath(import.meta.url));
+>>>>>>> b5af130a652d409fe04a03ac2c3bb00c52e4bb1c
 
 class EquipamentoService {
   constructor() {
@@ -145,6 +148,8 @@ class EquipamentoService {
     return equipamento;
   }
 
+<<<<<<< HEAD
+=======
 
   async ListarFoto(id, fotoId) {
     const equipamento = await this._buscarEquipamentoExistente(id);
@@ -179,6 +184,7 @@ class EquipamentoService {
     return { filePath, contentType };
   }
 
+>>>>>>> b5af130a652d409fe04a03ac2c3bb00c52e4bb1c
   _processarFiltros(filtros, usuarioId) {
     const pagina = parseInt(filtros.page) || 1;
     const limite = parseInt(filtros.limit) || 10;
@@ -196,6 +202,23 @@ class EquipamentoService {
       .comCategoria(filtros.categoria)
       .comFaixaDeValor(filtros.minValor, filtros.maxValor);
 
+<<<<<<< HEAD
+    if (status === 'inativo' && usuarioId) {
+      builder.comStatus(status);
+      builder.filtros.equiUsuario = usuarioId; // Apenas o dono pode ver inativos
+    } else if (status === 'pendente') {
+      builder.comStatus(status); // Apenas admins/mods podem ver pendentes
+    } else if (status === 'ativo' || !status) {
+      if (usuarioId) {
+        builder.filtros.$or = [
+          { equiStatus: 'ativo' },
+          { equiStatus: 'pendente', equiUsuario: usuarioId },
+          { equiStatus: 'inativo', equiUsuario: usuarioId }
+        ];
+      } else {
+        builder.comStatus('ativo'); // Padrão para não autenticados
+      }
+=======
     if (status === 'pendente') {
       builder.comStatus('pendente');
     } else if (status === 'inativo' && usuarioId) {
@@ -209,6 +232,7 @@ class EquipamentoService {
       ];
     } else {
       builder.comStatus('ativo');
+>>>>>>> b5af130a652d409fe04a03ac2c3bb00c52e4bb1c
     }
 
     const query = builder.build();

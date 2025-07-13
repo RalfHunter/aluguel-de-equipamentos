@@ -93,11 +93,28 @@ class EquipamentoController {
       await EquipamentoQuerySchema.parseAsync(query);
     }
 
+<<<<<<< HEAD
+    const usuario = await Usuario.findById(usuarioId).populate('grupos');
+=======
     const usuario = usuarioId ? await Usuario.findById(usuarioId).populate('grupos') : null;
+>>>>>>> b5af130a652d409fe04a03ac2c3bb00c52e4bb1c
     const isAdminOrMod = usuario && usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao));
 
     if (query.status === 'pendente') {
       if (!isAdminOrMod) {
+<<<<<<< HEAD
+        return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito a administradores ou moderadores para filtrar equipamentos pendentes.');
+      }
+    } else if (query.status === 'inativo') {
+      if (!usuarioId) {
+        return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Usuário não autenticado.');
+      }
+      // Apenas o dono pode listar inativos
+      query.equiUsuario = usuarioId;
+    } else if (!query.status || query.status === 'ativo') {
+      // Usuários comuns veem apenas ativos e os próprios pendentes/inativos
+      if (!isAdminOrMod && usuarioId) {
+=======
         return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'forbidden', null, [], 'Acesso restrito a administradores ou moderadores para filtrar equipamentos pendentes.');
       }
       query.equiStatus = 'pendente';
@@ -109,15 +126,22 @@ class EquipamentoController {
       query.equiStatus = 'inativo';
     } else {
       if (usuarioId && !isAdminOrMod) {
+>>>>>>> b5af130a652d409fe04a03ac2c3bb00c52e4bb1c
         query.$or = [
           { equiStatus: 'ativo' },
           { equiStatus: 'pendente', equiUsuario: usuarioId },
           { equiStatus: 'inativo', equiUsuario: usuarioId }
         ];
       } else if (isAdminOrMod) {
+<<<<<<< HEAD
+        query.equiStatus = { $in: ['ativo', 'pendente'] }; // Admins/mods veem apenas ativos e pendentes
+      } else {
+        query.equiStatus = 'ativo'; // Padrão para não autenticados
+=======
         query.equiStatus = { $in: ['ativo', 'pendente'] };
       } else {
         query.equiStatus = 'ativo';
+>>>>>>> b5af130a652d409fe04a03ac2c3bb00c52e4bb1c
       }
     }
 
@@ -125,6 +149,29 @@ class EquipamentoController {
     return CommonResponse.success(res, data);
   }
 
+<<<<<<< HEAD
+  async listarPorId(req, res) {
+    const { id } = req.params;
+    EquipamentoIdSchema.parse(id);
+
+    const usuarioId = req.user_id?.toString();
+    const usuario = await Usuario.findById(usuarioId).populate('grupos');
+    const isAdminOrMod = usuario && usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao));
+
+    const equipamento = await this.service.listarPorId(id, usuarioId);
+
+    if (equipamento && usuarioId) {
+      const isOwner = equipamento.equiUsuario?.toString() === usuarioId;
+      if (!isOwner && !isAdminOrMod) {
+        return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito a equipamentos do próprio usuário.');
+      }
+      if (isAdminOrMod && !isOwner && !['ativo', 'pendente'].includes(equipamento.equiStatus)) {
+        return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Administradores e moderadores só podem acessar equipamentos ativos ou pendentes, exceto os próprios.');
+      }
+    }
+
+    return CommonResponse.success(res, equipamento);
+=======
  async listarPorId(req, res) {
   const { id } = req.params;
   const usuarioId = req.user_id?.toString();
@@ -134,6 +181,7 @@ class EquipamentoController {
   const equipamento = await this.service.listarPorId(id, usuarioId);
   if (!equipamento) {
     return CommonResponse.error(res, HttpStatusCodes.NOT_FOUND.code, 'not_found', null, [], 'Equipamento não encontrado.');
+>>>>>>> b5af130a652d409fe04a03ac2c3bb00c52e4bb1c
   }
 
   if (!usuarioId) {
@@ -155,8 +203,14 @@ class EquipamentoController {
 }
   async criar(req, res) {
     const usuarioLogado = req.user_id;
+<<<<<<< HEAD
+    const usuario = await Usuario.findById(usuarioLogado).populate('grupos');
+    if (!usuario || !usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao))) {
+      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito para criar equipamentos.');
+=======
     if (!usuarioLogado) {
       return CommonResponse.error(res, HttpStatusCodes.UNAUTHORIZED.code, 'unauthorized', null, [], 'Usuário não autenticado.');
+>>>>>>> b5af130a652d409fe04a03ac2c3bb00c52e4bb1c
     }
 
     const files = req.files || [];
@@ -173,7 +227,10 @@ class EquipamentoController {
       ...dadosProcessados,
       equiUsuario: usuarioLogado,
       equiFotos,
+<<<<<<< HEAD
+=======
       equiStatus: 'pendente'
+>>>>>>> b5af130a652d409fe04a03ac2c3bb00c52e4bb1c
     };
 
     const dados = equipamentoSchema.parse(dadosEquipamento);
@@ -187,6 +244,19 @@ class EquipamentoController {
 
   async atualizar(req, res) {
     const { id } = req.params;
+<<<<<<< HEAD
+    EquipamentoIdSchema.parse(id);
+
+    const usuario = await Usuario.findById(req.user_id).populate('grupos');
+    if (!usuario || !usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao))) {
+      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito para atualizar equipamentos.');
+    }
+
+    const dadosAtualizados = equipamentoUpdateSchema.parse(req.body);
+    const equipamento = await this.service.atualizar(id, dadosAtualizados);
+
+    return CommonResponse.success(res, equipamento, 200, 'Equipamento atualizado com sucesso.');
+=======
     const usuarioId = req.user_id?.toString();
 
     EquipamentoIdSchema.parse(id);
@@ -207,12 +277,17 @@ class EquipamentoController {
     const equipamentoAtualizado = await this.service.atualizar(id, dadosAtualizados);
 
     return CommonResponse.success(res, equipamentoAtualizado, 200, 'Equipamento atualizado com sucesso.');
+>>>>>>> b5af130a652d409fe04a03ac2c3bb00c52e4bb1c
   }
 
   async aprovar(req, res) {
     const usuario = await Usuario.findById(req.user_id).populate('grupos');
     if (!usuario || !usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao))) {
+<<<<<<< HEAD
+      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito a administradores ou moderadores.');
+=======
       return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'forbidden', null, [], 'Acesso restrito a administradores ou moderadores.');
+>>>>>>> b5af130a652d409fe04a03ac2c3bb00c52e4bb1c
     }
 
     const { id } = req.params;
@@ -225,7 +300,11 @@ class EquipamentoController {
   async reprovar(req, res) {
     const usuario = await Usuario.findById(req.user_id).populate('grupos');
     if (!usuario || !usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao))) {
+<<<<<<< HEAD
+      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito a administradores ou moderadores.');
+=======
       return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'forbidden', null, [], 'Acesso restrito a administradores ou moderadores.');
+>>>>>>> b5af130a652d409fe04a03ac2c3bb00c52e4bb1c
     }
 
     const { id } = req.params;
@@ -235,6 +314,27 @@ class EquipamentoController {
     return CommonResponse.success(res, resultado, 200, 'Equipamento reprovado e excluído com sucesso.');
   }
 
+<<<<<<< HEAD
+  async adicionarFoto(req, res) {
+    const { id } = req.params;
+    const file = req.file;
+
+    EquipamentoIdSchema.parse(id);
+
+    if (!file) {
+      return CommonResponse.error(res, HttpStatusCodes.BAD_REQUEST.code, 'Nenhuma foto foi enviada.');
+    }
+
+    const usuario = await Usuario.findById(req.user_id).populate('grupos');
+    if (!usuario || !usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao))) {
+      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Acesso restrito para adicionar fotos.');
+    }
+
+    const novaFoto = this._processarImagemParaFoto(file, req);
+    const equipamento = await this.service.adicionarFoto(id, novaFoto);
+
+    return CommonResponse.success(res, equipamento, 200, 'Foto adicionada com sucesso.');
+=======
   async atualizarStatus(req, res) {
     const { id } = req.params;
     const { status } = req.body;
@@ -306,6 +406,7 @@ class EquipamentoController {
 
     res.setHeader('Content-Type', contentType);
     return res.sendFile(filePath);
+>>>>>>> b5af130a652d409fe04a03ac2c3bb00c52e4bb1c
   }
 }
 

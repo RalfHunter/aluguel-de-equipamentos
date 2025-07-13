@@ -374,6 +374,16 @@ Criar um novo equipamento para locação com imagens.
 
 #### Regras de Negócio
 - Apenas locador autenticado pode cadastrar.
+<<<<<<< HEAD
+- `equiValorDiaria` deve ser um número maior que 0.
+- `equiQuantidadeDisponivel` deve ser um número inteiro não negativo.
+- `equiFotos` deve conter pelo menos uma foto, enviada como arquivo com formato válido (JPEG, PNG ou RIFF).
+- Equipamento criado com status pendente.
+
+#### Resultado Esperado
+- Equipamento criado, aguardando aprovação.
+- Em caso de erro, ex.: campos inválidos, falta de fotos, ou formato inválido, retorna erro e o equipamento não será cadastrado.
+=======
 - Todos os campos são obrigatórios e validados.
 - Valor da diária deve ser um número positivo.
 - Quantidade deve ser um número inteiro ≥ 0.
@@ -386,6 +396,7 @@ Criar um novo equipamento para locação com imagens.
 
 #### Resultado Esperado
 Equipamento cadastrado e aguardando aprovação.
+>>>>>>> b5af130a652d409fe04a03ac2c3bb00c52e4bb1c
 
 ### 4.2 GET /equipamentos
 
@@ -430,7 +441,11 @@ Atualizar valor da diária ou quantidade disponível.
 #### Resultado Esperado
 Equipamento atualizado com sucesso.
 
+<<<<<<< HEAD
+### 2.5 PATCH /equipamentos/:id/aprovar
+=======
 ### 4.5 PATCH /equipamentos/:id/aprovar
+>>>>>>> b5af130a652d409fe04a03ac2c3bb00c52e4bb1c
 
 #### Caso de Uso
 Aprovar equipamento pendente.
@@ -442,7 +457,11 @@ Aprovar equipamento pendente.
 #### Resultado Esperado
 Equipamento aprovado e ativado.
 
+<<<<<<< HEAD
+### 2.6 PATCH /equipamentos/:id/reprovar
+=======
 ### 4.6 PATCH /equipamentos/:id/reprovar
+>>>>>>> b5af130a652d409fe04a03ac2c3bb00c52e4bb1c
 
 #### Caso de Uso
 Reprovar e excluir um equipamento pendente.
@@ -455,6 +474,11 @@ Reprovar e excluir um equipamento pendente.
 #### Resultado Esperado
 Equipamento reprovado e removido do sistema.
 
+<<<<<<< HEAD
+## 3. Reservas
+
+### 3.1 POST /reservas
+=======
 ### 4.7 PATCH /equipamentos/:id/status
 
 #### Caso de Uso
@@ -473,6 +497,7 @@ Ativar ou inativar equipamento.
 Status do equipamento alterado com sucesso.
 
 ### 4.8 POST /equipamentos/:id/foto
+>>>>>>> b5af130a652d409fe04a03ac2c3bb00c52e4bb1c
 
 #### Caso de Uso
 Adicionar novas fotos a um equipamento existente.

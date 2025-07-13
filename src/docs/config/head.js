@@ -1,6 +1,10 @@
 import reservasSchemas from "../schemas/reservaSchema.js";
 import avaliacaoSchemas from "../schemas/avaliacaoSchema.js";
 import reservasPaths from "../paths/reserva.js";
+<<<<<<< HEAD
+import equipamentoPaths from "../paths/equipamento.js";
+import equipamentoSchemas from "../schemas/equipamentoSchema.js";
+=======
 import usuariosSchemas from "../schemas/usuarioSchema.js";
 import usuariosPaths from "../paths/usuarios.js";
 import authSchemas from "../schemas/authSchema.js";
@@ -9,6 +13,7 @@ import gruposSchemas from "../schemas/grupoSchema.js";
 import gruposPaths from "../paths/grupos.js";
 import avaliacaoPaths from "../paths/avaliacao.js";
 
+>>>>>>> b5af130a652d409fe04a03ac2c3bb00c52e4bb1c
 
 const getServersInCorrectOrder = () => {
     const PORT = process.env.APP_PORT
@@ -60,12 +65,17 @@ const getSwaggerOptions = () => {
                 },
             ],
             paths: {
+<<<<<<< HEAD
+                ...reservasPaths,
+                ...equipamentoPaths
+=======
                 ...authPaths,
                 ...gruposPaths,
                 ...reservasPaths,
                 ...usuariosPaths,
                 ...avaliacaoPaths,
 
+>>>>>>> b5af130a652d409fe04a03ac2c3bb00c52e4bb1c
             },
             components: {
                 securitySchemes: {
@@ -79,9 +89,13 @@ const getSwaggerOptions = () => {
                     ...authSchemas,
                     ...gruposSchemas,
                     ...reservasSchemas,
+<<<<<<< HEAD
+                    ...equipamentoSchemas
+=======
                     ...usuariosSchemas,
                     ...avaliacaoSchemas,
 
+>>>>>>> b5af130a652d409fe04a03ac2c3bb00c52e4bb1c
                 }
             },
             security: [{
