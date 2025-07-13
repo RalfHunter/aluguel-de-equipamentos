@@ -84,58 +84,64 @@ class EquipamentoController {
       equiQuantidadeDisponivel: parseInt(body.equiQuantidadeDisponivel),
     };
   }
+async listar(req, res) {
+  const query = req.query || {};
+  const usuarioId = req.user_id;
 
-  async listar(req, res) {
-    const query = req.query || {};
-    const usuarioId = req.user_id;
-
-    if (Object.keys(query).length !== 0) {
-      await EquipamentoQuerySchema.parseAsync(query);
-    }
-
-    const usuario = usuarioId ? await Usuario.findById(usuarioId).populate('grupos') : null;
-    const isAdminOrMod = usuario && usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao));
-
-    if (query.status === 'pendente' && !isAdminOrMod) {
-      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Você não tem permissão para listar equipamentos pendentes.');
-    }
-
-    if (!usuarioId && query.status && query.status !== 'ativo') {
-      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Você não tem permissão para listar equipamentos com este status.');
-    }
-
-    const data = await this.service.listar(query, usuarioId, isAdminOrMod);
-    return CommonResponse.success(res, data);
+  if (!usuarioId) {
+    return CommonResponse.error(res, 498, 'Token não informado.');
   }
 
-  async listarPorId(req, res) {
-    const { id } = req.params;
-    const usuarioId = req.user_id?.toString();
+  if (Object.keys(query).length !== 0) {
+    await EquipamentoQuerySchema.parseAsync(query);
+  }
 
-    EquipamentoIdSchema.parse(id);
+  const usuario = await Usuario.findById(usuarioId).populate('grupos');
+  const isAdminOrMod = usuario && usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao));
 
-    const equipamento = await this.service.listarPorId(id, usuarioId);
-    if (!equipamento) {
-      return CommonResponse.error(res, HttpStatusCodes.NOT_FOUND.code, 'Equipamento não encontrado.');
+  if (query.status === 'pendente' && !isAdminOrMod) {
+    return CommonResponse.error(res, 403, 'Você não tem permissão para listar equipamentos pendentes.');
+  }
+
+  if (query.status && query.status !== 'ativo' && !isAdminOrMod) {
+    return CommonResponse.error(res, 403, 'Você não tem permissão para listar equipamentos com este status.');
+  }
+
+  const data = await this.service.listar(query, usuarioId, isAdminOrMod);
+  return CommonResponse.success(res, data);
+}
+
+
+async listarPorId(req, res) {
+  const { id } = req.params;
+  const usuarioId = req.user_id?.toString();
+
+  EquipamentoIdSchema.parse(id);
+
+  const equipamento = await this.service.listarPorId(id, usuarioId);
+  if (!equipamento) {
+    return CommonResponse.error(res, HttpStatusCodes.NOT_FOUND.code, 'Equipamento não encontrado.');
+  }
+
+  if (!usuarioId) {
+    if ((equipamento.equiStatus || '').toLowerCase() !== 'ativo') {
+      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Você não tem permissão para acessar equipamentos não ativos.');
     }
-
-    if (!usuarioId) {
-      if (equipamento.equiStatus !== 'ativo') {
-        return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Você não tem permissão para acessar equipamentos não ativos.');
-      }
-      return CommonResponse.success(res, equipamento);
-    }
-
-    const usuario = await Usuario.findById(usuarioId).populate('grupos');
-    const isAdminOrMod = usuario && usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao));
-    const isOwner = equipamento.equiUsuario?.toString() === usuarioId;
-
-    if (!isOwner && !isAdminOrMod && equipamento.equiStatus !== 'ativo') {
-      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Você não tem permissão para acessar equipamentos não ativos ou não próprios.');
-    }
-
     return CommonResponse.success(res, equipamento);
   }
+
+  const usuario = await Usuario.findById(usuarioId).populate('grupos');
+  const isAdminOrMod = usuario && usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao));
+  const isOwner = equipamento.equiUsuario?.toString() === usuarioId;
+
+  if (!isOwner && !isAdminOrMod && (equipamento.equiStatus || '').toLowerCase() !== 'ativo') {
+    return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Você não tem permissão para acessar equipamentos não ativos ou não próprios.');
+  }
+
+  return CommonResponse.success(res, equipamento);
+}
+
+
 
   async criar(req, res) {
     const usuarioLogado = req.user_id;
