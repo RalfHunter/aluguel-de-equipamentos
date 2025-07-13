@@ -462,7 +462,6 @@ describe('grupoRouter', () => {
 })
 
 function pegarIdGrupo(grupos) {
-    console.log(grupos.length)
     for (const grupo of grupos) {
         if (grupo.nome === "usuario") {
             return grupo

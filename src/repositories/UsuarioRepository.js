@@ -67,11 +67,9 @@ class UsuarioRepository {
 
     }
     async buscarPorId(id, includeTokens = false) {
-        console.log("SERVICE", id)
         // console.log("Estou no bucarPorId no UsuarioRepository")
         let query = this.model.findById(id).populate('grupos')
         if (includeTokens) {
-            console.log(includeTokens)
             query.select('+refreshToken +accessToken +CPF')
         }
         const user = await query
@@ -92,8 +90,6 @@ class UsuarioRepository {
 
         // console.log("Pesquisa conluida com sucesso")
         if (documento) {
-            console.log(idIgnorado)
-            console.log("ESTE É O DOCUMENTO", documento)
             throw new CustomError({
                 statusCode: 409,
                 errorType: "Conflict",
@@ -150,7 +146,7 @@ class UsuarioRepository {
         return documento
     }
     async buscarPorCodigoRecuperacao(codigo) {
-        console.log('Estou no buscarPorPorCodigoRecuperacao em UsuarioRepository');
+        // console.log('Estou no buscarPorPorCodigoRecuperacao em UsuarioRepository');
         const filtro = { codigo_recupera_senha: codigo };
         const documento = await this.model.findOne(filtro, ['+senha', '+codigo_recupera_senha', '+exp_codigo_recupera_senha'])
         return documento;

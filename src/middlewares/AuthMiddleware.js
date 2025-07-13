@@ -27,7 +27,7 @@ class AuthMiddleware {
       // Permite “Bearer <token>” ou apenas o token cru
       const parts = authHeader.split(' ');
       const token = parts.length === 2 ? parts[1] : parts[0];
-      console.log(token)
+      // console.log(token)
       return {
         token,
         secret: process.env.JWT_SECRET_ACCESS_TOKEN
@@ -36,7 +36,6 @@ class AuthMiddleware {
 
     // 3. Query string (link de redefinição de senha) ────────
     if (req.query?.token) {
-      console.log("Lançou um erro aqui")
       return {
         token: req.query.token,
         secret: process.env.JWT_SECRET_PASSWORD_RECOVERY

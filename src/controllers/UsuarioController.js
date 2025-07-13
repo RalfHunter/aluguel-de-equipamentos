@@ -50,7 +50,7 @@ class UsuarioController {
         return CommonResponse.success(res, data, 200, `Status alterado com sucesso para ${parseData.ativo}`)
     }
     async criarComSenha(req, res) {
-        console.log('Estou no criar em UsuarioController');
+        // console.log('Estou no criar em UsuarioController');
 
         // valida os dados
         const parsedData = UsuarioSchema.parse(req.body);
@@ -131,7 +131,7 @@ class UsuarioController {
 
     async fotoUpload(req, res, next) {
         try {
-            console.log('Estou no fotoUpload em UsuarioController');
+            // console.log('Estou no fotoUpload em UsuarioController');
 
             const { id } = req.params;
             UsuarioIdSchema.parse(id);

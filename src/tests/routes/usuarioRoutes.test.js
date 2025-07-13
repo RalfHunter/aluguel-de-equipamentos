@@ -318,9 +318,9 @@ describe('usuarioRoute', () => {
             .set('Authorization', `Bearer ${userLogado.accessToken}`)
             .attach('file', img, 'imagem-pequena.png')
             
-            if (res.status !== 200) {
-                console.log('Error response:', res.body)
-            }
+            // if (res.status !== 200) {
+            //     console.log('Error response:', res.body)
+            // }
             
             expect(res.status).toBe(200)
             expect(res.body?.message).toEqual('Requisição bem-sucedida'),
@@ -417,7 +417,6 @@ describe('usuarioRoute', () => {
             .get(`/usuarios/invalido/foto`)
             .set('Authorization', `Bearer ${userLogado.accessToken}`)
             .expect(400)
-            console.log(res.body)
             expect(res.body?.message).toEqual("Erro de validação. 1 campo(s) inválido(s).")
             expect(res.body?.data).toBeNull()
             expect(res.body?.errors[0]).toEqual({ path: '', message: 'ID inválido' } )
@@ -483,7 +482,6 @@ describe('usuarioRoute', () => {
             .set('Authorization', `Bearer ${userLogado.accessToken}`)
             .send(body)
             .expect(400)
-            console.log(res.body)
             expect(res.body?.message).toEqual("Erro de validação. 1 campo(s) inválido(s).")
             expect(res.body?.data).toEqual(null)
             expect(res.body?.errors[0]).toEqual( { path: 'email', message: 'Formato de email inválido.' } )
@@ -522,9 +520,6 @@ describe('usuarioRoute', () => {
             expect(res.body?.message).toEqual('Usuário excluído com sucesso.')
             delete userTemp?.CPF
             expect(res.body?.data).toMatchObject(userTemp)
-            console.log(res.body)
-            // expect(res.body?.data).toMatchObject(userTemp)
-            // console.log(userTemp)
         });
         it('deve falhar ao tentar deletar um usuário que não existe', async ()=>{
             const res = await request(app)

@@ -89,7 +89,6 @@ class UsuarioService {
         break
       }
     }
-    console.log(permissao)
     if (permissao) {
       throw new CustomError({
         statusCode: 403,
@@ -206,7 +205,6 @@ class UsuarioService {
         break
       }
     }
-    console.log(permissao)
     if (permissao) {
       throw new CustomError({
         statusCode: 403,
