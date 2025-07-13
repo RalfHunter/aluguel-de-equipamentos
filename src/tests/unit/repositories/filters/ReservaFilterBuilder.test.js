@@ -1,11 +1,5 @@
-<<<<<<< HEAD
-import ReservaFilterBuilder from "../repositories/filters/ReservaFilterBuilderder";
-import Reserva from "../models/Reservarva";
-jest.mock("../../models/Reserva");
-=======
 import ReservaFilterBuilder from "../../../../repositories/filters/ReservaFilterBuilder";
 jest.mock("../../../../models/Reserva.js");
->>>>>>> nova-master
 
 describe('ReservaFilterBuilder', () => {
   let reservaFilterBuilder;
@@ -171,18 +165,9 @@ describe('ReservaFilterBuilder', () => {
     it('deve setar filtro de statusReserva quando valor é fornecido', () => {
       reservaFilterBuilder.comStatus('pendente');
       const filtros = reservaFilterBuilder.build();
-<<<<<<< HEAD
-      
-      expect(filtros).toHaveProperty('statusReserva');
-      expect(filtros.statusReserva).toEqual({
-        $regex: 'pendente',
-        $options: 'i'
-      });
-=======
 
       expect(filtros).toHaveProperty('statusReserva');
       expect(filtros.statusReserva).toBe('pendente');
->>>>>>> nova-master
     });
 
     it('não deve setar filtro de statusReserva quando vazio ou undefined', () => {
@@ -202,53 +187,24 @@ describe('ReservaFilterBuilder', () => {
 
     it('deve retornar objeto de filtros com todos os filtros adicionados', () => {
       const testDate = '2023-01-01';
-<<<<<<< HEAD
-      
-=======
 
->>>>>>> nova-master
       reservaFilterBuilder
         .comDataInicial(testDate)
         .comDataFinal(testDate)
         .comQuantidadeEquipamento('2')
         .comStatus('pendente');
-<<<<<<< HEAD
-      
-      const filtros = reservaFilterBuilder.build();
-      
-=======
 
       const filtros = reservaFilterBuilder.build();
 
->>>>>>> nova-master
       expect(filtros).toEqual({
         dataInicial: { $gte: new Date(testDate) },
         dataFinal: { $lte: new Date(testDate) },
         quantidadeEquipamento: 2,
-<<<<<<< HEAD
-        statusReserva: { $regex: 'pendente', $options: 'i' }
-=======
         statusReserva: 'pendente'
->>>>>>> nova-master
       });
     });
   });
 
-<<<<<<< HEAD
-  describe('escapeRegex', () => {
-    it('deve escapar caracteres especiais de regex', () => {
-      const testString = 'test.*+?^${}()|[]\\';
-      const escaped = reservaFilterBuilder.escapeRegex(testString);
-      
-      expect(escaped).toBe('test\\.\\*\\+\\?\\^\\$\\{\\}\\(\\)\\|\\[\\]\\\\');
-    });
-
-    it('deve retornar string vazia quando input é vazio', () => {
-      const escaped = reservaFilterBuilder.escapeRegex('');
-      expect(escaped).toBe('');
-    });
-  });
-=======
   // describe('escapeRegex', () => {
   //   it('deve escapar caracteres especiais de regex', () => {
   //     const testString = 'test.*+?^${}()|[]\\';
@@ -262,5 +218,4 @@ describe('ReservaFilterBuilder', () => {
   //     expect(escaped).toBe('');
   //   });
   // });
->>>>>>> nova-master
 });
