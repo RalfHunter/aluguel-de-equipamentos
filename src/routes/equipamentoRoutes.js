@@ -36,7 +36,10 @@ router
     .get("/equipamentos/:id/foto/:fotoId", AuthMiddleware, AuthPermission, asyncWrapper(equipamentoController.listarFoto.bind(equipamentoController)))
 
     //adicionar uma nova foto
-    .post("/equipamentos/:id/foto", AuthMiddleware, upload.array('files', 5), AuthPermission, asyncWrapper(equipamentoController.adicionarFotos.bind(equipamentoController)));
+    .post("/equipamentos/:id/foto", AuthMiddleware, upload.array('files', 5), AuthPermission, asyncWrapper(equipamentoController.adicionarFotos.bind(equipamentoController)))
+
+    //deletar um equipamento
+    .delete("/equipamentos/:id", AuthMiddleware, AuthPermission, asyncWrapper(equipamentoController.deletarEquipamento.bind(equipamentoController)));
 
 
 export default router;

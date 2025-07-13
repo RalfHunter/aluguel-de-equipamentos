@@ -65,6 +65,7 @@ describe('EquipamentoController', () => {
             atualizarStatus: jest.fn(),
             adicionarFotos: jest.fn(),
             listarFoto: jest.fn(),
+            deletarEquipamento: jest.fn(),
         };
         EquipamentoService.mockImplementation(() => serviceMock);
         controller = new EquipamentoController();
@@ -179,6 +180,36 @@ describe('EquipamentoController', () => {
             await controller.listarPorId(req, res);
             expect(CommonResponse.error).toHaveBeenCalledWith(res, 403, 'Você não tem permissão para acessar equipamentos não ativos.');
         });
+
+        it('deve permitir admin ver equipamento pendente de outro usuário', async () => {
+            req.params = { id: '1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            serviceMock.listarPorId.mockResolvedValue({ _id: '1', equiStatus: 'pendente', equiUsuario: 'outroUserId' });
+            Usuario.findById.mockReturnValue({
+                populate: jest.fn().mockResolvedValue({ grupos: [{ nivelPermissao: 0 }] }),
+            });
+            await controller.listarPorId(req, res);
+            expect(CommonResponse.success).toHaveBeenCalledWith(res, { _id: '1', equiStatus: 'pendente', equiUsuario: 'outroUserId' });
+        });
+
+        it('deve permitir moderador ver equipamento pendente de outro usuário', async () => {
+            req.params = { id: '1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            serviceMock.listarPorId.mockResolvedValue({ _id: '1', equiStatus: 'pendente', equiUsuario: 'outroUserId' });
+            Usuario.findById.mockReturnValue({
+                populate: jest.fn().mockResolvedValue({ grupos: [{ nivelPermissao: 50 }] }),
+            });
+            await controller.listarPorId(req, res);
+            expect(CommonResponse.success).toHaveBeenCalledWith(res, { _id: '1', equiStatus: 'pendente', equiUsuario: 'outroUserId' });
+        });
+
+        it('deve permitir usuário comum ver seu próprio equipamento pendente', async () => {
+            req.params = { id: '1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            serviceMock.listarPorId.mockResolvedValue({ _id: '1', equiStatus: 'pendente', equiUsuario: 'userId' });
+            await controller.listarPorId(req, res);
+            expect(CommonResponse.success).toHaveBeenCalledWith(res, { _id: '1', equiStatus: 'pendente', equiUsuario: 'userId' });
+        });
     });
 
     describe('criar', () => {
@@ -231,6 +262,43 @@ describe('EquipamentoController', () => {
                 equiStatus: 'pendente',
             }));
             expect(serviceMock.criar).toHaveBeenCalledWith(parsedData);
+            expect(CommonResponse.created).toHaveBeenCalledWith(res, {
+                mensagem: 'Equipamento cadastrado. Aguardando aprovação.',
+                equipamento: { _id: '1', ...parsedData },
+            });
+        });
+
+        it('deve criar equipamento com _id gerado via mongoose.Types.ObjectId', async () => {
+            req.body = { nome: 'Câmera', equiValorDiaria: '100.50', equiQuantidadeDisponivel: '5', categoria: '1' };
+            req.files = [{ mimetype: 'image/jpeg', path: 'path/to/foto.jpg', originalname: 'foto.jpg', size: 1024, filename: 'foto.jpg' }];
+            
+            // Mock para incluir _id mongoose
+            controller._processarImagemParaFoto.mockReturnValue({
+                _id: expect.objectContaining({ constructor: { name: 'ObjectId' } }),
+                url: 'http://localhost/uploads/equipamentos/foto.jpg',
+                largura: 100,
+                altura: 100,
+                tamanhoMb: 0.1,
+            });
+
+            const parsedData = {
+                nome: 'Câmera',
+                equiValorDiaria: 100.5,
+                equiQuantidadeDisponivel: 5,
+                categoria: '1',
+                equiUsuario: 'userId',
+                equiFotos: [expect.objectContaining({
+                    _id: expect.any(Object),
+                    url: expect.any(String)
+                })],
+                equiStatus: 'pendente',
+            };
+            
+            equipamentoSchema.parse.mockReturnValue(parsedData);
+            serviceMock.criar.mockResolvedValue({ _id: '1', ...parsedData });
+            
+            await controller.criar(req, res);
+            
             expect(CommonResponse.created).toHaveBeenCalledWith(res, {
                 mensagem: 'Equipamento cadastrado. Aguardando aprovação.',
                 equipamento: { _id: '1', ...parsedData },
@@ -322,6 +390,19 @@ describe('EquipamentoController', () => {
             expect(CommonResponse.success).toHaveBeenCalledWith(res, { _id: '1', equiStatus: 'aprovado' }, 200, 'Equipamento aprovado com sucesso.');
         });
 
+        it('deve aprovar equipamento com usuário moderador', async () => {
+            req.params = { id: '1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            Usuario.findById.mockReturnValue({
+                populate: jest.fn().mockResolvedValue({ grupos: [{ nivelPermissao: 50 }] }),
+            });
+            serviceMock.aprovar.mockResolvedValue({ _id: '1', equiStatus: 'aprovado' });
+            await controller.aprovar(req, res);
+            expect(EquipamentoIdSchema.parse).toHaveBeenCalledWith('1');
+            expect(serviceMock.aprovar).toHaveBeenCalledWith('1', 'userId');
+            expect(CommonResponse.success).toHaveBeenCalledWith(res, { _id: '1', equiStatus: 'aprovado' }, 200, 'Equipamento aprovado com sucesso.');
+        });
+
         it('deve retornar erro para usuário não admin', async () => {
             req.params = { id: '1' };
             EquipamentoIdSchema.parse.mockReturnValue('1');
@@ -354,6 +435,19 @@ describe('EquipamentoController', () => {
             expect(CommonResponse.success).toHaveBeenCalledWith(res, { _id: '1', equiStatus: 'reprovado' }, 200, 'Equipamento reprovado e excluído com sucesso.');
         });
 
+        it('deve reprovar equipamento com usuário moderador', async () => {
+            req.params = { id: '1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            Usuario.findById.mockReturnValue({
+                populate: jest.fn().mockResolvedValue({ grupos: [{ nivelPermissao: 50 }] }),
+            });
+            serviceMock.reprovar.mockResolvedValue({ _id: '1', equiStatus: 'reprovado' });
+            await controller.reprovar(req, res);
+            expect(EquipamentoIdSchema.parse).toHaveBeenCalledWith('1');
+            expect(serviceMock.reprovar).toHaveBeenCalledWith('1', 'userId');
+            expect(CommonResponse.success).toHaveBeenCalledWith(res, { _id: '1', equiStatus: 'reprovado' }, 200, 'Equipamento reprovado e excluído com sucesso.');
+        });
+
         it('deve retornar erro para usuário não admin', async () => {
             req.params = { id: '1' };
             EquipamentoIdSchema.parse.mockReturnValue('1');
@@ -378,11 +472,39 @@ describe('EquipamentoController', () => {
             req.body = { status: 'ativo' };
             EquipamentoIdSchema.parse.mockReturnValue('1');
             equipamentoStatusSchema.parse.mockReturnValue({ status: 'ativo' });
+            serviceMock.listarPorId.mockResolvedValue({ _id: '1', equiUsuario: 'userId', equiStatus: 'inativo' });
             serviceMock.atualizarStatus.mockResolvedValue({ _id: '1', equiStatus: 'ativo' });
             await controller.atualizarStatus(req, res);
             expect(EquipamentoIdSchema.parse).toHaveBeenCalledWith('1');
             expect(equipamentoStatusSchema.parse).toHaveBeenCalledWith({ status: 'ativo' });
+            expect(serviceMock.listarPorId).toHaveBeenCalledWith('1', 'userId', false);
             expect(serviceMock.atualizarStatus).toHaveBeenCalledWith('1', 'userId', 'ativo');
+            expect(CommonResponse.success).toHaveBeenCalledWith(res, { _id: '1', equiStatus: 'ativo' }, 200, 'Equipamento ativado com sucesso.');
+        });
+
+        it('deve atualizar status para inativo com dados válidos', async () => {
+            req.params = { id: '1' };
+            req.body = { status: 'inativo' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            equipamentoStatusSchema.parse.mockReturnValue({ status: 'inativo' });
+            serviceMock.listarPorId.mockResolvedValue({ _id: '1', equiUsuario: 'userId', equiStatus: 'ativo' });
+            serviceMock.atualizarStatus.mockResolvedValue({ _id: '1', equiStatus: 'inativo' });
+            await controller.atualizarStatus(req, res);
+            expect(CommonResponse.success).toHaveBeenCalledWith(res, { _id: '1', equiStatus: 'inativo' }, 200, 'Equipamento inativado com sucesso.');
+        });
+
+        it('deve permitir admin alterar status de equipamento de outro usuário', async () => {
+            req.params = { id: '1' };
+            req.body = { status: 'ativo' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            equipamentoStatusSchema.parse.mockReturnValue({ status: 'ativo' });
+            Usuario.findById.mockReturnValue({
+                populate: jest.fn().mockResolvedValue({ grupos: [{ nivelPermissao: 0 }] }),
+            });
+            serviceMock.listarPorId.mockResolvedValue({ _id: '1', equiUsuario: 'outroUserId', equiStatus: 'inativo' });
+            serviceMock.atualizarStatus.mockResolvedValue({ _id: '1', equiStatus: 'ativo' });
+            await controller.atualizarStatus(req, res);
+            expect(serviceMock.listarPorId).toHaveBeenCalledWith('1', 'userId', true);
             expect(CommonResponse.success).toHaveBeenCalledWith(res, { _id: '1', equiStatus: 'ativo' }, 200, 'Equipamento ativado com sucesso.');
         });
 
@@ -541,6 +663,79 @@ describe('EquipamentoController', () => {
             serviceMock.listarPorId.mockResolvedValue({ _id: '1', equiUsuario: 'userId', equiStatus: 'ativo' });
             serviceMock.listarFoto.mockRejectedValue({ status: 500 });
             await expect(controller.listarFoto(req, res)).rejects.toEqual(expect.objectContaining({ status: 500 }));
+        });
+
+        it('deve permitir admin ver foto de equipamento não ativo de outro usuário', async () => {
+            req.params = { id: '1', fotoId: 'foto1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            serviceMock.listarPorId.mockResolvedValue({ _id: '1', equiUsuario: 'outroUserId', equiStatus: 'pendente' });
+            Usuario.findById.mockReturnValue({
+                populate: jest.fn().mockResolvedValue({ grupos: [{ nivelPermissao: 0 }] }),
+            });
+            serviceMock.listarFoto.mockResolvedValue({ filePath: '/path/to/foto.jpg', contentType: 'image/jpeg' });
+            await controller.listarFoto(req, res);
+            expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'image/jpeg');
+            expect(res.sendFile).toHaveBeenCalledWith('/path/to/foto.jpg');
+        });
+
+        it('deve permitir moderador ver foto de equipamento não ativo de outro usuário', async () => {
+            req.params = { id: '1', fotoId: 'foto1' };
+            EquipamentoIdSchema.parse.mockReturnValue('1');
+            serviceMock.listarPorId.mockResolvedValue({ _id: '1', equiUsuario: 'outroUserId', equiStatus: 'pendente' });
+            Usuario.findById.mockReturnValue({
+                populate: jest.fn().mockResolvedValue({ grupos: [{ nivelPermissao: 50 }] }),
+            });
+            serviceMock.listarFoto.mockResolvedValue({ filePath: '/path/to/foto.jpg', contentType: 'image/jpeg' });
+            await controller.listarFoto(req, res);
+            expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'image/jpeg');
+            expect(res.sendFile).toHaveBeenCalledWith('/path/to/foto.jpg');
+        });
+    });
+
+    describe('deletarEquipamento', () => {
+        it('deve deletar equipamento com sucesso', async () => {
+            req.params = { id: '507f1f77bcf86cd799439011' };
+            const mockEquipamento = { _id: '507f1f77bcf86cd799439011', equiNome: 'Câmera Digital' };
+            
+            EquipamentoIdSchema.parse.mockReturnValue('507f1f77bcf86cd799439011');
+            serviceMock.deletarEquipamento.mockResolvedValue(mockEquipamento);
+
+            await controller.deletarEquipamento(req, res);
+
+            expect(EquipamentoIdSchema.parse).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
+            expect(serviceMock.deletarEquipamento).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
+            expect(CommonResponse.success).toHaveBeenCalledWith(res, mockEquipamento, 200, 'Equipamento excluído com sucesso.');
+        });
+
+        it('deve lançar erro se ID for inválido', async () => {
+            req.params = { id: 'id-invalido' };
+            
+            const validationError = new Error('ID inválido');
+            EquipamentoIdSchema.parse.mockImplementation(() => {
+                throw validationError;
+            });
+
+            await expect(controller.deletarEquipamento(req, res)).rejects.toThrow('ID inválido');
+            expect(EquipamentoIdSchema.parse).toHaveBeenCalledWith('id-invalido');
+            expect(serviceMock.deletarEquipamento).not.toHaveBeenCalled();
+        });
+
+        it('deve propagar erro do service', async () => {
+            req.params = { id: '507f1f77bcf86cd799439011' };
+            
+            EquipamentoIdSchema.parse.mockReturnValue('507f1f77bcf86cd799439011');
+            serviceMock.deletarEquipamento.mockRejectedValue(new Error('Equipamento não encontrado'));
+
+            await expect(controller.deletarEquipamento(req, res)).rejects.toThrow('Equipamento não encontrado');
+            expect(serviceMock.deletarEquipamento).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
+        });
+
+        it('deve retornar erro para falha inesperada em deletarEquipamento', async () => {
+            req.params = { id: '507f1f77bcf86cd799439011' };
+            EquipamentoIdSchema.parse.mockReturnValue('507f1f77bcf86cd799439011');
+            serviceMock.deletarEquipamento.mockRejectedValue({ status: 500 });
+            
+            await expect(controller.deletarEquipamento(req, res)).rejects.toEqual(expect.objectContaining({ status: 500 }));
         });
     });
 

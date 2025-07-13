@@ -381,113 +381,164 @@
 
 ## 4. Equipamentos
 
-### 4.1 POST /equipamentos
+### 4.1 GET /equipamentos
 
 #### Caso de Uso
-Criar um novo equipamento para locação.
-
-#### Regras de Negócio
-- Todos os campos são obrigatórios.
-- Apenas locador autenticado pode cadastrar.
-- Valor diária deve ser número maior que 0.
-- Quantidade deve ser número inteiro.
-- Fotos: mínimo uma, formato JPEG, PNG ou RIFF.
-- Equipamento criado com status pendente.
-
-#### Resultado Esperado
-Equipamento criado, aguardando aprovação.
-
-### 4.2 GET /equipamentos
-
-#### Caso de Uso
-Listar equipamentos disponíveis para locação com filtros.
+- Listar todos os equipamentos disponíveis no sistema com paginação e filtros.
 
 #### Regras de Negócio
 - Usuário deve estar autenticado.
-- Retorna apenas equipamentos aprovados.
-- Filtros: categoria, preço, localização, disponibilidade.
-- Paginação de resultados.
+- Usuários comuns só podem ver equipamentos com status "ativo".
+- Administradores e moderadores podem filtrar por qualquer status, incluindo "pendente".
+- Filtros disponíveis: categoria, status, minValor, maxValor.
+- Paginação: page (número da página), limit (quantidade de itens por página).
+- Validar formatos e valores dos filtros fornecidos.
 
 #### Resultado Esperado
-Lista de equipamentos conforme filtros aplicados.
+- Lista paginada de equipamentos com metadados de paginação (totalDocs, limit, totalPages, page, pagingCounter, hasPrevPage, hasNextPage, prevPage, nextPage).
+- Em caso de erro, mensagem de erro: "Não autorizado", "Filtros inválidos" ou "Erro interno do servidor".
 
-### 4.3 GET /equipamentos/:id
+### 4.2 GET /equipamentos/:id
 
 #### Caso de Uso
-Visualizar detalhes de um equipamento específico.
+- Buscar um equipamento específico pelo ID.
 
 #### Regras de Negócio
 - Usuário deve estar autenticado.
 - ID do equipamento deve ser válido.
-- Retorna informações completas do equipamento.
+- Usuário comum só pode ver equipamentos ativos ou seus próprios equipamentos.
+- Administradores e moderadores podem ver qualquer equipamento.
 
 #### Resultado Esperado
-Dados detalhados do equipamento solicitado.
+- Dados completos do equipamento solicitado incluindo fotos e avaliações.
+- Em caso de erro, mensagem de erro: "Equipamento não encontrado", "Não autorizado" ou "ID inválido".
 
-### 4.4 PUT /equipamentos/:id
+### 4.3 POST /equipamentos
 
 #### Caso de Uso
-Atualizar informações de um equipamento existente.
+- Cadastrar um novo equipamento para disponibilização no sistema.
 
 #### Regras de Negócio
-- Usuário deve ser o proprietário do equipamento ou admin.
-- Todos os campos são validados.
-- Alterações passam por nova aprovação se necessário.
+- Usuário deve estar autenticado.
+- Dados obrigatórios: equiNome, equiDescricao, equiValorDiaria, equiQuantidadeDisponivel, equiCategoria.
+- Obrigatório enviar pelo menos 1 foto e no máximo 5 fotos (multipart/form-data).
+- Valor diária deve ser número maior que 0.
+- Quantidade disponível deve ser número inteiro positivo.
+- Equipamento é automaticamente associado ao usuário logado como proprietário.
+- Status inicial é sempre "pendente" (aguardando aprovação).
 
 #### Resultado Esperado
-Equipamento atualizado com sucesso.
+- Equipamento criado com sucesso e status "pendente".
+- Em caso de erro, mensagem de erro: "Dados obrigatórios ausentes", "Valor inválido", "Erro no upload de fotos" ou "Não autorizado".
 
-### 4.5 DELETE /equipamentos/:id
+### 4.4 PATCH /equipamentos/:id
 
 #### Caso de Uso
-Remover equipamento do sistema.
+- Atualizar dados de um equipamento existente.
 
 #### Regras de Negócio
-- Apenas proprietário ou admin podem remover.
+- Usuário deve estar autenticado.
+- Apenas o proprietário do equipamento pode atualizar.
+- Equipamento deve estar com status "ativo" (não "pendente" ou "inativo").
+- Campos permitidos para atualização: equiNome, equiDescricao, equiValorDiaria, equiQuantidadeDisponivel.
+- Não é possível alterar categoria, status ou proprietário via esta rota.
+
+#### Resultado Esperado
+- Equipamento atualizado com sucesso.
+- Em caso de erro, mensagem de erro: "Equipamento não encontrado", "Não autorizado", "Status não permite alteração" ou "Dados inválidos".
+
+### 4.5 PATCH /equipamentos/:id/aprovar
+
+#### Caso de Uso
+- Aprovar um equipamento pendente (apenas administradores).
+
+#### Regras de Negócio
+- Usuário deve estar autenticado.
+- Apenas administradores podem aprovar equipamentos.
+- Equipamento deve estar com status "pendente".
+- Após aprovação, status muda para "ativo".
+
+#### Resultado Esperado
+- Equipamento aprovado com sucesso e status alterado para "ativo".
+- Em caso de erro, mensagem de erro: "Equipamento não encontrado", "Permissão negada", "Status não permite aprovação" ou "Não autorizado".
+
+### 4.6 PATCH /equipamentos/:id/reprovar
+
+#### Caso de Uso
+- Reprovar um equipamento pendente (apenas administradores).
+
+#### Regras de Negócio
+- Usuário deve estar autenticado.
+- Apenas administradores podem reprovar equipamentos.
+- Equipamento deve estar com status "pendente".
+- Após reprovação, status muda para "inativo".
+
+#### Resultado Esperado
+- Equipamento reprovado com sucesso e status alterado para "inativo".
+- Em caso de erro, mensagem de erro: "Equipamento não encontrado", "Permissão negada", "Status não permite reprovação" ou "Não autorizado".
+
+### 4.7 PATCH /equipamentos/:id/status
+
+#### Caso de Uso
+- Alterar status do equipamento entre "ativo" e "inativo" (proprietários).
+
+#### Regras de Negócio
+- Usuário deve estar autenticado.
+- Apenas o proprietário do equipamento pode alterar o status.
+- Equipamento deve estar aprovado (não "pendente").
+- Status possíveis: "ativo" ou "inativo".
+- Equipamentos inativos não aparecem nas listagens públicas.
+
+#### Resultado Esperado
+- Status do equipamento atualizado com sucesso.
+- Em caso de erro, mensagem de erro: "Equipamento não encontrado", "Não autorizado", "Status não permitido" ou "Dados inválidos".
+
+### 4.8 GET /equipamentos/:id/foto/:fotoId
+
+#### Caso de Uso
+- Obter uma foto específica do equipamento.
+
+#### Regras de Negócio
+- Usuário deve estar autenticado.
+- ID do equipamento e ID da foto devem ser válidos.
+- Equipamento deve existir no sistema.
+- Foto deve estar associada ao equipamento.
+
+#### Resultado Esperado
+- Dados da foto incluindo URL de acesso, dimensões e tamanho.
+- Em caso de erro, mensagem de erro: "Equipamento não encontrado", "Foto não encontrada" ou "IDs inválidos".
+
+### 4.9 POST /equipamentos/:id/foto
+
+#### Caso de Uso
+- Adicionar novas fotos a um equipamento existente.
+
+#### Regras de Negócio
+- Usuário deve estar autenticado.
+- Apenas o proprietário do equipamento pode adicionar fotos.
+- Máximo de 5 fotos por upload (multipart/form-data).
+- Formatos aceitos: JPG, JPEG, PNG.
+- Validação de tamanho e dimensões das imagens.
+
+#### Resultado Esperado
+- Fotos adicionadas com sucesso ao equipamento.
+- Em caso de erro, mensagem de erro: "Equipamento não encontrado", "Não autorizado", "Formato de arquivo inválido" ou "Limite de fotos excedido".
+
+### 4.10 DELETE /equipamentos/:id
+
+#### Caso de Uso
+- Deletar um equipamento do sistema.
+
+#### Regras de Negócio
+- Usuário deve estar autenticado.
+- Apenas o proprietário do equipamento ou administradores podem deletar.
 - Equipamento não pode ter reservas ativas.
-- Remoção das fotos associadas.
+- Remoção física das fotos associadas do servidor.
+- Deleção definitiva do banco de dados.
 
 #### Resultado Esperado
-Equipamento removido com sucesso.
-
-### 4.6 POST /equipamentos/:id/foto
-
-#### Caso de Uso
-Fazer upload de foto para o equipamento.
-
-#### Regras de Negócio
-- Apenas proprietário ou admin podem adicionar fotos.
-- Formatos aceitos: JPG, PNG, WEBP.
-- Compressão automática aplicada.
-- Limite de fotos por equipamento.
-
-#### Resultado Esperado
-Foto adicionada com sucesso ao equipamento.
-
-### 4.7 GET /equipamentos/:id/foto
-
-#### Caso de Uso
-Obter foto do equipamento.
-
-#### Regras de Negócio
-- Acesso público para visualização.
-- Retorna primeira foto ou foto padrão.
-
-#### Resultado Esperado
-Imagem do equipamento retornada.
-
-### 4.8 DELETE /equipamentos/:id/foto
-
-#### Caso de Uso
-Remover foto do equipamento.
-
-#### Regras de Negócio
-- Apenas proprietário ou admin podem remover.
-- Remoção do arquivo físico do servidor.
-- Manter pelo menos uma foto.
-
-#### Resultado Esperado
-Foto removida com sucesso.
+- Equipamento deletado com sucesso incluindo todas as fotos.
+- Em caso de erro, mensagem de erro: "Equipamento não encontrado", "Não autorizado", "Equipamento possui reservas ativas" ou "Erro interno do servidor".
 
 ## 5. Reservas
 

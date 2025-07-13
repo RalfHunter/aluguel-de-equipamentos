@@ -303,6 +303,15 @@ class EquipamentoController {
     res.setHeader('Content-Type', contentType);
     return res.sendFile(filePath);
   }
+
+  async deletarEquipamento(req, res) {
+    const { id } = req.params || {};
+    EquipamentoIdSchema.parse(id);
+
+    const data = await this.service.deletarEquipamento(id);
+
+    return CommonResponse.success(res, data, 200, 'Equipamento excluído com sucesso.');
+  }
 }
 
 export default EquipamentoController;
