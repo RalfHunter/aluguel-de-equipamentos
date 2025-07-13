@@ -18,10 +18,29 @@ class EquipamentoService {
     return this.repository.listar(query, pagina, limite);
   }
 
-  async listarPorId(id, usuarioId) {
-    const equipamento = await this._buscarEquipamentoExistente(id);
+  async listarPorId(id, usuarioId, isAdminOrMod = false) {
+    const equipamento = await this.repository.listarPorId(id);
+    if (!equipamento) {
+      throw new CustomError({
+        statusCode: HttpStatusCodes.NOT_FOUND.code,
+        customMessage: 'Equipamento não encontrado.',
+      });
+    }
+
+    // Se for admin ou moderador retorna direto
+    if (isAdminOrMod) return equipamento;
+
+    // Usuário comum só pode ver se for dono
+    if (equipamento.equiUsuario?.toString() !== usuarioId) {
+      throw new CustomError({
+        statusCode: HttpStatusCodes.NOT_FOUND.code,
+        customMessage: 'Equipamento não encontrado.',
+      });
+    }
+
     return equipamento;
   }
+
 
   async criar(dados) {
     this._validarCamposObrigatorios(dados);
@@ -37,9 +56,55 @@ class EquipamentoService {
 
   async atualizar(id, dadosAtualizados) {
     const equipamento = await this._buscarEquipamentoExistente(id);
+    console.log('Status do equipamento no atualizar:', equipamento.equiStatus);
+
+    const status = (equipamento.equiStatus || '').toLowerCase().trim();
+
+    if (status === 'pendente') {
+      throw new CustomError({
+        statusCode: HttpStatusCodes.FORBIDDEN.code,
+        customMessage: 'Não é possível atualizar! Equipamento pendente, espere por uma aprovação.',
+      });
+    }
+
+    if (status === 'inativo') {
+      throw new CustomError({
+        statusCode: HttpStatusCodes.FORBIDDEN.code,
+        customMessage: 'Não é possível atualizar! Equipamento inativo.',
+      });
+    }
+
     this._verificarAtualizacaoPermitida(equipamento, dadosAtualizados);
 
     return await this.repository.atualizar(id, dadosAtualizados);
+  }
+
+
+  _verificarAtualizacaoPermitida(equipamento, dadosAtualizados) {
+    const camposPermitidos = ['equiValorDiaria', 'equiQuantidadeDisponivel'];
+    const camposAtualizados = Object.keys(dadosAtualizados);
+
+    if (equipamento.equiStatus === 'pendente') {
+      throw new CustomError({
+        statusCode: HttpStatusCodes.FORBIDDEN.code,
+        customMessage: 'Não é possível atualizar! Equipamento pendente, espere por uma aprovação.',
+      });
+    }
+
+    if (equipamento.equiStatus === 'inativo') {
+      throw new CustomError({
+        statusCode: HttpStatusCodes.FORBIDDEN.code,
+        customMessage: 'Não é possível atualizar! Equipamento inativo.',
+      });
+    }
+
+    const camposInvalidos = camposAtualizados.filter((campo) => !camposPermitidos.includes(campo));
+    if (camposInvalidos.length > 0) {
+      throw new CustomError({
+        statusCode: HttpStatusCodes.BAD_REQUEST.code,
+        customMessage: `Não é permitido alterar os seguintes campos: ${camposInvalidos.join(', ')}`,
+      });
+    }
   }
 
   async aprovar(id, usuarioId) {
@@ -91,7 +156,11 @@ class EquipamentoService {
     const equipamento = await this._buscarEquipamentoExistente(id);
     const donoId = equipamento.equiUsuario?.toString();
 
-    if (!donoId || donoId !== usuarioId) {
+    // Verifica se o usuário é admin ou moderador
+    const usuario = await Usuario.findById(usuarioId).populate('grupos');
+    const isAdminOrMod = usuario && usuario.grupos.some(g => [0, 50].includes(g.nivelPermissao));
+
+    if (!isAdminOrMod && (!donoId || donoId !== usuarioId)) {
       throw new CustomError({
         statusCode: HttpStatusCodes.FORBIDDEN.code,
         customMessage: 'Apenas o dono do equipamento pode alterar seu status.',
@@ -141,6 +210,7 @@ class EquipamentoService {
     await equipamento.save();
     return equipamento;
   }
+
 
   async adicionarFotos(id, novasFotos) {
     if (!Array.isArray(novasFotos) || novasFotos.length === 0) {
@@ -199,43 +269,36 @@ class EquipamentoService {
       .comFaixaDeValor(filtros.minValor, filtros.maxValor);
 
     let query = builder.build();
-    const status = filtros.status
-      ? filtros.status === 'true'
-        ? 'ativo'
-        : filtros.status === 'false'
-          ? 'pendente'
-          : filtros.status
-      : null;
+    const status = filtros.status;
 
-    if (status === 'pendente' && !isAdminOrMod) {
-      throw new CustomError({
-        statusCode: HttpStatusCodes.FORBIDDEN.code,
-        customMessage: 'Você não tem permissão para listar equipamentos pendentes.',
-      });
-    }
-
-    if (status === 'pendente' && isAdminOrMod) {
-      query = { ...query, equiStatus: 'pendente' };
-    } else if (status === 'inativo' && usuarioId) {
-      query = { ...query, equiStatus: 'inativo', equiUsuario: usuarioId };
+    if (!status) {
+      // sme filtro lista todos os ativos sem restrição
+      query = { ...query, equiStatus: 'ativo' };
     } else if (status === 'ativo') {
-      query = { ...query, equiStatus: 'ativo' };
-    } else if (usuarioId && !isAdminOrMod) {
-      query = {
-        ...query,
-        $or: [
-          { equiStatus: 'ativo' },
-          { equiStatus: 'inativo', equiUsuario: usuarioId },
-        ],
-      };
-    } else if (!usuarioId) {
-      query = { ...query, equiStatus: 'ativo' };
+      // lista só os ativos do proprio dono
+      query = { ...query, equiStatus: 'ativo', equiUsuario: usuarioId };
+    } else if (status === 'inativo') {
+      // lista só os inativos do proprio do dono
+      query = { ...query, equiStatus: 'inativo', equiUsuario: usuarioId };
+    } else if (status === 'pendente') {
+      // lista todos os pendentes para moderadores e adm
+      if (!isAdminOrMod) {
+        throw new CustomError({
+          statusCode: HttpStatusCodes.FORBIDDEN.code,
+          customMessage: 'Você não tem permissão para listar equipamentos pendentes.',
+        });
+      }
+      query = { ...query, equiStatus: 'pendente' };
     } else {
-      query = { ...query, equiStatus: 'ativo' };
+      throw new CustomError({
+        statusCode: HttpStatusCodes.BAD_REQUEST.code,
+        customMessage: `Status inválido: ${status}`,
+      });
     }
 
     return { query, pagina, limite };
   }
+
 
   async _buscarEquipamentoExistente(id) {
     const equipamento = await this.repository.listarPorId(id);

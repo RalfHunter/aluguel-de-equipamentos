@@ -62,20 +62,20 @@ class EquipamentoController {
     }
   }
 
- _processarImagemParaFoto(file, req) {
-  this._validarArquivoImagem(file);
+  _processarImagemParaFoto(file, req) {
+    this._validarArquivoImagem(file);
 
-  const dimensoes = this._obterDimensoesImagem(file.path);
-  const tamanhoMb = +(file.size / (1024 * 1024)).toFixed(2);
+    const dimensoes = this._obterDimensoesImagem(file.path);
+    const tamanhoMb = +(file.size / (1024 * 1024)).toFixed(2);
 
-  return {
-    _id: new mongoose.Types.ObjectId(), 
-    url: `${req.protocol}://${req.get('host')}/uploads/equipamentos/${file.filename}`,
-    largura: dimensoes.width,
-    altura: dimensoes.height,
-    tamanhoMb,
-  };
-}
+    return {
+      _id: new mongoose.Types.ObjectId(),
+      url: `${req.protocol}://${req.get('host')}/uploads/equipamentos/${file.filename}`,
+      largura: dimensoes.width,
+      altura: dimensoes.height,
+      tamanhoMb,
+    };
+  }
 
   _processarDadosFormulario(body) {
     return {
@@ -84,64 +84,58 @@ class EquipamentoController {
       equiQuantidadeDisponivel: parseInt(body.equiQuantidadeDisponivel),
     };
   }
-async listar(req, res) {
-  const query = req.query || {};
-  const usuarioId = req.user_id;
 
-  if (!usuarioId) {
-    return CommonResponse.error(res, 498, 'Token não informado.');
-  }
+  async listar(req, res) {
+    const query = req.query || {};
+    const usuarioId = req.user_id;
 
-  if (Object.keys(query).length !== 0) {
-    await EquipamentoQuerySchema.parseAsync(query);
-  }
-
-  const usuario = await Usuario.findById(usuarioId).populate('grupos');
-  const isAdminOrMod = usuario && usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao));
-
-  if (query.status === 'pendente' && !isAdminOrMod) {
-    return CommonResponse.error(res, 403, 'Você não tem permissão para listar equipamentos pendentes.');
-  }
-
-  if (query.status && query.status !== 'ativo' && !isAdminOrMod) {
-    return CommonResponse.error(res, 403, 'Você não tem permissão para listar equipamentos com este status.');
-  }
-
-  const data = await this.service.listar(query, usuarioId, isAdminOrMod);
-  return CommonResponse.success(res, data);
-}
-
-
-async listarPorId(req, res) {
-  const { id } = req.params;
-  const usuarioId = req.user_id?.toString();
-
-  EquipamentoIdSchema.parse(id);
-
-  const equipamento = await this.service.listarPorId(id, usuarioId);
-  if (!equipamento) {
-    return CommonResponse.error(res, HttpStatusCodes.NOT_FOUND.code, 'Equipamento não encontrado.');
-  }
-
-  if (!usuarioId) {
-    if ((equipamento.equiStatus || '').toLowerCase() !== 'ativo') {
-      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Você não tem permissão para acessar equipamentos não ativos.');
+    if (!usuarioId) {
+      return CommonResponse.error(res, 498, 'Token não informado.');
     }
+
+    if (Object.keys(query).length !== 0) {
+      await EquipamentoQuerySchema.parseAsync(query);
+    }
+
+    const usuario = await Usuario.findById(usuarioId).populate('grupos');
+    const isAdminOrMod = usuario && usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao));
+
+    if (query.status === 'pendente' && !isAdminOrMod) {
+      return CommonResponse.error(res, 403, 'Você não tem permissão para listar equipamentos pendentes.');
+    }
+
+    const data = await this.service.listar(query, usuarioId, isAdminOrMod);
+    return CommonResponse.success(res, data);
+  }
+
+  async listarPorId(req, res) {
+    const { id } = req.params;
+    const usuarioId = req.user_id?.toString();
+
+    EquipamentoIdSchema.parse(id);
+
+    const equipamento = await this.service.listarPorId(id, usuarioId);
+    if (!equipamento) {
+      return CommonResponse.error(res, HttpStatusCodes.NOT_FOUND.code, 'Equipamento não encontrado.');
+    }
+
+    if (!usuarioId) {
+      if ((equipamento.equiStatus || '').toLowerCase() !== 'ativo') {
+        return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Você não tem permissão para acessar equipamentos não ativos.');
+      }
+      return CommonResponse.success(res, equipamento);
+    }
+
+    const usuario = await Usuario.findById(usuarioId).populate('grupos');
+    const isAdminOrMod = usuario && usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao));
+    const isOwner = equipamento.equiUsuario?.toString() === usuarioId;
+
+    if (!isOwner && !isAdminOrMod && (equipamento.equiStatus || '').toLowerCase() !== 'ativo') {
+      return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Você não tem permissão para acessar equipamentos não ativos ou não próprios.');
+    }
+
     return CommonResponse.success(res, equipamento);
   }
-
-  const usuario = await Usuario.findById(usuarioId).populate('grupos');
-  const isAdminOrMod = usuario && usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao));
-  const isOwner = equipamento.equiUsuario?.toString() === usuarioId;
-
-  if (!isOwner && !isAdminOrMod && (equipamento.equiStatus || '').toLowerCase() !== 'ativo') {
-    return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Você não tem permissão para acessar equipamentos não ativos ou não próprios.');
-  }
-
-  return CommonResponse.success(res, equipamento);
-}
-
-
 
   async criar(req, res) {
     const usuarioLogado = req.user_id;
@@ -188,15 +182,18 @@ async listarPorId(req, res) {
     if (!equipamento) {
       return CommonResponse.error(res, HttpStatusCodes.NOT_FOUND.code, 'Equipamento não encontrado.');
     }
+
     if (equipamento.equiUsuario?.toString() !== usuarioId) {
       return CommonResponse.error(res, HttpStatusCodes.FORBIDDEN.code, 'Apenas o dono do equipamento pode atualizá-lo.');
     }
 
     const dadosAtualizados = equipamentoUpdateSchema.parse(req.body);
+
     const equipamentoAtualizado = await this.service.atualizar(id, dadosAtualizados);
 
     return CommonResponse.success(res, equipamentoAtualizado, 200, 'Equipamento atualizado com sucesso.');
   }
+
 
   async aprovar(req, res) {
     const usuarioId = req.user_id;
@@ -225,7 +222,6 @@ async listarPorId(req, res) {
     const resultado = await this.service.reprovar(id, usuarioId);
     return CommonResponse.success(res, resultado, 200, 'Equipamento reprovado e excluído com sucesso.');
   }
-
   async atualizarStatus(req, res) {
     const { id } = req.params;
     const { status } = req.body;
@@ -238,9 +234,16 @@ async listarPorId(req, res) {
       return CommonResponse.error(res, HttpStatusCodes.UNAUTHORIZED.code, 'Usuário não autenticado.');
     }
 
-    const equipamento = await this.service.atualizarStatus(id, usuarioId, status);
-    return CommonResponse.success(res, equipamento, 200, `Equipamento ${status === 'ativo' ? 'ativado' : 'inativado'} com sucesso.`);
+    const usuario = await Usuario.findById(usuarioId).populate('grupos');
+    const isAdminOrMod = usuario && usuario.grupos.some(group => [0, 50].includes(group.nivelPermissao));
+
+    const equipamento = await this.service.listarPorId(id, usuarioId, isAdminOrMod);
+
+    const equipamentoAtualizado = await this.service.atualizarStatus(id, usuarioId, status);
+
+    return CommonResponse.success(res, equipamentoAtualizado, 200, `Equipamento ${status === 'ativo' ? 'ativado' : 'inativado'} com sucesso.`);
   }
+
 
   async adicionarFotos(req, res) {
     const { id } = req.params;

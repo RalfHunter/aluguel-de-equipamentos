@@ -50,57 +50,57 @@ const grupoAdmin = {
         substituir: false,
         modificar: false,
         excluir: true
-    }, 
+    },
     {
-            rota: "equipamentos",
-            dominio: "localhost",
-            ativo: true,
-            buscar: true,
-            enviar: true,
-            substituir: true,
-            modificar: true,
-            excluir: true
-        },
-        {
-            rota: "equipamentos-id-status",
-            dominio: "localhost",
-            ativo: true,
-            buscar: false,
-            enviar: false,
-            substituir: false,
-            modificar: true,
-            excluir: false
-        },
-        {
-            rota: "equipamentos-id-aprovar",
-            dominio: "localhost",
-            ativo: true,
-            buscar: false,
-            enviar: false,
-            substituir: false,
-            modificar: true,
-            excluir: false
-        },
-        {
-            rota: "equipamentos-id-reprovar",
-            dominio: "localhost",
-            ativo: true,
-            buscar: false,
-            enviar: false,
-            substituir: false,
-            modificar: true,
-            excluir: false
-        },
-        {
-            rota: "equipamentos-id-foto-id",
-            dominio: "localhost",
-            ativo: true,
-            buscar: true,
-            enviar: true,
-            substituir: false,
-            modificar: false,
-            excluir: false
-        }
+        rota: "equipamentos",
+        dominio: "localhost",
+        ativo: true,
+        buscar: true,
+        enviar: true,
+        substituir: true,
+        modificar: true,
+        excluir: true
+    },
+    {
+        rota: "equipamentos-id-status",
+        dominio: "localhost",
+        ativo: true,
+        buscar: false,
+        enviar: false,
+        substituir: false,
+        modificar: true,
+        excluir: false
+    },
+    {
+        rota: "equipamentos-id-aprovar",
+        dominio: "localhost",
+        ativo: true,
+        buscar: false,
+        enviar: false,
+        substituir: false,
+        modificar: true,
+        excluir: false
+    },
+    {
+        rota: "equipamentos-id-reprovar",
+        dominio: "localhost",
+        ativo: true,
+        buscar: false,
+        enviar: false,
+        substituir: false,
+        modificar: true,
+        excluir: false
+    },
+    {
+        rota: "equipamentos-id-foto-id",
+        dominio: "localhost",
+        ativo: true,
+        buscar: true,
+        enviar: true,
+        substituir: false,
+        modificar: false,
+        excluir: false
+    }
     ]
 }
 const grupoModerador = {
@@ -138,45 +138,55 @@ const grupoModerador = {
         excluir: true
     },
     {
-            rota: "equipamentos",
-            dominio: "localhost",
-            ativo: true,
-            buscar: true,
-            enviar: true,
-            substituir: false,
-            modificar: false,
-            excluir: false
-        },
-        {
-            rota: "equipamentos-id-aprovar",
-            dominio: "localhost",
-            ativo: true,
-            buscar: false,
-            enviar: false,
-            substituir: false,
-            modificar: true,
-            excluir: false
-        },
-        {
-            rota: "equipamentos-id-reprovar",
-            dominio: "localhost",
-            ativo: true,
-            buscar: false,
-            enviar: false,
-            substituir: false,
-            modificar: true,
-            excluir: false
-        },
-              {
-            rota: "equipamentos-id-foto-id",
-            dominio: "localhost",
-            ativo: true,
-            buscar: true,
-            enviar: true,
-            substituir: false,
-            modificar: false,
-            excluir: false
-        }
+        rota: "equipamentos",
+        dominio: "localhost",
+        ativo: true,
+        buscar: true,
+        enviar: true,
+        substituir: false,
+        modificar: true,
+        excluir: false
+    },
+    {
+        rota: "equipamentos-id-aprovar",
+        dominio: "localhost",
+        ativo: true,
+        buscar: false,
+        enviar: false,
+        substituir: false,
+        modificar: true,
+        excluir: false
+    },
+    {
+        rota: "equipamentos-id-status",
+        dominio: "localhost",
+        ativo: true,
+        buscar: false,
+        enviar: false,
+        substituir: false,
+        modificar: true,
+        excluir: false
+    },
+    {
+        rota: "equipamentos-id-reprovar",
+        dominio: "localhost",
+        ativo: true,
+        buscar: false,
+        enviar: false,
+        substituir: false,
+        modificar: true,
+        excluir: false
+    },
+    {
+        rota: "equipamentos-id-foto-id",
+        dominio: "localhost",
+        ativo: true,
+        buscar: true,
+        enviar: true,
+        substituir: false,
+        modificar: false,
+        excluir: false
+    }
     ]
 }
 
@@ -214,35 +224,35 @@ const grupoUsuario = {
         excluir: true
     },
     {
-            rota: "equipamentos",
-            dominio: "localhost",
-            ativo: true,
-            buscar: true,
-            enviar: true,
-            substituir: false,
-            modificar: true,
-            excluir: false
-        },
-        {
-            rota: "equipamentos-id-status",
-            dominio: "localhost",
-            ativo: true,
-            buscar: false,
-            enviar: false,
-            substituir: false,
-            modificar: true,
-            excluir: false
-        },
-        {
-            rota: "equipamentos-id-foto-id",
-            dominio: "localhost",
-            ativo: true,
-            buscar: true,
-            enviar: true,
-            substituir: false,
-            modificar: false,
-            excluir: false
-        }
+        rota: "equipamentos",
+        dominio: "localhost",
+        ativo: true,
+        buscar: true,
+        enviar: true,
+        substituir: false,
+        modificar: true,
+        excluir: false
+    },
+    {
+        rota: "equipamentos-id-status",
+        dominio: "localhost",
+        ativo: true,
+        buscar: false,
+        enviar: false,
+        substituir: false,
+        modificar: true,
+        excluir: false
+    },
+    {
+        rota: "equipamentos-id-foto-id",
+        dominio: "localhost",
+        ativo: true,
+        buscar: true,
+        enviar: true,
+        substituir: false,
+        modificar: false,
+        excluir: false
+    }
     ]
 }
 
