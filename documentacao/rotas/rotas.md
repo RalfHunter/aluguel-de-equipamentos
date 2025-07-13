@@ -365,37 +365,45 @@
 - Grupo removido com sucesso.
 - Em caso de erro, mensagem de erro: "Grupo não encontrado" ou "Grupo em uso".
 
-## 4. Equipamentos
+# 4. Equipamentos
 
 ### 4.1 POST /equipamentos
 
 #### Caso de Uso
-Criar um novo equipamento para locação.
+Criar um novo equipamento para locação com imagens.
 
 #### Regras de Negócio
-- Todos os campos são obrigatórios.
 - Apenas locador autenticado pode cadastrar.
-- Valor diária deve ser número maior que 0.
-- Quantidade deve ser número inteiro.
-- Fotos: mínimo uma, formato JPEG, PNG ou RIFF.
-- Equipamento criado com status pendente.
+- Todos os campos são obrigatórios e validados.
+- Valor da diária deve ser um número positivo.
+- Quantidade deve ser um número inteiro ≥ 0.
+- Categoria deve ser uma válida.
+- Deve conter no minímo 1 foto.
+- Formatos permitidos: JPEG, PNG, RIFF.
+- Tamanho máximo por imagem: 5MB.
+- Imagens são validadas por tipo e tamanho.
+- Equipamento é criado com status `pendente`.
 
 #### Resultado Esperado
-Equipamento criado, aguardando aprovação.
+Equipamento cadastrado e aguardando aprovação.
 
 ### 4.2 GET /equipamentos
 
 #### Caso de Uso
-Listar equipamentos disponíveis para locação com filtros.
+Listar equipamentos com base em filtros e permissões.
 
 #### Regras de Negócio
 - Usuário deve estar autenticado.
-- Retorna apenas equipamentos aprovados.
-- Filtros: categoria, preço, localização, disponibilidade.
-- Paginação de resultados.
+- Locadores visualizam seus próprios equipamentos (pendentes, ativos e inativos).
+- Locatários visualizam apenas os `ativos`.
+- Filtros disponíveis via query:
+  - `categoria`
+  - `status`: `ativo`, `pendente`, `inativo`
+  - `minValor`, `maxValor`
+  - `page`, `limit`
 
 #### Resultado Esperado
-Lista de equipamentos conforme filtros aplicados.
+Lista paginada de equipamentos conforme os filtros.
 
 ### 4.3 GET /equipamentos/:id
 
@@ -404,76 +412,93 @@ Visualizar detalhes de um equipamento específico.
 
 #### Regras de Negócio
 - Usuário deve estar autenticado.
-- ID do equipamento deve ser válido.
-- Retorna informações completas do equipamento.
+- Apenas o dono do equipamneto pode acessar.
 
 #### Resultado Esperado
-Dados detalhados do equipamento solicitado.
+Detalhes completos do equipamento.
 
-### 4.4 PUT /equipamentos/:id
+### 4.4 PATCH /equipamentos/:id
 
 #### Caso de Uso
-Atualizar informações de um equipamento existente.
+Atualizar valor da diária ou quantidade disponível.
 
 #### Regras de Negócio
-- Usuário deve ser o proprietário do equipamento ou admin.
-- Todos os campos são validados.
-- Alterações passam por nova aprovação se necessário.
+- Apenas o dono pode atualizar.
+- Equipamentos `pendentes` e `inativos` não podem ser atualizados.
+- Apenas os campos `equiValorDiaria` e `equiQuantidadeDisponivel` podem ser alterados.
 
 #### Resultado Esperado
 Equipamento atualizado com sucesso.
 
-### 4.5 DELETE /equipamentos/:id
+### 4.5 PATCH /equipamentos/:id/aprovar
 
 #### Caso de Uso
-Remover equipamento do sistema.
+Aprovar equipamento pendente.
 
 #### Regras de Negócio
-- Apenas proprietário ou admin podem remover.
-- Equipamento não pode ter reservas ativas.
-- Remoção das fotos associadas.
+- Acesso restrito a administradores ou moderadores.
+- Apenas equipamentos `pendentes` podem ser aprovados.
 
 #### Resultado Esperado
-Equipamento removido com sucesso.
+Equipamento aprovado e ativado.
 
-### 4.6 POST /equipamentos/:id/foto
+### 4.6 PATCH /equipamentos/:id/reprovar
 
 #### Caso de Uso
-Fazer upload de foto para o equipamento.
+Reprovar e excluir um equipamento pendente.
 
 #### Regras de Negócio
-- Apenas proprietário ou admin podem adicionar fotos.
-- Formatos aceitos: JPG, PNG, WEBP.
-- Compressão automática aplicada.
-- Limite de fotos por equipamento.
+- Acesso restrito a administradores ou moderadores.
+- Apenas equipamentos `pendentes` podem ser reprovados.
+- O equipamento deve ser removido do banco após reprovação.
 
 #### Resultado Esperado
-Foto adicionada com sucesso ao equipamento.
+Equipamento reprovado e removido do sistema.
 
-### 4.7 GET /equipamentos/:id/foto
+### 4.7 PATCH /equipamentos/:id/status
 
 #### Caso de Uso
-Obter foto do equipamento.
+Ativar ou inativar equipamento.
 
 #### Regras de Negócio
-- Acesso público para visualização.
-- Retorna primeira foto ou foto padrão.
+- Apenas o dono do equipamento pode mudar o status.
+- Equipamentos `pendentes` não podem ter o status alterado.
+- Não é possível inativar equipamento com reservas ativas.
+- Transições válidas:
+  - `ativo` → `inativo`
+  - `inativo` → `ativo`
+- Status permitido: `ativo`, `inativo`.
 
 #### Resultado Esperado
-Imagem do equipamento retornada.
+Status do equipamento alterado com sucesso.
 
-### 4.8 DELETE /equipamentos/:id/foto
+### 4.8 POST /equipamentos/:id/foto
 
 #### Caso de Uso
-Remover foto do equipamento.
+Adicionar novas fotos a um equipamento existente.
 
 #### Regras de Negócio
-- Apenas proprietário ou admin podem remover.
-- Remoção do arquivo físico do servidor.
-- Manter pelo menos uma foto.
+- Apenas o proprietário pode adicionar fotos.
+- Equipamento deve existir e ser do usuário autenticado.
+- Imagens devem ser JPEG, PNG ou RIFF.
+- Mínimo 1 foto, máximo 5 no total.
+- As fotos são validadas e processadas (dimensões, tipo, tamanho).
+- Fotos não podem ser alteradas após aprovação.
 
 #### Resultado Esperado
-Foto removida com sucesso.
+Fotos adicionadas com sucesso ao equipamento.
+
+### 4.9 GET /equipamentos/:id/foto/:fotoId
+
+#### Caso de Uso
+Obter uma foto específica de um equipamento.
+
+#### Regras de Negócio
+- Apenas dono, admin/mod ou usuários com acesso a equipamentos `ativos` podem visualizar.
+- ID do equipamento e ID da foto devem ser válidos.
+
+#### Resultado Esperado
+Imagem da foto solicitada enviada.
 
 ## 5. Reservas
 
