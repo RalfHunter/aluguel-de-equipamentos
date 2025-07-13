@@ -17,7 +17,7 @@ export default  {
     // testMatch:['**/UsuarioController.test.js']
     // testMatch:['**/AuthMiddleware.test.js']]
     // testMatch:['**/usuarioRouter.test.js']
-     testMatch:['**/reservaRoutes.test.js' ]
+     testMatch:['**/EquipamentoController.test.js','**/EquipamentoQuerySchema.test.js', '**/EquipamentoSchema.test.js', '**/Equipamento.test.js', '**/equipamentoRoutes.test.js', '**/EquipamentoService.test.js', '**/EquipamentoRepository.test.js', '**/EquipamentoFilterBuilder.test.js', ]
    
 };
- //'**/EquipamentoQuerySchema.test.js', '**/EquipamentoSchema.test.js', '**/Equipamento.test.js', '**/EquipamentoController.test.js', '**/EquipamentoService.test.js', '**/EquipamentoRepository.test.js', '**/EquipamentoFilterBuilder.test.js',
+ //

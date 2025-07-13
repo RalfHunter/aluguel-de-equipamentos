@@ -56,7 +56,7 @@ class EquipamentoService {
 
   async atualizar(id, dadosAtualizados) {
     const equipamento = await this._buscarEquipamentoExistente(id);
-    console.log('Status do equipamento no atualizar:', equipamento.equiStatus);
+    //console.log('Status do equipamento no atualizar:', equipamento.equiStatus);
 
     const status = (equipamento.equiStatus || '').toLowerCase().trim();
 

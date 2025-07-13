@@ -56,7 +56,6 @@ class EquipamentoRepository {
 
   async criar(dadosEquipamentos) {
     const novoEquipamento = new this.model(dadosEquipamentos);
-    console.log('Dados salvos no Mongoose:', novoEquipamento);
     return await novoEquipamento.save();
   }
 

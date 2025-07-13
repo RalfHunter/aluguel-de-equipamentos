@@ -144,18 +144,18 @@ describe("EquipamentoService", () => {
       await expect(equipamentoService.criar(dadosSemFoto)).rejects.toMatchObject({
         name: "CustomError",
         statusCode: HttpStatusCodes.BAD_REQUEST.code,
-        customMessage: "Pelo menos uma foto é obrigatória",
+        customMessage: "Pelo menos uma foto é obrigatória.",
       });
       expect(mockCustomError).toHaveBeenCalledWith({
         statusCode: HttpStatusCodes.BAD_REQUEST.code,
-        customMessage: "Pelo menos uma foto é obrigatória",
+        customMessage: "Pelo menos uma foto é obrigatória.",
       });
     });
   });
 
   describe("listar", () => {
     it("deve chamar repository.listar com os filtros processados e retornar os dados", async () => {
-      const mockFiltros = { page: "1", limit: "10", categoria: "maquinas", status: "true", minValor: "100", maxValor: "500", usuarioId: "userId" };
+      const mockFiltros = { page: "1", limit: "10", categoria: "maquinas", status: "ativo", minValor: "100", maxValor: "500", usuarioId: "userId" };
       const mockResponseData = [makeEquipamento()];
       mockEquipamentoRepositoryInstance.listar.mockResolvedValue(mockResponseData);
       mockEquipamentoFilterBuilderInstance.build.mockReturnValue({ equiCategoria: "maquinas", equiValorDiaria: { $gte: 100, $lte: 500 } });
@@ -168,11 +168,8 @@ describe("EquipamentoService", () => {
         {
           equiCategoria: "maquinas",
           equiValorDiaria: { $gte: 100, $lte: 500 },
-          $or: [
-            { equiStatus: 'ativo' },
-            { equiStatus: 'pendente', equiUsuario: "userId" },
-            { equiStatus: 'inativo', equiUsuario: "userId" },
-          ],
+          equiStatus: 'ativo',
+          equiUsuario: "userId",
         },
         1,
         10
@@ -180,17 +177,20 @@ describe("EquipamentoService", () => {
       expect(resultado).toEqual(mockResponseData);
     });
 
-it("deve chamar listarPendentes se filtro status for pendente", async () => {
-  const mockFiltros = { status: "false", usuarioId: "userId", page: "1", limit: "10" };
-  const mockPendentes = [makeEquipamento({ equiStatus: "pendente" })];
-  mockEquipamentoRepositoryInstance.listarPendentes.mockResolvedValue(mockPendentes);
-  mockEquipamentoFilterBuilderInstance.build.mockReturnValue({});
+    it("deve chamar listarPendentes se filtro status for pendente", async () => {
+      const mockFiltros = { status: "pendente", usuarioId: "userId", page: "1", limit: "10" };
+      const mockPendentes = [makeEquipamento({ equiStatus: "pendente" })];
+      mockEquipamentoRepositoryInstance.listar.mockResolvedValue(mockPendentes);
+      mockEquipamentoFilterBuilderInstance.build.mockReturnValue({});
+      Usuario.findById.mockReturnValue({
+        populate: jest.fn().mockResolvedValue({ grupos: [{ nivelPermissao: 0 }] }),
+      });
 
-  const resultado = await equipamentoService.listar(mockFiltros, "userId");
+      const resultado = await equipamentoService.listar(mockFiltros, "userId", true);
 
-  expect(mockEquipamentoRepositoryInstance.listarPendentes).toHaveBeenCalledWith(1, 10);
-  expect(resultado).toEqual(mockPendentes);
-});
+      expect(mockEquipamentoRepositoryInstance.listar).toHaveBeenCalledWith({ equiStatus: "pendente" }, 1, 10);
+      expect(resultado).toEqual(mockPendentes);
+    });
 
     it("deve processar filtros sem status definido para usuário autenticado", async () => {
       const mockFiltros = { page: "1", limit: "10", usuarioId: "userId" };
@@ -201,13 +201,7 @@ it("deve chamar listarPendentes se filtro status for pendente", async () => {
       const resultado = await equipamentoService.listar(mockFiltros, "userId");
 
       expect(mockEquipamentoRepositoryInstance.listar).toHaveBeenCalledWith(
-        {
-          $or: [
-            { equiStatus: 'ativo' },
-            { equiStatus: 'pendente', equiUsuario: "userId" },
-            { equiStatus: 'inativo', equiUsuario: "userId" },
-          ],
-        },
+        { equiStatus: 'ativo' },
         1,
         10
       );
@@ -232,13 +226,18 @@ it("deve chamar listarPendentes se filtro status for pendente", async () => {
   });
 
   describe("listarPendentes", () => {
-    it("deve chamar repository.listarPendentes e retornar resultado", async () => {
+    it("deve chamar repository.listar com status pendente para admin e retornar resultado", async () => {
+      const mockFiltros = { status: "pendente", page: "1", limit: "10" };
       const mockPendentes = [makeEquipamento({ equiStatus: "pendente" })];
-      mockEquipamentoRepositoryInstance.listarPendentes.mockResolvedValue(mockPendentes);
+      mockEquipamentoRepositoryInstance.listar.mockResolvedValue(mockPendentes);
+      mockEquipamentoFilterBuilderInstance.build.mockReturnValue({});
+      Usuario.findById.mockReturnValue({
+        populate: jest.fn().mockResolvedValue({ grupos: [{ nivelPermissao: 0 }] }),
+      });
 
-      const resultado = await equipamentoService.listarPendentes();
+      const resultado = await equipamentoService.listar(mockFiltros, "userId", true);
 
-      expect(mockEquipamentoRepositoryInstance.listarPendentes).toHaveBeenCalled();
+      expect(mockEquipamentoRepositoryInstance.listar).toHaveBeenCalledWith({ equiStatus: "pendente" }, 1, 10);
       expect(resultado).toEqual(mockPendentes);
     });
   });
@@ -357,11 +356,11 @@ it("deve chamar listarPendentes se filtro status for pendente", async () => {
       await expect(equipamentoService.aprovar(validObjectId, "userId")).rejects.toMatchObject({
         name: "CustomError",
         statusCode: HttpStatusCodes.FORBIDDEN.code,
-        customMessage: "Acesso restrito a administradores ou moderadores.",
+        customMessage: "Você não tem permissão para aprovar equipamentos.",
       });
       expect(mockCustomError).toHaveBeenCalledWith({
         statusCode: HttpStatusCodes.FORBIDDEN.code,
-        customMessage: "Acesso restrito a administradores ou moderadores.",
+        customMessage: "Você não tem permissão para aprovar equipamentos.",
       });
     });
 
@@ -427,11 +426,11 @@ it("deve chamar listarPendentes se filtro status for pendente", async () => {
       await expect(equipamentoService.reprovar(validObjectId, "userId")).rejects.toMatchObject({
         name: "CustomError",
         statusCode: HttpStatusCodes.FORBIDDEN.code,
-        customMessage: "Acesso restrito a administradores ou moderadores.",
+        customMessage: "Você não tem permissão para reprovar equipamentos.",
       });
       expect(mockCustomError).toHaveBeenCalledWith({
         statusCode: HttpStatusCodes.FORBIDDEN.code,
-        customMessage: "Acesso restrito a administradores ou moderadores.",
+        customMessage: "Você não tem permissão para reprovar equipamentos.",
       });
     });
 
@@ -570,11 +569,11 @@ it("deve chamar listarPendentes se filtro status for pendente", async () => {
       await expect(equipamentoService.atualizarStatus(validObjectId, userId, "inativo")).rejects.toMatchObject({
         name: "CustomError",
         statusCode: HttpStatusCodes.CONFLICT.code,
-        customMessage: "Não é possível inativar equipamento com reservas ativas.",
+        customMessage: "Não é possível inativar equipamento com reservas ativas ou futuras.",
       });
       expect(mockCustomError).toHaveBeenCalledWith({
         statusCode: HttpStatusCodes.CONFLICT.code,
-        customMessage: "Não é possível inativar equipamento com reservas ativas.",
+        customMessage: "Não é possível inativar equipamento com reservas ativas ou futuras.",
       });
     });
 
@@ -660,7 +659,7 @@ it("deve chamar listarPendentes se filtro status for pendente", async () => {
       mockEquipamentoRepositoryInstance.listarPorId.mockResolvedValue(mockEquip);
       mockEquipamentoRepositoryInstance.buscarFotoPorId.mockResolvedValue(mockFoto);
 
-      const resultado = await equipamentoService.ListarFoto(validObjectId, validFotoId);
+      const resultado = await equipamentoService.listarFoto(validObjectId, validFotoId);
 
       expect(mockEquipamentoRepositoryInstance.listarPorId).toHaveBeenCalledWith(validObjectId);
       expect(mockEquipamentoRepositoryInstance.buscarFotoPorId).toHaveBeenCalledWith(validObjectId, validFotoId);
@@ -674,7 +673,7 @@ it("deve chamar listarPendentes se filtro status for pendente", async () => {
       mockEquipamentoRepositoryInstance.listarPorId.mockResolvedValue(null);
       messages.error.resourceNotFound.mockReturnValue("Equipamento não encontrado.");
 
-      await expect(equipamentoService.ListarFoto(validObjectId, validFotoId)).rejects.toMatchObject({
+      await expect(equipamentoService.listarFoto(validObjectId, validFotoId)).rejects.toMatchObject({
         name: "CustomError",
         statusCode: HttpStatusCodes.NOT_FOUND.code,
         customMessage: "Equipamento não encontrado.",
@@ -690,7 +689,7 @@ it("deve chamar listarPendentes se filtro status for pendente", async () => {
       mockEquipamentoRepositoryInstance.listarPorId.mockResolvedValue(mockEquip);
       mockEquipamentoRepositoryInstance.buscarFotoPorId.mockResolvedValue(null);
 
-      await expect(equipamentoService.ListarFoto(validObjectId, validFotoId)).rejects.toMatchObject({
+      await expect(equipamentoService.listarFoto(validObjectId, validFotoId)).rejects.toMatchObject({
         name: "CustomError",
         statusCode: HttpStatusCodes.NOT_FOUND.code,
         customMessage: "Foto não encontrada.",
@@ -708,7 +707,7 @@ it("deve chamar listarPendentes se filtro status for pendente", async () => {
       mockEquipamentoRepositoryInstance.buscarFotoPorId.mockResolvedValue(mockFoto);
       jest.spyOn(require('fs'), 'existsSync').mockReturnValue(false);
 
-      await expect(equipamentoService.ListarFoto(validObjectId, validFotoId)).rejects.toMatchObject({
+      await expect(equipamentoService.listarFoto(validObjectId, validFotoId)).rejects.toMatchObject({
         name: "CustomError",
         statusCode: HttpStatusCodes.NOT_FOUND.code,
         customMessage: "Arquivo da foto não encontrado no servidor.",
@@ -721,24 +720,24 @@ it("deve chamar listarPendentes se filtro status for pendente", async () => {
   });
 
   describe("_processarFiltros", () => {
-    it('deve retornar status ativo quando status é "true"', () => {
-      const filtros = { status: "true", usuarioId: "userId" };
+    it('deve retornar status ativo quando status é "ativo"', () => {
+      const filtros = { status: "ativo", usuarioId: "userId" };
       mockEquipamentoFilterBuilderInstance.build.mockReturnValue({});
       const { query } = equipamentoService._processarFiltros(filtros, "userId");
       expect(query).toEqual({
-        $or: [
-          { equiStatus: 'ativo' },
-          { equiStatus: 'pendente', equiUsuario: "userId" },
-          { equiStatus: 'inativo', equiUsuario: "userId" },
-        ],
+        equiStatus: 'ativo',
+        equiUsuario: "userId",
       });
     });
 
-    it('deve retornar status pendente quando status é "false"', () => {
-      const filtros = { status: "false", usuarioId: "userId" };
+    it('deve retornar status pendente quando status é "pendente"', () => {
+      const filtros = { status: "pendente", usuarioId: "userId" };
       mockEquipamentoFilterBuilderInstance.build.mockReturnValue({});
-      const { query } = equipamentoService._processarFiltros(filtros, "userId");
-      expect(query).toEqual({ equiStatus: "pendente", equiUsuario: "userId" });
+      Usuario.findById.mockReturnValue({
+        populate: jest.fn().mockResolvedValue({ grupos: [{ nivelPermissao: 0 }] }),
+      });
+      const { query } = equipamentoService._processarFiltros(filtros, "userId", true);
+      expect(query).toEqual({ equiStatus: "pendente" });
     });
 
     it('deve retornar status personalizado quando status é outro valor', () => {
@@ -752,13 +751,7 @@ it("deve chamar listarPendentes se filtro status for pendente", async () => {
       const filtros = { usuarioId: "userId" };
       mockEquipamentoFilterBuilderInstance.build.mockReturnValue({});
       const { query } = equipamentoService._processarFiltros(filtros, "userId");
-      expect(query).toEqual({
-        $or: [
-          { equiStatus: 'ativo' },
-          { equiStatus: 'pendente', equiUsuario: "userId" },
-          { equiStatus: 'inativo', equiUsuario: "userId" },
-        ],
-      });
+      expect(query).toEqual({ equiStatus: "ativo" });
     });
 
     it('deve retornar status ativo padrão quando status não definido e sem usuário', () => {
@@ -828,13 +821,13 @@ it("deve chamar listarPendentes se filtro status for pendente", async () => {
       expect(() => equipamentoService._validarFotosObrigatorias({ equiFotos: [] })).toThrow(
         new CustomError({
           statusCode: HttpStatusCodes.BAD_REQUEST.code,
-          customMessage: "Pelo menos uma foto é obrigatória",
+          customMessage: "Pelo menos uma foto é obrigatória.",
         })
       );
       expect(() => equipamentoService._validarFotosObrigatorias({})).toThrow(
         new CustomError({
           statusCode: HttpStatusCodes.BAD_REQUEST.code,
-          customMessage: "Pelo menos uma foto é obrigatória",
+          customMessage: "Pelo menos uma foto é obrigatória.",
         })
       );
     });

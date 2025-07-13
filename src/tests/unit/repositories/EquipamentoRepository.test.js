@@ -181,47 +181,16 @@ describe('EquipamentoRepository', () => {
       await expect(repository.listarPendentes()).rejects.toThrow('Database error');
     });
   });
-describe('listarPorId', () => {
-  // it('deve retornar detalhes de um equipamento ativo com população', async () => {
-  //   const id = '123';
-  //   const mockEquipamento = { _id: '123', equiNome: 'Betoneira', equiStatus: 'ativo' };
-  //   const queryMock = {
-  //     populate: jest.fn().mockReturnThis(), 
-  //     populate: jest.fn().mockResolvedValue(mockEquipamento),
-  //   };
-  //   mockFindById.mockReturnValueOnce(queryMock);
+  describe('listarPorId', () => {
 
-  //   const result = await repository.listarPorId(id);
+    it('deve lançar erro para ID inválido', async () => {
+      const id = 'invalid_id';
+      mockFindById.mockRejectedValueOnce(new Error('Invalid ID'));
 
-  //   expect(result).toEqual(mockEquipamento);
-  //   expect(mockFindById).toHaveBeenCalledWith(id);
-  //   expect(queryMock.populate).toHaveBeenCalledTimes(2); 
-  // });
-
-  // it('deve retornar null se o equipamento não for encontrado', async () => {
-  //   const id = '123';
-   
-  //   const queryMock = {
-  //     populate: jest.fn().mockReturnThis(),
-  //     populate: jest.fn().mockResolvedValue(null),
-  //   };
-  //   mockFindById.mockReturnValueOnce(queryMock);
-
-  //   const result = await repository.listarPorId(id);
-
-  //   expect(result).toBeNull();
-  //   expect(mockFindById).toHaveBeenCalledWith(id);
-  //   expect(queryMock.populate).toHaveBeenCalledTimes(2);
-  // });
-
-  it('deve lançar erro para ID inválido', async () => {
-    const id = 'invalid_id';
-    mockFindById.mockRejectedValueOnce(new Error('Invalid ID'));
-
-    await expect(repository.listarPorId(id)).rejects.toThrow('Invalid ID');
-    expect(mockFindById).toHaveBeenCalledWith(id);
+      await expect(repository.listarPorId(id)).rejects.toThrow('Invalid ID');
+      expect(mockFindById).toHaveBeenCalledWith(id);
+    });
   });
-});
 
   describe('atualizar', () => {
     it('deve atualizar equipamento e marcar como inativo para nova aprovação', async () => {

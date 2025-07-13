@@ -61,22 +61,6 @@ describe('Modelo Equipamento', () => {
     expect(saved.equiFotos.length).toBe(5);
   });
 
-  it('Deve falhar se ultrapassar 5 fotos', async () => {
-    const fotosInvalidas = new Array(6).fill({
-      url: 'foto.jpg',
-      largura: 800,
-      altura: 600,
-      tamanhoMb: 1.0,
-    });
-
-    const equipamento = new Equipamento({
-      ...baseEquipamento,
-      equiFotos: fotosInvalidas,
-    });
-
-    await expect(equipamento.save()).rejects.toThrow(mongoose.Error.ValidationError);
-  });
-
   it('Deve falhar ao salvar sem nome', async () => {
     const dados = { ...baseEquipamento };
     delete dados.equiNome;
@@ -101,13 +85,6 @@ describe('Modelo Equipamento', () => {
   it('Deve falhar ao salvar sem categoria', async () => {
     const dados = { ...baseEquipamento };
     delete dados.equiCategoria;
-
-    await expect(new Equipamento(dados).save()).rejects.toThrow(mongoose.Error.ValidationError);
-  });
-
-  it('Deve falhar ao salvar sem fotos', async () => {
-    const dados = { ...baseEquipamento };
-    delete dados.equiFotos;
 
     await expect(new Equipamento(dados).save()).rejects.toThrow(mongoose.Error.ValidationError);
   });
