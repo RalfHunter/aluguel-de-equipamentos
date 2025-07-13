@@ -2,12 +2,14 @@ export default  {
   transform: {
     "^.+\\.js$": "babel-jest"
   },
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
   "coveragePathIgnorePatterns": [
       "/node_modules/",
       "/src/utils/helpers/index.js",
       "/utils/logger.js",
       "utils/helpers/HttpStatusCodes.js"
     ],
+    // testMatch:['**/TokenUtil.test.js']
     // testMatch:['**/AuthController.test.js', '**/AuthService.test.js', '**/authRoutes.test.js']
     // testMatch:['**/multerUserConfig.test.js']
     // testMatch:['**/messages.test.js']
@@ -15,6 +17,7 @@ export default  {
     // testMatch:['**/AuthService.test.js']
     // testMatch:['**/Usuario.test.js']
     // testMatch:['**/UsuarioController.test.js']
+    // testMatch:['**/UsuarioService.test.js', '**/Usuario.test.js']
     // testMatch:['**/AuthMiddleware.test.js']]
     // testMatch:['**/usuarioRouter.test.js']
     //testMatch:['**/equipamentoRoutes.test.js']
@@ -66,7 +69,11 @@ export default  {
     //   '**/messages.test.js',
     //   '**/randomPastDate.test.js',
     //   '**/StatusService.test.js',
-    //   '**/LoginSchema.test.js'
+    //   '**/LoginSchema.test.js',
+    //   '**/authRoutes.test.js',
+    //   '**/grupoRoutes.test.js',
+    //   '**/usuarioRoutes.test.js',
+    //   '**/TokenUtil.test.js'
     // ]
     // testMatch:['**/GrupoQuerySchema.test.js']
     // testMatch:['**/errorHandler.test.js']

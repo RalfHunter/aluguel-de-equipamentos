@@ -101,43 +101,6 @@ describe('UsuarioController', () => {
     });
   });
 
-  describe('atualizar', () => {
-    it('deve atualizar um usuário pelo id recebido no req.user_id', async () => {
-      req = {
-        user_id: '67959501ea0999e0a0fa9f59', body: {
-          nome: "Nome Alterado Com Sucesso",
-          email: "emailalteradocomsucesso@gmail.com",
-          telefone: "(69) 99999-9999"
-        }
-      };
-      const updatedData = {
-        id: req.user_id,
-        nome: req.body.nome,
-        email: req.body.email,
-        telefone: req.body.telefone,
-        senha: "Laravel@123",
-        dataNascimento: "2000-08-08",
-        CPF: "96945788253",
-        ativo: true,
-        tipoUsuario: "usuario",
-        fotoUsuario: "http://lorempixel.com/640/480"
-      };
-      usuarioController.service.updateUsuario.mockResolvedValue(updatedData);
-      await usuarioController.updateUsuario(req, res);
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({
-        data: updatedData,
-        errors: [],
-        message: "Usuário atualizado com sucesso!"
-      });
-    });
-
-    it('deve retornar um erro ao tentar atualizar o usuário sem id', async () => {
-      req.params = undefined;
-      await expect(usuarioController.updateUsuario(req, res)).rejects.toThrow();
-    });
-  });
-
   describe('alterarStatus', () => {
     it('deve alterar status com sucesso', async () => {
       req.params = { id: '67959501ea0999e0a0fa9f59' };
@@ -756,36 +719,6 @@ describe('UsuarioController', () => {
         errors: [],
         message: "Requisição bem-sucedida"
       });
-    });
-
-    it('deve atualizar usuário filtrando apenas campos permitidos', async () => {
-      req = {
-        user_id: '67959501ea0999e0a0fa9f59',
-        body: {
-          nome: "Nome Alterado",
-          email: "novo@email.com",
-          telefone: "(69) 99999-9999"
-          // Removendo campos que não são permitidos para não causar erro de validação
-        }
-      };
-
-      const dadosFiltrados = {
-        nome: "Nome Alterado",
-        email: "novo@email.com",
-        telefone: "(69) 99999-9999"
-      };
-
-      const updatedData = {
-        id: req.user_id,
-        ...dadosFiltrados
-      };
-
-      usuarioController.service.updateUsuario.mockResolvedValue(updatedData);
-      
-      await usuarioController.updateUsuario(req, res);
-      
-      expect(usuarioController.service.updateUsuario).toHaveBeenCalledWith(req.user_id, dadosFiltrados);
-      expect(res.status).toHaveBeenCalledWith(200);
     });
 
     it('deve listar usuário por params quando params e query estão presentes', async () => {

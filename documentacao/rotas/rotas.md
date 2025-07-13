@@ -144,21 +144,7 @@
 - Dados do usuário solicitado.
 - Em caso de erro, mensagem de erro: "Usuário não encontrado" ou "Permissão negada".
 
-### 2.3 PATCH /usuarios/
-
-#### Caso de Uso
-- Atualizar dados do próprio usuário logado.
-
-#### Regras de Negócio
-- Apenas usuários autenticados podem acessar.
-- Usuário só pode editar seus próprios dados.
-- Campos editáveis: nome, telefone, dataNascimento.
-
-#### Resultado Esperado
-- Dados do usuário atualizados com sucesso.
-- Em caso de erro, mensagem de erro: "Dados inválidos" ou "Não autorizado".
-
-### 2.4 PATCH /usuarios/:id
+### 2.3 PATCH /usuarios/:id
 
 #### Caso de Uso
 - Alterar status do usuário (apenas administradores e moderadores).
@@ -172,7 +158,7 @@
 - Status do usuário alterado com sucesso.
 - Em caso de erro, mensagem de erro: "Usuário não encontrado" ou "Permissão negada".
 
-### 2.5 POST /usuarios
+### 2.4 POST /usuarios
 
 #### Caso de Uso
 - Criar um novo usuário no sistema.
@@ -189,7 +175,7 @@
 - Usuário criado com sucesso.
 - Em caso de erro, mensagem de erro: "Email já cadastrado", "Telefone já cadastrado", "CPF já cadastrado" ou "Permissão negada".
 
-### 2.6 POST /usuarios/:id/foto
+### 2.5 POST /usuarios/:id/foto
 
 #### Caso de Uso
 - Fazer upload da foto do usuário.

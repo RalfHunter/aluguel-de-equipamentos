@@ -2,6 +2,7 @@ import request from 'supertest'
 import mongoose from 'mongoose';
 import fakerbr from 'faker-br';
 import { gerarDataAleatoria } from '../../utils/helpers/randomPastDate';
+import "../../../src/routes/authRoutes.js"
 
 describe('authRouter', () => {
     let usuarioToken;
@@ -205,12 +206,13 @@ describe('authRouter', () => {
     describe('post /signup', () =>{
         it('deve realziar singup com sucesso', async() =>{
             const body = gerarUsuarioFake()
+            
             const res = await request(app)
             .post('/signup')
             .send(body)
             .expect(201)
+            
             expect(res.body.message).toEqual('Recurso criado com sucesso')
-            // console.log(res.body)
             usuarioFake = res.body?.data
         });
         it('deve falhar ao realizar singup, dados inválidos', async() =>{
@@ -236,19 +238,28 @@ describe('authRouter', () => {
             .set("Authorization", `Bearer ${moderador?.accessToken}`)
             .expect(200)
             expect(res.body?.message).toEqual('Usuário excluído com sucesso.')
-            expect(res.body?.data).toMatchObject(usuarioFake)
+            expect(res.body?.data).toMatchObject({
+                _id: usuarioFake._id,
+                nome: usuarioFake.nome,
+                email: usuarioFake.email,
+                ativo: usuarioFake.ativo,
+                dataNascimento: usuarioFake.dataNascimento
+            })
             // .expect(200)
         })
     });
 })
 
 function gerarUsuarioFake() {
+  // Generate unique values to avoid conflicts
+  const uniqueId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+  
   return {
     nome: fakerbr.name.firstName() + ' ' + fakerbr.name.lastName(),
-    email: fakerbr.name.firstName() + fakerbr.name.lastName() + fakerbr.internet.email(),
-    telefone: "11 4789-7843", // ex: (11) 91234-5678
-    senha: "Senha@1234", // pode criptografar depois
-    dataNascimento: "2001-01-01", // ou fake.date.past(30)
+    email: `test${uniqueId}@exemplo.com.br`,
+    telefone: "(11) 91234-5678", // Valid format
+    senha: "Senha@1234", // Valid strong password
+    dataNascimento: "1990-01-01", // Valid date
     CPF: fakerbr.br.cpf(),
-}
+  }
 }

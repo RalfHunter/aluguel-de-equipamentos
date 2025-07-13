@@ -89,7 +89,6 @@ class UsuarioService {
         break
       }
     }
-    console.log(permissao)
     if (permissao) {
       throw new CustomError({
         statusCode: 403,
@@ -164,17 +163,30 @@ class UsuarioService {
     const data = await this.model.buscarPorId(id)
     // const objetoJs = await data.toObject()
     const foto  = data.fotoUsuario
-    if(fs.existsSync(foto)){
-      return foto
-    }
-     throw new CustomError({
+    
+    // Verificar se o usuário tem foto definida
+    if (!foto || foto === null || foto === undefined) {
+      throw new CustomError({
           statusCode: HttpStatusCodes.NOT_FOUND.code,
           errorType: 'resourceNotFound',
           field: 'Foto',
           details: [],
           customMessage: 'Foto não encontrada.'
       })
-
+    }
+    
+    // Verificar se o arquivo existe no sistema de arquivos
+    if(fs.existsSync(foto)){
+      return foto
+    }
+    
+    throw new CustomError({
+          statusCode: HttpStatusCodes.NOT_FOUND.code,
+          errorType: 'resourceNotFound',
+          field: 'Foto',
+          details: [],
+          customMessage: 'Foto não encontrada.'
+      })
   }
   async deletarUsuario(req, id){
     if (req.user_id == id) {
@@ -193,7 +205,6 @@ class UsuarioService {
         break
       }
     }
-    console.log(permissao)
     if (permissao) {
       throw new CustomError({
         statusCode: 403,
@@ -202,7 +213,16 @@ class UsuarioService {
         customMessage: messages.error.unauthorized("Permissão")
       })
     }
+  
     const data = await this.model.deletarUsuario(id);
+    if (data.fotoUsuario && fs.existsSync(data.fotoUsuario)) {
+      try {
+        fs.unlinkSync(data.fotoUsuario)
+      } catch (error) {
+        console.error('Erro ao remover foto do usuário:', error);
+        // Usuário foi deletado, mas foto permaneceu (não crítico)
+      }
+    }
     return data;
   
 
