@@ -92,10 +92,10 @@ const grupoAdmin = {
             excluir: false
         },
         {
-            rota: "equipamentos-id-foto",
+            rota: "equipamentos-id-foto-id",
             dominio: "localhost",
             ativo: true,
-            buscar: false,
+            buscar: true,
             enviar: true,
             substituir: false,
             modificar: false,
@@ -142,7 +142,7 @@ const grupoModerador = {
             dominio: "localhost",
             ativo: true,
             buscar: true,
-            enviar: false,
+            enviar: true,
             substituir: false,
             modificar: false,
             excluir: false
@@ -165,6 +165,16 @@ const grupoModerador = {
             enviar: false,
             substituir: false,
             modificar: true,
+            excluir: false
+        },
+              {
+            rota: "equipamentos-id-foto-id",
+            dominio: "localhost",
+            ativo: true,
+            buscar: true,
+            enviar: true,
+            substituir: false,
+            modificar: false,
             excluir: false
         }
     ]
@@ -223,16 +233,16 @@ const grupoUsuario = {
             modificar: true,
             excluir: false
         },
-        // {
-        //     rota: "equipamentos-id-foto",
-        //     dominio: "localhost",
-        //     ativo: true,
-        //     buscar: false,
-        //     enviar: true,
-        //     substituir: false,
-        //     modificar: false,
-        //     excluir: false
-        // }
+        {
+            rota: "equipamentos-id-foto-id",
+            dominio: "localhost",
+            ativo: true,
+            buscar: true,
+            enviar: true,
+            substituir: false,
+            modificar: false,
+            excluir: false
+        }
     ]
 }
 
