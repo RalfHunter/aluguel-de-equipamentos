@@ -1,12 +1,16 @@
 import { beforeEach, describe, expect, jest } from '@jest/globals';
 import ReservaService from '../../../services/ReservaService.js';
-import ReservaRepository from '../../../repositories/ReservaRepository.js
-import Equipamento from '../../../models/Equipamento.js
-import Usuario from '../../../models/Usuario.js
+import ReservaRepository from '../../../repositories/ReservaRepository.js';
+import Equipamento from '../../../models/Equipamento.js';
+import Usuario from '../../../models/Usuario.js';
 import mongoose from 'mongoose';
+import request from "supertest";
 import { CustomError } from '../../../utils/helpers/index.js';
 
-jest.mock('../../repositories/ReservaRepository.js', () => {
+const PORT = process.env.APP_PORT || 3000;
+let app = `http://localhost:${PORT}`
+
+jest.mock('../../../repositories/ReservaRepository.js', () => {
   return jest.fn().mockImplementation(() => ({
     listar: jest.fn(),
     criar: jest.fn(),
@@ -19,12 +23,12 @@ jest.mock('../../repositories/ReservaRepository.js', () => {
   }));
 });
 
-jest.mock('../../models/Equipamento.js', () => ({
+jest.mock('../../../models/Equipamento.js', () => ({
   findById: jest.fn(),
   findByIdAndUpdate: jest.fn(),
 }));
 
-jest.mock('../../models/Usuario.js', () => ({
+jest.mock('../../../models/Usuario.js', () => ({
   findById: jest.fn(),
 }));
 
@@ -51,6 +55,41 @@ describe('ReservaService', () => {
   let reservaService;
   let repositoryMock;
   let req;
+  let token;
+  let usuarioId;
+  let equipamentoId;
+  let reservaId;
+
+  beforeAll(async () => {
+    try {
+      const loginRes = await request(app)
+        .post('/login')
+        .send({ email: 'dev@gmail.com', senha: 'Dev@1234' });
+
+      token = loginRes.body?.data?.user?.accessToken;
+      usuarioId = loginRes.body?.data?.user?._id;
+      console.log('USUARIO', usuarioId);
+      expect(token).toBeTruthy();
+      expect(usuarioId).toBeTruthy();
+
+      const equipamentoRes = await request(app)
+        .get('/equipamentos')
+        .set('Authorization', `Bearer ${token}`);
+      equipamentoId = equipamentoRes.body?.data?.docs[0]?._id;
+      console.log('EQUIPAMENTO', equipamentoId);
+      expect(equipamentoId).toBeTruthy();
+
+      const reservaRes = await request(app)
+        .get('/reservas')
+        .set('Authorization', `Bearer ${token}`);
+      reservaId = reservaRes.body?.data?.dados?.docs[0]?._id;
+      expect(reservaId).toBeTruthy();
+      console.log('RESERVA', reservaId);
+    } catch (error) {
+      console.error('Erro ao configurar beforeAll:', error);
+      throw new Error('Falha ao obter IDs para os testes');
+    }
+  });
 
   beforeEach(() => {
     req = { params: {}, body: {}, query: {} };
@@ -61,50 +100,121 @@ describe('ReservaService', () => {
     mongoose.Types.ObjectId.isValid.mockReturnValue(true);
   });
 
+  // Função auxiliar para criar dados de teste
+  const criarReservaData = (overrides = {}) => ({
+    dataInicial: new Date('2026-08-22T05:00:00.000Z'),
+    dataFinal: new Date('2026-08-23T05:00:00.000Z'),
+    quantidadeEquipamento: 2,
+    valorEquipamento: 200,
+    enderecoEquipamento: 'Rua Exemplo, 123',
+    statusReserva: 'pendente',
+    equipamentos: equipamentoId,
+    usuarios: usuarioId,
+    ...overrides,
+  });
+
   describe('listar', () => {
     it('deve listar todas as reservas', async () => {
+        const usuarioMock = {
+        _id: usuarioId,
+        grupos: [{ nivelPermissao: 0 }],
+      };
+
+      Usuario.findById.mockReturnValue({
+        populate: jest.fn().mockResolvedValue(usuarioMock),
+      });
+
       const mockData = [
         {
-          _id: '67959501ea0999e0a0fa9f58',
+          _id: reservaId,
           dataInicial: new Date('2026-06-01T05:01:45.884Z'),
           dataFinal: new Date('2026-06-05T05:01:45.884Z'),
           quantidadeEquipamento: 2,
           valorEquipamento: 200,
           enderecoEquipamento: 'Rua Exemplo, 123',
           statusReserva: 'confirmada',
-          equipamentos: '67959501ea0999e0a0fa9f58',
-          usuarios: '6839a06f57d3853fbcc3797f',
+          equipamentos: equipamentoId,
+          usuarios: usuarioId,
         },
       ];
       repositoryMock.listar.mockResolvedValue(mockData);
+
+       req.user_id = usuarioId;
 
       const result = await reservaService.listar(req);
 
       expect(repositoryMock.listar).toHaveBeenCalledWith(req);
       expect(result).toEqual(mockData);
     });
+
+    it('deve retornar 404 se o usuário não for encontrado', async () => {
+      Usuario.findById.mockReturnValue({
+        populate: jest.fn().mockResolvedValue(null),
+      });
+
+      req.user_id = usuarioId;
+
+      await expect(reservaService.listar(req)).rejects.toThrow(
+        new CustomError({
+          statusCode: 404,
+          errorType: 'resourceNotFound',
+          field: 'usuarios',
+          customMessage: 'Usuário não encontrado.',
+        })
+      );
+    });
+
+    it('deve lançar erro se dataFinalAtrasada for inválida', async () => {
+      const invalidData = criarReservaData({
+        dataFinalAtrasada: 'data-invalida',
+      });
+
+      await expect(reservaService.criar(invalidData)).rejects.toThrow(
+        new CustomError({
+          statusCode: 400,
+          errorType: 'invalidData',
+          field: 'datas',
+          customMessage: 'As datas fornecidas são inválidas.',
+        })
+      );
+    });
+
+    it('deve lançar erro se usuarioId for inválido', async () => {
+      const invalidData = criarReservaData({
+        usuarios: 'usuario-invalido',
+        equipamentos: equipamentoId, 
+      });
+
+      mongoose.Types.ObjectId.isValid.mockImplementation((id) => id !== 'usuario-invalido');
+
+      Equipamento.findById.mockResolvedValue({
+        _id: equipamentoId,
+        equiStatus: 'ativo',
+        equiQuantidadeDisponivel: 10,
+      });
+
+      await expect(reservaService.criar(invalidData)).rejects.toThrow(
+        new CustomError({
+          statusCode: 400,
+          errorType: 'invalidData',
+          field: 'usuarios',
+          customMessage: 'ID de usuário inválido: usuario-invalido',
+        })
+      );
+    });
   });
 
   describe('criar', () => {
-    const validReservaData = {
-      dataInicial: new Date('2026-08-22T05:00:00.000Z'),
-      dataFinal: new Date('2026-08-23T05:00:00.000Z'),
-      quantidadeEquipamento: 2,
-      valorEquipamento: 200,
-      enderecoEquipamento: 'Rua Exemplo, 123',
-      statusReserva: 'pendente',
-      equipamentos: '67959501ea0999e0a0fa9f58',
-      usuarios: '6839a06f57d3853fbcc3797f',
-    };
-
     it('deve criar uma reserva válida', async () => {
+      const validReservaData = criarReservaData();
       const mockEquipamento = {
-        _id: '67959501ea0999e0a0fa9f58',
+        _id: equipamentoId,
         equiQuantidadeDisponivel: 5,
-        equiStatus: true,
+        equiStatus: "ativo",
       };
       const mockUsuario = {
-        _id: '6839a06f57d3853fbcc3797f',
+        _id: usuarioId,
+        ativo: true,
       };
       Equipamento.findById.mockResolvedValue(mockEquipamento);
       Usuario.findById.mockResolvedValue(mockUsuario);
@@ -114,7 +224,7 @@ describe('ReservaService', () => {
 
       const result = await reservaService.criar(validReservaData);
 
-      expect(mongoose.Types.ObjectId.isValid).toHaveBeenCalledWith('67959501ea0999e0a0fa9f58');
+      expect(mongoose.Types.ObjectId.isValid).toHaveBeenCalledWith(equipamentoId);
       expect(Equipamento.findById).toHaveBeenCalledWith(expect.objectContaining({
         toString: expect.any(Function),
         equals: expect.any(Function),
@@ -136,18 +246,18 @@ describe('ReservaService', () => {
     }, 10000);
 
     it('deve criar uma reserva com data no formato ISO do MongoDB', async () => {
-      const isoReservaData = {
-        ...validReservaData,
+      const isoReservaData = criarReservaData({
         dataInicial: new Date('2026-06-22T05:01:45.884Z'),
         dataFinal: new Date('2026-06-23T05:01:45.884Z'),
-      };
+      });
       const mockEquipamento = {
-        _id: '67959501ea0999e0a0fa9f58',
+        _id: equipamentoId,
         equiQuantidadeDisponivel: 5,
-        equiStatus: true,
+        equiStatus: 'ativo',
       };
       const mockUsuario = {
-        _id: '6839a06f57d3853fbcc3797f',
+        _id: usuarioId,
+        ativo: true,
       };
       Equipamento.findById.mockResolvedValue(mockEquipamento);
       Equipamento.findByIdAndUpdate.mockResolvedValue(mockEquipamento);
@@ -158,7 +268,7 @@ describe('ReservaService', () => {
 
       const result = await reservaService.criar(isoReservaData);
 
-      expect(mongoose.Types.ObjectId.isValid).toHaveBeenCalledWith('67959501ea0999e0a0fa9f58');
+      expect(mongoose.Types.ObjectId.isValid).toHaveBeenCalledWith(equipamentoId);
       expect(Equipamento.findById).toHaveBeenCalledWith(expect.objectContaining({
         toString: expect.any(Function),
         equals: expect.any(Function),
@@ -194,11 +304,10 @@ describe('ReservaService', () => {
     });
 
     it('deve lançar erro se dataInicial for maior a dataFinal', async () => {
-      const invalidData = {
-        ...validReservaData,
+      const invalidData = criarReservaData({
         dataInicial: new Date('2026-06-05T05:01:45.884Z'),
         dataFinal: new Date('2026-06-05T05:01:45.884Z'),
-      };
+      });
 
       await expect(reservaService.criar(invalidData)).rejects.toThrow(
         new CustomError({
@@ -212,10 +321,9 @@ describe('ReservaService', () => {
     });
 
     it('deve lançar erro se dataFinalAtrasada for menor ou igual a dataFinal', async () => {
-      const invalidData = {
-        ...validReservaData,
+      const invalidData = criarReservaData({
         dataFinalAtrasada: new Date('2025-09-05T05:00:00.000Z'),
-      };
+      });
 
       await expect(reservaService.criar(invalidData)).rejects.toThrow(
         new CustomError({
@@ -229,10 +337,9 @@ describe('ReservaService', () => {
     });
 
     it('deve lançar erro se dataInicial for no passado', async () => {
-      const invalidData = {
-        ...validReservaData,
+      const invalidData = criarReservaData({
         dataInicial: new Date('2024-01-01T05:01:45.884Z'),
-      };
+      });
 
       await expect(reservaService.criar(invalidData)).rejects.toThrow(
         new CustomError({
@@ -246,10 +353,9 @@ describe('ReservaService', () => {
     });
 
     it('deve lançar erro se quantidadeEquipamento for menor ou igual a zero', async () => {
-      const invalidData = {
-        ...validReservaData,
+      const invalidData = criarReservaData({
         quantidadeEquipamento: 0,
-      };
+      });
 
       await expect(reservaService.criar(invalidData)).rejects.toThrow(
         new CustomError({
@@ -263,10 +369,9 @@ describe('ReservaService', () => {
     });
 
     it('deve lançar erro se equipamentos não for especificado', async () => {
-      const invalidData = {
-        ...validReservaData,
+      const invalidData = criarReservaData({
         equipamentos: null,
-      };
+      });
 
       await expect(reservaService.criar(invalidData)).rejects.toThrow(
         new CustomError({
@@ -280,10 +385,9 @@ describe('ReservaService', () => {
     });
 
     it('deve lançar erro se equipamentoId for inválido', async () => {
-      const invalidData = {
-        ...validReservaData,
+      const invalidData = criarReservaData({
         equipamentos: 'invalid-id',
-      };
+      });
       mongoose.Types.ObjectId.isValid.mockReturnValue(false);
 
       await expect(reservaService.criar(invalidData)).rejects.toThrow(
@@ -298,6 +402,7 @@ describe('ReservaService', () => {
     });
 
     it('deve lançar erro se equipamento não for encontrado', async () => {
+      const validReservaData = criarReservaData();
       Equipamento.findById.mockResolvedValue(null);
 
       await expect(reservaService.criar(validReservaData)).rejects.toThrow(
@@ -313,12 +418,12 @@ describe('ReservaService', () => {
 
     it('deve lançar erro se quantidade solicitada excede a disponível', async () => {
       const mockEquipamento = {
-        _id: '6839a07057d3853fbcc379b8',
+        _id: '6839a07057d3853fbcc379b8', 
         equiQuantidadeDisponivel: 1,
-        equiStatus: true,
+        equiStatus: 'ativo',
       };
-
       Equipamento.findById.mockResolvedValue(mockEquipamento);
+      const validReservaData = criarReservaData();
 
       await expect(reservaService.criar(validReservaData)).rejects.toThrow(
         new CustomError({
@@ -338,12 +443,13 @@ describe('ReservaService', () => {
 
     it('deve lançar erro se houver reservas sobrepostas', async () => {
       const mockEquipamento = {
-        _id: '67959501ea0999e0a0fa9f58',
+        _id: equipamentoId,
         equiQuantidadeDisponivel: 5,
-        equiStatus: true,
+        equiStatus: 'ativo',
       };
       const mockUsuario = {
-        _id: '6839a06f57d3853fbcc3797f',
+        _id: usuarioId,
+        ativo: true,
       };
       Equipamento.findById.mockResolvedValue(mockEquipamento);
       Usuario.findById.mockResolvedValue(mockUsuario);
@@ -351,13 +457,11 @@ describe('ReservaService', () => {
         { _id: 'existing-reserva' },
       ]);
       repositoryMock.findReservasAtrasadas.mockResolvedValue([]);
-
-      const futureReservaData = {
-        ...validReservaData,
+      const futureReservaData = criarReservaData({
         dataInicial: new Date('2025-08-14'),
         dataFinal: new Date('2025-08-15'),
         dataFinalAtrasada: new Date('2025-08-19'),
-      };
+      });
 
       await expect(reservaService.criar(futureReservaData)).rejects.toThrow(
         new CustomError({
@@ -374,22 +478,22 @@ describe('ReservaService', () => {
   describe('atualizar', () => {
     it('deve atualizar uma reserva válida', async () => {
       const mockReserva = {
-        _id: '67959501ea0999e0a0fa9f58',
+        _id: reservaId,
         dataInicial: new Date('2025-06-01T05:01:45.884Z'),
         dataFinal: new Date('2025-06-05T05:01:45.884Z'),
         quantidadeEquipamento: 2,
         valorEquipamento: 200,
         enderecoEquipamento: 'Rua Exemplo, 123',
         statusReserva: 'pendente',
-        equipamentos: 'equip1',
-        usuarios: 'user1',
+        equipamentos: equipamentoId,
+        usuarios: usuarioId,
       };
       const updateData = { statusReserva: 'confirmada' };
       repositoryMock.atualizar.mockResolvedValue({ ...mockReserva, ...updateData });
 
-      const result = await reservaService.atualizar(mockReserva._id, updateData);
+      const result = await reservaService.atualizar(reservaId, updateData);
 
-      expect(repositoryMock.atualizar).toHaveBeenCalledWith(mockReserva._id, updateData);
+      expect(repositoryMock.atualizar).toHaveBeenCalledWith(reservaId, updateData);
       expect(result).toEqual({ ...mockReserva, ...updateData });
     });
   });
@@ -397,28 +501,28 @@ describe('ReservaService', () => {
   describe('ensureReservaExists', () => {
     it('deve retornar a reserva se ela existir', async () => {
       const mockReserva = {
-        _id: '67959501ea0999e0a0fa9f58',
+        _id: reservaId,
         dataInicial: new Date('2030-12-01T05:01:45.884Z'),
         dataFinal: new Date('2030-12-05T05:01:45.884Z'),
         quantidadeEquipamento: 2,
         valorEquipamento: 200,
         enderecoEquipamento: 'Rua Exemplo, 123',
         statusReserva: 'pendente',
-        equipamentos: 'equip1',
-        usuarios: 'user1',
+        equipamentos: equipamentoId,
+        usuarios: usuarioId,
       };
       repositoryMock.buscarPorID.mockResolvedValue(mockReserva);
 
-      const result = await reservaService.ensureReservaExists(mockReserva._id);
+      const result = await reservaService.ensureReservaExists(reservaId);
 
-      expect(repositoryMock.buscarPorID).toHaveBeenCalledWith(mockReserva._id);
+      expect(repositoryMock.buscarPorID).toHaveBeenCalledWith(reservaId);
       expect(result).toEqual(mockReserva);
     });
 
     it('deve lançar erro se a reserva não for encontrada', async () => {
       repositoryMock.buscarPorID.mockResolvedValue(null);
 
-      await expect(reservaService.ensureReservaExists('67959501ea0999e0a0fa9f58')).rejects.toThrow(
+      await expect(reservaService.ensureReservaExists(reservaId)).rejects.toThrow(
         new CustomError({
           statusCode: 404,
           errorType: 'resourceNotFound',
@@ -433,8 +537,8 @@ describe('ReservaService', () => {
   describe('marcarReservasAtrasadas', () => {
     it('deve marcar reservas como atrasadas quando existem reservas atrasadas', async () => {
       const mockReservasAtrasadas = [
-        { _id: '67959501ea0999e0a0fa9f58' },
-        { _id: '6839a06f57d3853fbcc3797f' },
+        { _id: reservaId },
+        { _id: '6839a06f57d3853fbcc3797f' }, // ID fixo para simular múltiplas reservas
       ];
       repositoryMock.findReservasParaMarcarAtrasada.mockResolvedValue(mockReservasAtrasadas);
       repositoryMock.marcarReservasComoAtrasadas.mockResolvedValue();
@@ -442,7 +546,7 @@ describe('ReservaService', () => {
       const result = await reservaService.marcarReservasAtrasadas();
 
       expect(repositoryMock.findReservasParaMarcarAtrasada).toHaveBeenCalledWith(expect.any(Date));
-      expect(repositoryMock.marcarReservasComoAtrasadas).toHaveBeenCalledWith(['67959501ea0999e0a0fa9f58', '6839a06f57d3853fbcc3797f']);
+      expect(repositoryMock.marcarReservasComoAtrasadas).toHaveBeenCalledWith([reservaId, '6839a06f57d3853fbcc3797f']);
       expect(result).toEqual({ message: '2 reservas marcadas como atrasadas.' });
     });
   });

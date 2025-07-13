@@ -22,6 +22,7 @@ const fakeMappings = {
     ativo: () => fakebr.random.arrayElement([true, false]),
     fotoUsuario: () => fakebr.internet.avatar(),
     tokenUnico: () => "",
+    exp_tokenUnico_recuperacao: () =>"",
     accessToken: () => "",
     refreshToken: () => "",
     codigo_recupera_senha: () => "",
@@ -44,7 +45,6 @@ const fakeMappings = {
       const rotaAleatoria = fakebr.helpers.arrayElement(rotas);
       return {
         rota: rotaAleatoria,
-        dominio: 'localhost',
         ativo: true,
         buscar: fakebr.datatype.boolean(0.8),
         enviar: fakebr.datatype.boolean(0.6),

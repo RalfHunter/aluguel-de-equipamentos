@@ -1,7 +1,7 @@
 ## 7° Sprint (18/06/2025 - 01/07/2025)
 
 1. Criação da rota de recover usuário; (Silvio Huan)
-2. Criação da rota de avaliações
+2. Criação da rota de avaliações (Danielle Melo)
    - Controller;
    - Zod;
    - Routes

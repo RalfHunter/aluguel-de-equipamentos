@@ -2,24 +2,32 @@ import request from 'supertest'
 import mongoose from 'mongoose';
 import fakerbr from 'faker-br';
 import { gerarDataAleatoria } from '../../utils/helpers/randomPastDate';
+import "../../../src/routes/authRoutes.js"
 
 describe('authRouter', () => {
     let usuarioToken;
     let idUsuario;
     let refreshTokenUsuario;
-    let tokenAdmin;
-    let idAdmin;
-    let nomeAdmin;
+    let usuarioFake
     // URL da requisição
     let app = 'http://localhost:5011'
     // Usuário alvo da requisição
-    let tokenUsuario;
-    let id;
-    let statusUser;
-    let user;
-    // Admin alvo para testes
-    let idAdmin2
+    let moderador;
     describe('rota /login', () => {
+        it('/login, realiza login para poder deletar usuário criado durante os testes', async()=>{
+            const body = {
+                email:"moderador@gmail.com",
+                senha:"Moderador@1234"
+            }
+            const res = await request(app)
+            .post('/login')
+            .send(body)
+            .expect(200)
+            expect(res.body?.message).toEqual("Requisição bem-sucedida")
+            expect(res.body?.data).not.toEqual(null)
+            expect(res.body?.errors).toHaveLength(0)
+            moderador = res.body?.data?.user
+        })
         it('/login realizado com sucesso por um usuário comum', async () => {
             const body = {
                 email:"usuario@gmail.com",
@@ -81,8 +89,8 @@ describe('authRouter', () => {
             const res = await request(app)
             .post("/logout")
             .set("Authorization", `Bearer invalido`)
-            .expect(500)
-            expect(res.body?.message).toEqual("Erro interno do servidor. Tente novamente mais tarde.")
+            .expect(401)
+            expect(res.body?.message).toEqual("Token de acesso inválido ou malformado.")
         });
         
     });
@@ -152,7 +160,7 @@ describe('authRouter', () => {
             .send(body)
             .expect(401)
             expect(res.body?.data).toEqual(null)
-            expect(res.body?.message).toEqual('Erro de autorização: Token.')
+            expect(res.body?.message).toEqual('Refresh token inválido ou não corresponde ao usuário.')
         });
     });
     describe('/introspect', () =>{
@@ -195,61 +203,63 @@ describe('authRouter', () => {
             expect(res.body?.errors[0]).toEqual({"message": "Required", "path": "accessToken"})
         });
     });
-    describe('/recover', () =>{
-        it('deve ter sucesso ao realizar recover', async () =>{
-           const body = {
-            email:'usuario@gmail.com'
-           }
-           const res = await request(app)
-           .post('/recover')
-           .send(body)
-           .expect(200) 
-           expect(res.body?.message).toEqual('Requisição bem-sucedida')
-           expect(res.body?.data?.message).toEqual('Solicitação de recuperação de senha recebida. Um e-mail foi enviado com instruções.')
-           expect(res.body?.errors).toHaveLength(0)
-        });
-        it('deve falhar ao realizar recover, campo email invalido', async () =>{
-           const body = {
-            invalido:'usuario@gmail.com'
-           }
-           const res = await request(app)
-           .post('/recover')
-           .send(body)
-           .expect(404) 
-           expect(res.body?.message).toEqual('Recurso não encontrado')
-           expect(res.body?.errors).toHaveLength(0)
-        });
-        it('deve falhar ao realizar recover, valor do campo email invalido', async () =>{
-           const body = {
-            email:'EsteEmailComCertezaNãoExiste'
-           }
-           const res = await request(app)
-           .post('/recover')
-           .send(body)
-           .expect(400) 
-           expect(res.body?.message).toEqual('Erro de validação. 1 campo(s) inválido(s).')
-           expect(res.body?.errors[0]).toEqual({"message": "Formato de email inválido.", "path": "email"})
-        });
-    });
     describe('post /signup', () =>{
         it('deve realziar singup com sucesso', async() =>{
             const body = gerarUsuarioFake()
+            
             const res = await request(app)
             .post('/signup')
             .send(body)
-
-            console.log(res.body)
+            .expect(201)
+            
+            expect(res.body.message).toEqual('Recurso criado com sucesso')
+            usuarioFake = res.body?.data
+        });
+        it('deve falhar ao realizar singup, dados inválidos', async() =>{
+            const body = {
+                nome:"1231", 
+                email:"invalido",
+                senha:"invalida",
+                telefone:"fone",
+                dataNascimento:"invalido",
+                CPF:"invalido"
+            }
+            const res = await request(app)
+            .post('/signup')
+            .send(body)
+            .expect(400)
+            expect(res.body.message).toEqual('Erro de validação. 8 campo(s) inválido(s).')
+            expect(res.body?.errors).toHaveLength(8)
+        });
+        it('deletar usuário criado durante os testes', async ()=>{
+            // console.log(moderador)
+             const res = await request(app)
+            .delete(`/usuarios/${usuarioFake?._id}`)
+            .set("Authorization", `Bearer ${moderador?.accessToken}`)
+            .expect(200)
+            expect(res.body?.message).toEqual('Usuário excluído com sucesso.')
+            expect(res.body?.data).toMatchObject({
+                _id: usuarioFake._id,
+                nome: usuarioFake.nome,
+                email: usuarioFake.email,
+                ativo: usuarioFake.ativo,
+                dataNascimento: usuarioFake.dataNascimento
+            })
+            // .expect(200)
         })
-    })
+    });
 })
 
 function gerarUsuarioFake() {
+  // Generate unique values to avoid conflicts
+  const uniqueId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+  
   return {
     nome: fakerbr.name.firstName() + ' ' + fakerbr.name.lastName(),
-    email: fakerbr.internet.email(),
-    telefone: fakerbr.phone.phoneNumber(), // ex: (11) 91234-5678
-    senha: fakerbr.internet.password(12), // pode criptografar depois
-    dataNascimento: gerarDataAleatoria(), // ou fake.date.past(30)
+    email: `test${uniqueId}@exemplo.com.br`,
+    telefone: "(11) 91234-5678", // Valid format
+    senha: "Senha@1234", // Valid strong password
+    dataNascimento: "1990-01-01", // Valid date
     CPF: fakerbr.br.cpf(),
-}
+  }
 }

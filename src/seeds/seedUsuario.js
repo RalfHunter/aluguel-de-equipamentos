@@ -1,14 +1,8 @@
 import fs from "fs"
 import Usuario from "../models/Usuario.js"
-// import getGlobalFakeMapping from "../globalFakeMapping"
 import bcrypt from "bcryptjs";
-import { faker } from "@faker-js/faker";
 import getGlobalFakeMapping from "./globalFakeMapping.js";
 import Grupo from "../models/Grupo.js";
-
-
-// await DbConect.conectar();
-
 
 
 export async function gerarSenhaHash(senhaPura){
@@ -57,11 +51,11 @@ async function SeedUsuario(){
             grupos
         });
     }
-    const dev = {
-        nome: "Dev",
-        email: "dev@gmail.com",
+    const Moderador = {
+        nome: "Moderador",
+        email: "moderador@gmail.com",
         telefone: "69 98191-4471",
-        senha:  await bcrypt.hash('Dev@1234', 8),
+        senha:  await bcrypt.hash('Moderador@1234', 8),
         dataNascimento: fake.dataNascimento(),
         CPF: "12345612345", // Geração de CPF fictício
         notaMedia: 0,
@@ -70,11 +64,11 @@ async function SeedUsuario(){
         grupos: [moderador._id]
         
     }
-    const dev2 = {
-        nome: "Dev2",
-        email: "dev2@gmail.com",
+    const Moderador2 = {
+        nome: "Moderador Dois",
+        email: "moderador2@gmail.com",
         telefone: "69 98191-0000",
-        senha:  await bcrypt.hash('Dev@1234', 8),
+        senha:  await bcrypt.hash('Moderador@1234', 8),
         dataNascimento: fake.dataNascimento(),
         CPF: "12345612347", // Geração de CPF fictício
         notaMedia: 0,
@@ -88,18 +82,18 @@ async function SeedUsuario(){
         telefone: "69 93121-2271",
         senha:  await bcrypt.hash('Usuario@1234', 8),
         dataNascimento: fake.dataNascimento(),
-        CPF: "12345612346", // Geração de CPF fictício
+        CPF: "95677319007", // Geração de CPF fictício
         notaMedia: 0,
-        ativo: true,
+        ativo: true,    
         fotoUsuario:'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmtv-wGPAGVnAMkWDSteg4qGIRHhtLCYgoDQ&s',
         grupos: [comum._id]
         
     }
-    const Dono = {
-        nome: "Dono",
-        email: "dono@gmail.com",
+    const Dev = {
+        nome: "Dev",
+        email: "dev@gmail.com",
         telefone: "69 98191-0100",
-        senha:  await bcrypt.hash('Dono@1234', 8),
+        senha:  await bcrypt.hash('Dev@1234', 8),
         dataNascimento: fake.dataNascimento(),
         CPF: "12345612317", // Geração de CPF fictício
         notaMedia: 0,
@@ -107,10 +101,10 @@ async function SeedUsuario(){
         fotoUsuario:'https://pt.quizur.com/_image?href=https://img.quizur.com/f/img63365b54eee492.52029189.png?lastEdited=1664506795&w=600&h=600&f=webp',
         grupos: [admin._id]
     }
-    usuarios.push({...dev})
+    usuarios.push({...Moderador})
     usuarios.push({...user})
-    usuarios.push({...dev2})
-    usuarios.push({...Dono})
+    usuarios.push({...Dev})
+    usuarios.push({...Moderador2})
     // Inserir no banco
     await Usuario.collection.insertMany(usuarios);
     // console.log(`${usuarios.length} usuários inseridos com sucesso!`);

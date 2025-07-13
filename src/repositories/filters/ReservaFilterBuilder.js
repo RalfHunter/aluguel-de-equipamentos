@@ -1,8 +1,9 @@
 import Reserva from "../../models/Reserva.js";
 import ReservaRepository from "../ReservaRepository.js";
+import mongoose from 'mongoose';
 
-class ReservaFilterBuilder{
-    constructor(){
+class ReservaFilterBuilder {
+    constructor() {
         this.filtros = {};
         this.reservaRepository = new ReservaRepository();
         this.reservaModel = new Reserva();
@@ -10,26 +11,26 @@ class ReservaFilterBuilder{
 
     comDataInicial(dataInicial) {
         if (dataInicial && !isNaN(Date.parse(dataInicial))) {
-          this.filtros.dataInicial = { $gte: new Date(dataInicial) };
+            this.filtros.dataInicial = { $gte: new Date(dataInicial) };
         }
         return this;
-      }
-    
-      comDataFinal(dataFinal) {
-        if (dataFinal && !isNaN(Date.parse(dataFinal))) {
-          this.filtros.dataFinal = { $lte: new Date(dataFinal) }; // Corrigido para $lte
-        }
-        return this;
-      }
+    }
 
-    comDataFinalAtrasada(dataFinalAtrasada){
-        if(dataFinalAtrasada && !isNaN(Date.parse(dataFinalAtrasada))){
+    comDataFinal(dataFinal) {
+        if (dataFinal && !isNaN(Date.parse(dataFinal))) {
+            this.filtros.dataFinal = { $lte: new Date(dataFinal) }; // Corrigido para $lte
+        }
+        return this;
+    }
+
+    comDataFinalAtrasada(dataFinalAtrasada) {
+        if (dataFinalAtrasada && !isNaN(Date.parse(dataFinalAtrasada))) {
             this.filtros.dataFinalAtrasada = { $lt: new Date(dataFinalAtrasada) }
         }
         return this;
     }
 
-    comQuantidadeEquipamento(quantidadeEquipamento){
+    comQuantidadeEquipamento(quantidadeEquipamento) {
         if (quantidadeEquipamento) {
             const parsed = parseInt(quantidadeEquipamento, 10);
             if (!isNaN(parsed)) {
@@ -39,7 +40,7 @@ class ReservaFilterBuilder{
         return this;
     }
 
-    comValorEquipamento(valorEquipamento){
+    comValorEquipamento(valorEquipamento) {
         if (valorEquipamento) {
             const parsed = parseFloat(valorEquipamento);
             if (!isNaN(parsed)) {
@@ -49,25 +50,33 @@ class ReservaFilterBuilder{
         return this;
     }
 
-    comEnderecoEquipamento(enderecoEquipamento){
-        if(enderecoEquipamento){
-            this.filtros.enderecoEquipamento = { $regex: enderecoEquipamento, $options: 'i'}
+    comEnderecoEquipamento(enderecoEquipamento) {
+        if (enderecoEquipamento) {
+            this.filtros.enderecoEquipamento = { $regex: enderecoEquipamento, $options: 'i' }
         }
         return this;
     }
 
-    comStatus(statusReserva){
-        if(statusReserva){
-            this.filtros.statusReserva = { $regex: statusReserva, $options: 'i'}
+    comStatus(statusReserva) {
+        if (statusReserva) {
+            this.filtros.statusReserva = statusReserva;
+        }
+         return this;
+    }
+
+    comUsuarios(usuarioId) {
+        if (usuarioId) {
+            this.filtros["usuarios"] = new mongoose.Types.ObjectId(usuarioId);
         }
         return this;
     }
 
-    escapeRegex(texto) {
-        return texto.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')
-    }
+    // escapeRegex(texto) {
+    //     return texto.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')
+    // }
 
-    build(){
+    build() {
+        console.log('Filtros construídos:', this.filtros);
         return this.filtros;
     }
 }

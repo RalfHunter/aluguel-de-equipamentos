@@ -15,7 +15,7 @@ class EquipamentoRepository {
         {
           path: 'equiAvaliacoes',
           populate: {
-            path: 'usuarios',   
+            path: 'usuarios',
             select: 'nome',
           },
         },
@@ -29,19 +29,7 @@ class EquipamentoRepository {
   }
 
   async listarPorId(id) {
-    return await this.model
-      .findById(id)
-      .populate({
-        path: 'equiAvaliacoes',
-        populate: {
-          path: 'usuarios',
-          select: 'nome',
-        },
-      })
-      .populate({
-        path: 'equiUsuario',
-        select: 'nome',
-      });
+    return await this.model.findById(id);
   }
 
   async listarPendentes(pagina = 1, limite = 10) {
@@ -64,10 +52,11 @@ class EquipamentoRepository {
       ],
     };
     return await this.model.paginate({ equiStatus: 'pendente' }, options);
-  }  
-  
+  }
+
   async criar(dadosEquipamentos) {
     const novoEquipamento = new this.model(dadosEquipamentos);
+    console.log('Dados salvos no Mongoose:', novoEquipamento);
     return await novoEquipamento.save();
   }
 
@@ -84,6 +73,18 @@ class EquipamentoRepository {
       });
     }
     return resultado;
+  }
+
+  async buscarFotoPorId(equipamentoId, fotoId) {
+    const equipamento = await this.model.findById(equipamentoId);
+    if (!equipamento) {
+      throw new CustomError({
+        statusCode: HttpStatusCodes.NOT_FOUND.code,
+        customMessage: 'Equipamento não encontrado.',
+      });
+    }
+    const foto = equipamento.equiFotos.find(f => f._id.toString() === fotoId);
+    return foto;
   }
 }
 

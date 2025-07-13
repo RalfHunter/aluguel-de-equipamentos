@@ -13,7 +13,7 @@ class GrupoController {
      * Lista grupos com filtros e paginação
      */
     async listar(req, res) {
-        console.log('Estou no listar em GrupoController');
+        // console.log('Estou no listar em GrupoController');
 
         const { id } = req.params || {};
         
@@ -37,7 +37,7 @@ class GrupoController {
      * Cria um novo grupo
      */
     async criar(req, res) {
-           console.log('Estou no criar em GrupoController');
+        //    console.log('Estou no criar em GrupoController');
 
         // Validação dos dados de entrada usando Zod (estrutural)
         const parsedData = GrupoSchema.parse(req.body);
@@ -52,7 +52,7 @@ class GrupoController {
      * Atualiza um grupo
      */
     async atualizar(req, res) {
-        console.log('Estou no atualizar em GrupoController');
+        // console.log('Estou no atualizar em GrupoController');
 
         //1ª Validação estrutural - validação do ID passado por parâmetro
         const { id } = req.params || null;
@@ -73,7 +73,7 @@ class GrupoController {
      * Deleta um grupo
      */
     async deletar(req, res) {
-        console.log('Estou no deletar em GrupoController');
+        // console.log('Estou no deletar em GrupoController');
     
         // Validação estrutural - validação do ID passado por parâmetro
         const { id } = req.params || null;
@@ -82,7 +82,7 @@ class GrupoController {
         }
         const parsedData = GrupoIdSchema.parse(id)
         // Chama o serviço para deletar o grupo
-        const data = await this.service.deletar(id);
+        const data = await this.service.deletar(req, id);
     
         // Se chegou até aqui, é porque deu tudo certo, retornar 200 OK
         return CommonResponse.success(res, data, 200, 'Grupo excluído com sucesso.');

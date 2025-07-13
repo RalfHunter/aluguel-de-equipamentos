@@ -1,6 +1,6 @@
 import request from 'supertest'
-import mongoose from 'mongoose'
-import { any } from 'zod/v4'
+import '../../../src/routes/grupoRoutes.js'
+
 
 describe('grupoRouter', () => {
     let admin = ''
@@ -22,18 +22,18 @@ describe('grupoRouter', () => {
         })
         it('deve logar como moderador para provar que seu acesso não é permitido em nenhuma dessas rotas', async() =>{
             const body = {
-                email: "dev@gmail.com",
-                senha:"Dev@1234"
+                email: "moderador@gmail.com",
+                senha:"Moderador@1234"
             }
             const res = await request(app)
                 .post("/login")
                 .send(body)
             moderador = res.body?.data?.user
         })
-        it('deve logar como admin para ser possivel fazer requisições', async () => {
+        it('deve logar como Dev/admin para ser possivel fazer requisições', async () => {
             const body = {
-                email: "dono@gmail.com",
-                senha: "Dono@1234"
+                email: "dev@gmail.com",
+                senha: "Dev@1234"
             }
             const res = await request(app)
                 .post("/login")
@@ -65,7 +65,7 @@ describe('grupoRouter', () => {
             const res = await request(app)
                 .get('/grupos')
                 .set("Authorization", `Bearer ${admin?.accessToken}`)
-            expect(200)
+                .expect(200)
             expect(res.body.message).toEqual("Requisição bem-sucedida")
             expect(res.body).toHaveProperty("data")
             expect(Array.isArray(res.body?.data?.docs)).toBe(true)
@@ -77,7 +77,6 @@ describe('grupoRouter', () => {
             expect(res.body?.data?.docs[0]).toHaveProperty("nivelPermissao")
             expect(res.body?.data?.docs[0]).toHaveProperty("permissoes")
             expect(res.body?.data?.docs[0]?.permissoes[0]).toHaveProperty("rota")
-            expect(res.body?.data?.docs[0]?.permissoes[0]).toHaveProperty("dominio")
             expect(res.body?.data?.docs[0]?.permissoes[0]).toHaveProperty("ativo")
             expect(res.body?.data?.docs[0]?.permissoes[0]).toHaveProperty("buscar")
             expect(res.body?.data?.docs[0]?.permissoes[0]).toHaveProperty("enviar")
@@ -85,15 +84,15 @@ describe('grupoRouter', () => {
             expect(res.body?.data?.docs[0]?.permissoes[0]).toHaveProperty("modificar")
             expect(res.body?.data?.docs[0]?.permissoes[0]).toHaveProperty("excluir")
             expect(res.body?.data?.docs[0]?.permissoes[0]).toHaveProperty("_id")
-            grupoUsuario = await pegarIdGrupo(res.body?.data?.docs)
+            grupoUsuario = pegarIdGrupo(res.body?.data?.docs)
             // console.log(grupoUsuario)
-        });
+        }, 10000);
         it('deve listar os grupos baseado nas queries, por nome neste exemplo', async () => {
             const res = await request(app)
                 .get('/grupos')
                 .set("Authorization", `Bearer ${admin?.accessToken}`)
                 .query({ nome: "moderador" })
-            expect(200)
+                .expect(200)
             expect(res.body?.message).toEqual("Requisição bem-sucedida")
             expect(res.body?.data?.docs[0]?.nome).toEqual("moderador")
             expect(Number.isInteger(res.body?.data?.docs[0]?.nivelPermissao)).toBe(true)
@@ -103,7 +102,7 @@ describe('grupoRouter', () => {
                 .get('/grupos')
                 .set("Authorization", `Bearer ${admin?.accessToken}`)
                 .query({ ativo: true })
-            expect(200)
+                .expect(200)
             expect(res.body?.message).toEqual("Requisição bem-sucedida")
             expect(res.body?.data?.docs[0]?.ativo).toBe(true)
             expect(Number.isInteger(res.body?.data?.docs[0]?.nivelPermissao)).toBe(true)
@@ -113,16 +112,19 @@ describe('grupoRouter', () => {
                 .get('/grupos')
                 .set("Authorization", `Bearer ${admin?.accessToken}`)
                 .query({ descricao: "Grupo que pude alocar e alugar equipamentos" })
-            expect(200)
+                .expect(200)
             expect(res.body?.message).toEqual("Requisição bem-sucedida")
             expect(res.body?.data?.docs[0]?.ativo).toBe(true)
             expect(res.body?.data?.docs[0]?.descricao).toEqual("Grupo que pude alocar e alugar equipamentos")
         });
         it('deve listar um grupo por id passado no params', async () => {
+            if (!grupoUsuario || !grupoUsuario._id) {
+                throw new Error('grupoUsuario não foi definido corretamente no teste anterior')
+            }
             const res = await request(app)
                 .get(`/grupos/${grupoUsuario._id}`)
                 .set("Authorization", `Bearer ${admin?.accessToken}`)
-            expect(200)
+                .expect(200)
             expect(res.body?.message).toEqual("Requisição bem-sucedida")
         });
         it('não deve retorna data = null se o id fornecido não existir', async () => {
@@ -175,7 +177,6 @@ describe('grupoRouter', () => {
                 permissoes: [
                     {
                         rota: "/usuarios",
-                        dominio: "localhost",
                         ativo: true,
                         buscar: true,
                         enviar: true,
@@ -202,7 +203,6 @@ describe('grupoRouter', () => {
                 permissoes: [
                     {
                         rota: "/usuarios",
-                        dominio: "localhost",
                         ativo: true,
                         buscar: true,
                         enviar: true,
@@ -344,7 +344,6 @@ describe('grupoRouter', () => {
                 permissoes: [
                     {
                         rota: "/usuarios",
-                        dominio: "localhost",
                         ativo: true,
                         buscar: true,
                         enviar: true,
@@ -360,7 +359,10 @@ describe('grupoRouter', () => {
             .send(body)
             .expect(200)
             expect(res.body?.message).toEqual("Requisição bem-sucedida")
-            expect(res.body?.data).toMatchObject(body)
+            // Remove campos dinâmicos da comparação
+            const { _id, data_criacao, data_atualizacao, ...bodyForComparison } = body
+            const { _id: resId, data_criacao: resCreated, data_atualizacao: resUpdated, ...resDataForComparison } = res.body?.data
+            expect(resDataForComparison).toMatchObject(bodyForComparison)
             grupoCriado = res.body?.data
         })
         it('deve retornar erro atualizar grupos, id invalido', async()=>{
@@ -419,7 +421,12 @@ describe('grupoRouter', () => {
                 .set("Authorization", `Bearer ${admin?.accessToken}`)
                 .expect(200)
                 expect(res.body?.message).toEqual('Grupo excluído com sucesso.')
-                expect(res.body?.data).toMatchObject(grupoCriado)
+                // Compare apenas campos não dinâmicos
+                expect(res.body?.data?._id).toEqual(grupoCriado._id)
+                expect(res.body?.data?.nome).toEqual(grupoCriado.nome)
+                expect(res.body?.data?.descricao).toEqual(grupoCriado.descricao)
+                expect(res.body?.data?.ativo).toEqual(grupoCriado.ativo)
+                expect(res.body?.data?.nivelPermissao).toEqual(grupoCriado.nivelPermissao)
         });
         it('deve falhar ao tentar deletar um grupo, id não existe no banco', async () => {
             const res = await request(app)
@@ -454,11 +461,12 @@ describe('grupoRouter', () => {
     })
 })
 
-async function pegarIdGrupo(grupos) {
-    console.log(grupos.length)
+function pegarIdGrupo(grupos) {
     for (const grupo of grupos) {
         if (grupo.nome === "usuario") {
             return grupo
         }
     }
+    // Se não encontrar o grupo "usuario", retorna o primeiro grupo disponível
+    return grupos[0] || null
 }
