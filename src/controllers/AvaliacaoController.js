@@ -12,8 +12,8 @@ class AvaliacaoController {
     }
 
     async criar(req, res) {
-        const usuarioId = req.user?.id || req.query.usuarioId; // Alterado de req.body para req.query
-        const equipamentoId = req.query.equipamentoId; // Alterado de req.body para req.query
+        const usuarioId = req.user?.id || req.query.usuarioId; 
+        const equipamentoId = req.query.equipamentoId; 
 
         console.log('req.user:', req.user);
         console.log('req.query:', req.query);

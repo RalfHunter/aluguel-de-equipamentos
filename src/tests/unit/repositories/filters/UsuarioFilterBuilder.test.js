@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import UsuarioFilterBuilder from "../../../../repositories/filters/UsuarioFilterBuilder.js";
 import Usuario from "../../../../models/Usuario.js";
 import GrupoRepository from "../../../../repositories/GrupoRepository.js";
@@ -147,3 +147,4 @@ describe('UsuarioFilterBuilder', () => {
         });
     });
 });
+

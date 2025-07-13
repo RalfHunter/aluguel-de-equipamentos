@@ -1,4 +1,4 @@
-import { EquipamentoIdSchema, EquipamentoQuerySchema } from '../../../../../../../utils/validators/schemas/zod/querys/EquipamentoQuerySchema.js';
+import { EquipamentoIdSchema, EquipamentoQuerySchema } from '../../../../../../../utils/validators/schemas/zod/querys/EquipamentoQuerySchema';
 import mongoose from 'mongoose';
 
 describe('EquipamentoQuerySchema', () => {
