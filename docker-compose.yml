@@ -1,7 +1,7 @@
 services:
   mongodb:
     container_name: mongodb-aluguel
-    image: mongo:latest
+    image: mongo:8
     volumes:
       - vol-mongodb-aluguel:/data/db
     ports:
