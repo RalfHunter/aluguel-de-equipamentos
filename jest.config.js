@@ -79,6 +79,6 @@ export default  {
     // testMatch:['**/errorHandler.test.js']
     // testMatch:['**/Grupo.test.js']
     //testMatch:['**/Reserva.test.js']
-    testMatch:['**/ReservaController.test.js', '**/ReservaService.test.js', '**/ReservaRepository.test.js', '**/ReservaFilterBuilder.test.js', '**/ReservaQuerySchema.test.js', '**/ReservaSchema.test.js', '**/reserva.test.js']
+    // testMatch:['**/ReservaController.test.js', '**/ReservaService.test.js', '**/ReservaRepository.test.js', '**/ReservaFilterBuilder.test.js', '**/ReservaQuerySchema.test.js', '**/ReservaSchema.test.js', '**/reserva.test.js']
 
 };

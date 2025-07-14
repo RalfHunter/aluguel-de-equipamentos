@@ -33,7 +33,7 @@ router
 
     // --- para fotos --- 
     //obter uma foto especifica do equipamento
-    .get("/equipamentos/:id/foto/:fotoId", AuthMiddleware, asyncWrapper(equipamentoController.ListarFoto.bind(equipamentoController)))
+    .get("/equipamentos/:id/foto/:fotoId", AuthMiddleware, asyncWrapper(equipamentoController.listarFoto.bind(equipamentoController)))
 
     //adicionar uma nova foto
     .post("/equipamentos/:id/foto", AuthMiddleware, upload.array('files', 5), asyncWrapper(equipamentoController.adicionarFotos.bind(equipamentoController)));

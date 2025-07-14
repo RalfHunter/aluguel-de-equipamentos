@@ -9,26 +9,18 @@ class Equipamento {
       equiValorDiaria: { type: Number, required: true },
       equiCategoria: { type: String, required: true },
 
-      equiFotos: {
-        type: [{
-          _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
-          url: { type: String, required: true },
-          largura: { type: Number, required: true },
-          altura: { type: Number, required: true },
-          tamanhoMb: { type: Number, required: true },
-        }],
-        required: true,
-        validate: {
-          validator: (arr) => Array.isArray(arr) && arr.length > 0,
-          message: 'O equipamento deve ter pelo menos uma foto',
-        },
-      },
-
+      equiFotos: [{
+        _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+        url: { type: String, required: true },
+        largura: { type: Number, required: true },
+        altura: { type: Number, required: true },
+        tamanhoMb: { type: Number, required: true },
+      }],
       equiQuantidadeDisponivel: { type: Number, required: true },
-      equiStatus: { 
-        type: String, 
-        enum: ['pendente', 'ativo', 'inativo'], 
-        default: 'pendente' 
+      equiStatus: {
+        type: String,
+        enum: ['pendente', 'ativo', 'inativo'],
+        default: 'pendente'
       },
       equiUsuario: {
         type: mongoose.Schema.Types.ObjectId,
