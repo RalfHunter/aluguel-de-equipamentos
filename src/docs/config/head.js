@@ -11,7 +11,6 @@ import avaliacaoPaths from "../paths/avaliacao.js";
 import equipamentoSchemas from "../schemas/equipamentoSchema.js";
 import equipamentosPaths from "../paths/equipamentos.js";
 
-
 const getServersInCorrectOrder = () => {
     const PORT = process.env.APP_PORT
     const devUrl = { url: process.env.SWAGGER_DEV_URL || `http://localhost:${PORT}` };
@@ -87,9 +86,9 @@ const getSwaggerOptions = () => {
                     ...equipamentoSchemas,
                     ...gruposSchemas,
                     ...reservasSchemas,
+                    ...equipamentoSchemas,
                     ...usuariosSchemas,
-                    ...avaliacaoSchemas,
-
+                    ...avaliacaoSchemas
                 }
             },
             security: [{

@@ -1,4 +1,4 @@
-import {AvaliacaoQuerySchema, AvaliacaoIdSchema } from '../../../../utils/validators/schemas/zod/querys/AvaliacaoQuerySchema.js';
+import {AvaliacaoQuerySchema, AvaliacaoIdSchema } from '../../../../../../../utils/validators/schemas/zod/querys/AvaliacaoQuerySchema.js';
 import mongoose from 'mongoose';
 
 describe('AvaliacaoQuerySchema', () => {

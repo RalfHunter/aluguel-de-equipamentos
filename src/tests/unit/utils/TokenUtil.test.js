@@ -12,13 +12,13 @@ const mockEnv = {
   JWT_PASSWORD_RECOVERY_EXPIRATION: '30m'
 };
 
-// Mock jwt
+
 jest.mock('jsonwebtoken');
 
 describe('TokenUtil', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Configurar as variáveis de ambiente
+    
     process.env.JWT_SECRET_ACCESS_TOKEN = mockEnv.JWT_SECRET_ACCESS_TOKEN;
     process.env.JWT_SECRET_REFRESH_TOKEN = mockEnv.JWT_SECRET_REFRESH_TOKEN;
     process.env.JWT_SECRET_PASSWORD_RECOVERY = mockEnv.JWT_SECRET_PASSWORD_RECOVERY;
@@ -311,7 +311,7 @@ describe('TokenUtil', () => {
     it('deve lançar CustomError quando ocorre erro no try/catch', async () => {
       const token = 'valid-token';
       
-      // Mock jwt.verify para lançar uma exceção antes do callback
+      
       jwt.verify.mockImplementation(() => {
         throw new Error('Erro inesperado');
       });

@@ -1,4 +1,4 @@
-import { AvaliacaoSchema, AvaliacaoUpdateSchema } from '../../../utils/validators/schemas/zod/AvaliacaoSchema.js';
+import { AvaliacaoSchema, AvaliacaoUpdateSchema } from '../../../../../../utils/validators/schemas/zod/AvaliacaoSchema.js';
 import { z } from 'zod';
 import mongoose from 'mongoose';
 

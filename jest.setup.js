@@ -6,7 +6,7 @@ jest.mock('./src/utils/logger.js', () => ({
     log: jest.fn()
 }));
 
-// Suprimir todas as mensagens de console durante os testes
+// Garantir que as mensagem do console não apareçam no terminal durante os testes
 const originalConsole = console;
 global.console = {
     ...originalConsole,
@@ -67,7 +67,7 @@ beforeAll(() => {
 });
 
 afterAll(() => {
-    // Restaurar o console original após os testes
+    // Restaurar o console após os testes
     global.console = originalConsole;
     
     if (console.error.mockRestore) {

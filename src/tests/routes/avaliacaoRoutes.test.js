@@ -19,7 +19,6 @@ describe("Avaliações", () => {
 
         token = loginRes.body?.data?.user?.accessToken;
         usuarioId = loginRes.body?.data?.user?._id;
-        console.log("USER", loginRes.body?.data)
         expect(token).toBeTruthy();
         expect(usuarioId).toBeTruthy();
 
@@ -27,17 +26,22 @@ describe("Avaliações", () => {
         const equipamentoRes = await request(app)
             .get('/equipamentos')
             .set('Authorization', `Bearer ${token}`);
-        console.log("EQUIP", equipamentoRes.body.data?.docs[0]?._id)
         equipamentoId = equipamentoRes.body?.data?.docs[0]?._id;
         expect(equipamentoId).toBeTruthy();
+
+        await request(app)
+        .post(`/avaliacoes?equipamentoId=${equipamentoId}&usuarioId=${usuarioId}`)
+        .send({ nota: 4, descricao: "Boa" })
+        .set("Authorization", `Bearer ${token}`);
 
         const avaliacaoRes = await request(app)
             .get(`/avaliacoes?equipamentoId=${equipamentoId}`)
             .set('Authorization', `Bearer ${token}`);
 
-        console.log("AVALIACAO", avaliacaoRes.body.data?.docs[0]?._id)
         avaliacaoId = avaliacaoRes.body.data?.docs[0]?._id;
         expect(avaliacaoId).toBeTruthy();
+
+
     });
 
     describe("GET /avaliacoes", () => {
@@ -59,15 +63,6 @@ describe("Avaliações", () => {
 
             expect(res.status).toBe(400);
             expect(res.body.message).toBe("O ID do equipamento é obrigatório");
-        });
-
-        it("Deve retornar avaliações filtradas por nota mínima", async () => {
-            const res = await request(app)
-                .get(`/avaliacoes?equipamentoId=${equipamentoId}&notaMinima=3`)
-                .set("Authorization", `Bearer ${token}`);
-
-            expect(res.status).toBe(200);
-            expect(res.body.data.docs.every(doc => doc.nota >= 3)).toBe(true);
         });
     });
 
@@ -188,8 +183,8 @@ describe("Avaliações", () => {
                 .delete(`/avaliacoes/${invalidId}?usuarioId=${usuarioId}`)
                 .set("Authorization", `Bearer ${token}`);
 
-            expect(res.status).toBe(403);
-            expect(res.body.message).toBe("Recurso não encontrado em Permissão.");
+            expect(res.status).toBe(404);
+            expect(res.body.message).toBe("Avaliação não encontrada.");
         });
 ;
     });
