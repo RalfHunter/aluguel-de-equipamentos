@@ -3,14 +3,16 @@ import mongoose from 'mongoose';
 import fakerbr from 'faker-br';
 import { gerarDataAleatoria } from '../../utils/helpers/randomPastDate';
 import "../../../src/routes/authRoutes.js"
-
+import dotenv from 'dotenv'
+dotenv.config()
+const PORT = process.env.APP_PORT || 5011
 describe('authRouter', () => {
     let usuarioToken;
     let idUsuario;
     let refreshTokenUsuario;
     let usuarioFake
     // URL da requisição
-    let app = 'http://localhost:5011'
+    let app = `http://localhost:${PORT}`
     // Usuário alvo da requisição
     let moderador;
     describe('rota /login', () => {

@@ -1,17 +1,17 @@
-// Mock do fs para arquivos de imagem
+
 jest.mock('fs', () => ({
     existsSync: () => true,
     statSync: () => ({ size: 1024 }),
     unlinkSync: () => {},
     readFileSync: () => 
         Buffer.from([
-            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
-            0x00, 0x00, 0x00, 0x0D, // IHDR chunk length
-            0x49, 0x48, 0x44, 0x52, // IHDR chunk type
-            0x00, 0x00, 0x03, 0x20, // Width: 800
-            0x00, 0x00, 0x02, 0x58, // Height: 600
-            0x08, 0x02, 0x00, 0x00, 0x00, // Bit depth, color type, compression, filter, interlace
-            ...Array(200).fill(0) // dados fictícios do PNG
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 
+            0x00, 0x00, 0x00, 0x0D, 
+            0x49, 0x48, 0x44, 0x52, 
+            0x00, 0x00, 0x03, 0x20, 
+            0x00, 0x00, 0x02, 0x58, 
+            0x08, 0x02, 0x00, 0x00, 0x00, 
+            ...Array(200).fill(0) 
         ])
 }));
 
@@ -193,7 +193,7 @@ describe('UsuarioService', () => {
 
             }));
             await expect(usuarioService.cadastrarUsuario(mockData)).rejects.toThrow(CustomError)
-            // await expect(usuarioService.cadastrarUsuario(mockData)).rejects.toThrowErrorMatchingInlineSnapshot(`"Conflito de recurso em Usuário contém Telefone."`)
+            
         });
 
     });
@@ -283,7 +283,7 @@ describe('UsuarioService', () => {
                 _id: userId,
                 nome: 'Usuario Teste',
                 grupos: [
-                    { nivelPermissao: 2 } // Nível maior que o usuário solicitante (menor permissão)
+                    { nivelPermissao: 2 } 
                 ]
             };
             
@@ -326,7 +326,7 @@ describe('UsuarioService', () => {
                 _id: userId,
                 nome: 'Usuario Teste',
                 grupos: [
-                    { nivelPermissao: 1 } // Nível menor ou igual ao solicitante (maior permissão)
+                    { nivelPermissao: 1 } 
                 ]
             };
             
@@ -351,8 +351,8 @@ describe('UsuarioService', () => {
                 _id: userId,
                 nome: 'Usuario Teste',
                 grupos: [
-                    { nivelPermissao: 2 }, // Nível maior que o solicitante (menor permissão)
-                    { nivelPermissao: 3 }  // Nível maior que o solicitante (menor permissão)
+                    { nivelPermissao: 2 }, 
+                    { nivelPermissao: 3 }  
                 ]
             };
             
@@ -714,7 +714,7 @@ describe('UsuarioService', () => {
                 nome: 'Usuario Teste',
                 email: 'teste@email.com',
                 grupos: [
-                    { nivelPermissao: 2 } // Nível maior que o usuário solicitante (menor permissão)
+                    { nivelPermissao: 2 } 
                 ]
             };
 
@@ -756,7 +756,7 @@ describe('UsuarioService', () => {
             const userId = '67959501ea0999e0a0fa9f58';
             const reqData = {
                 user_id: '67959501ea0999e0a0fa9f59',
-                nivelPermissao: 3 // Nível maior (menor permissão)
+                nivelPermissao: 3 
             };
 
             const mockUser = {
@@ -790,8 +790,8 @@ describe('UsuarioService', () => {
                 _id: userId,
                 nome: 'Usuario Teste',
                 grupos: [
-                    { nivelPermissao: 2 }, // Nível maior que o solicitante (menor permissão)
-                    { nivelPermissao: 3 }  // Nível maior que o solicitante (menor permissão)
+                    { nivelPermissao: 2 }, 
+                    { nivelPermissao: 3 }  
                 ]
             };
 

@@ -2,13 +2,15 @@ import request from 'supertest'
 import mongoose from 'mongoose';
 import sharp from 'sharp';
 import "../../../src/routes/usuarioRoutes.js"
-
+import dotenv from 'dotenv'
+dotenv.config()
+const PORT = process.env.APP_PORT || 5011
 describe('usuarioRoute', () => {
     // Admin que está fazendo a requição
     let idAdmin;
     let nomeAdmin;
     // URL da requisição
-    let app = 'http://localhost:5011'
+    let app = `http://localhost:${PORT}`
     // Usuário alvo da requisição
 //    Usuario criado durante os teste e deletano nos mesmos
 

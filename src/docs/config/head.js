@@ -1,8 +1,6 @@
 import reservasSchemas from "../schemas/reservaSchema.js";
 import avaliacaoSchemas from "../schemas/avaliacaoSchema.js";
 import reservasPaths from "../paths/reserva.js";
-import equipamentoPaths from "../paths/equipamento.js";
-import equipamentoSchemas from "../schemas/equipamentoSchema.js";
 import usuariosSchemas from "../schemas/usuarioSchema.js";
 import usuariosPaths from "../paths/usuarios.js";
 import authSchemas from "../schemas/authSchema.js";
@@ -10,6 +8,8 @@ import authPaths from "../paths/auth.js";
 import gruposSchemas from "../schemas/grupoSchema.js";
 import gruposPaths from "../paths/grupos.js";
 import avaliacaoPaths from "../paths/avaliacao.js";
+import equipamentoSchemas from "../schemas/equipamentoSchema.js";
+import equipamentosPaths from "../paths/equipamentos.js";
 
 const getServersInCorrectOrder = () => {
     const PORT = process.env.APP_PORT
@@ -40,6 +40,10 @@ const getSwaggerOptions = () => {
                     description: "Rotas para autenticação e autorização"
                 },
                 {
+                    name: "Equipamentos",
+                    description: "Rotas para gestão de equipamentos disponíveis para aluguel"
+                },
+                {
                     name: "Grupos",
                     description: "Rotas para gestão de grupos de permissões"
                 },
@@ -61,9 +65,8 @@ const getSwaggerOptions = () => {
                 },
             ],
             paths: {
-                ...reservasPaths,
-                ...equipamentoPaths,
                 ...authPaths,
+                ...equipamentosPaths,
                 ...gruposPaths,
                 ...reservasPaths,
                 ...usuariosPaths,
@@ -80,11 +83,12 @@ const getSwaggerOptions = () => {
                 },
                 schemas: {
                     ...authSchemas,
+                    ...equipamentoSchemas,
                     ...gruposSchemas,
                     ...reservasSchemas,
                     ...equipamentoSchemas,
                     ...usuariosSchemas,
-                    ...avaliacaoSchemas,
+                    ...avaliacaoSchemas
                 }
             },
             security: [{

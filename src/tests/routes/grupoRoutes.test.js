@@ -1,12 +1,14 @@
 import request from 'supertest'
 import '../../../src/routes/grupoRoutes.js'
-
+import dotenv from 'dotenv'
+dotenv.config()
+const PORT = process.env.APP_PORT || 5011
 
 describe('grupoRouter', () => {
     let admin = ''
     let moderador = ''
     let usuario = ''
-    let app = 'http://localhost:5011'
+    let app = `http://localhost:${PORT}`
     let grupoUsuario = ''
     let grupoCriado = ''
     describe('get /grupos', () => {

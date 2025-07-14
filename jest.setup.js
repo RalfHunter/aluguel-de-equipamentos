@@ -6,6 +6,17 @@ jest.mock('./src/utils/logger.js', () => ({
     log: jest.fn()
 }));
 
+// Garantir que as mensagem do console não apareçam no terminal durante os testes
+const originalConsole = console;
+global.console = {
+    ...originalConsole,
+    log: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    info: jest.fn(),
+    debug: jest.fn(),
+};
+
 // Mocks globais para dependências problemáticas
 jest.mock('bcrypt', () => ({
     hash: jest.fn(),
@@ -49,15 +60,23 @@ jest.mock('uuid', () => ({
 jest.mock('image-size', () => jest.fn(() => ({ width: 800, height: 600 })));
 
 beforeAll(() => {
+    // Adicionalmente, garantir que os spies também estejam configurados
     jest.spyOn(console, 'error').mockImplementation(() => { });
-    // jest.spyOn(console, 'log').mockImplementation(() => { });
+    jest.spyOn(console, 'log').mockImplementation(() => { });
+    jest.spyOn(console, 'warn').mockImplementation(() => { });
 });
 
 afterAll(() => {
+    // Restaurar o console após os testes
+    global.console = originalConsole;
+    
     if (console.error.mockRestore) {
         console.error.mockRestore();
     }
     if (console.log.mockRestore) {
         console.log.mockRestore();
+    }
+    if (console.warn.mockRestore) {
+        console.warn.mockRestore();
     }
 });

@@ -9,10 +9,10 @@ import bcrypt from 'bcrypt';
 jest.mock('../../../utils/TokenUtil.js')
 jest.mock('../../../utils/helpers/messages.js')
 jest.mock('../../../utils/helpers/messages.js')
-jest.mock('../../../repositories/UsuarioRepository.js'); // Mockando o repositório
-jest.mock('../../../utils/AuthHelper.js'); // Mockando o AuthHelper
+jest.mock('../../../repositories/UsuarioRepository.js'); 
+jest.mock('../../../utils/AuthHelper.js'); 
 
-// Mock global fetch
+
 global.fetch = jest.fn();
 
 import AuthHelper from '../../../utils/AuthHelper.js';
@@ -26,7 +26,7 @@ describe('AuthService - carregatokens', () => {
     let id;
     let token;
     let res;
-    // let bcrypt
+    
 
     beforeEach(() => {
         id = '123'
@@ -63,10 +63,10 @@ describe('AuthService - carregatokens', () => {
         };
         bcrypt.compare = jest.fn();
         
-        // Mock AuthHelper
+        
         AuthHelper.hashPassword = jest.fn().mockResolvedValue('$2b$08$hashedPassword123');
         
-        // Setup environment variables for tests
+        
         process.env.MAIL_API_URL = 'https://test-email-service.com';
         process.env.MAIL_API_KEY = 'test-api-key';
         process.env.FRONTEND_URL = 'http://localhost:5013';
@@ -79,7 +79,7 @@ describe('AuthService - carregatokens', () => {
         });
     })
     beforeEach(() => {
-        jest.clearAllMocks(); // limpa todos os mocks
+        jest.clearAllMocks(); 
     });;
     describe('carregatokens', () => {
         it('Deve carregar os tokens do usuário com sucesso', async () => {
@@ -190,7 +190,7 @@ describe('AuthService - carregatokens', () => {
                 details: [],
                 customMessage: 'ID do usuário é obrigatório para logout.'
             });
-            // Não deveria chamar o repository quando a validação falha
+            
         });
     });
     describe('login', () => {
@@ -206,9 +206,9 @@ describe('AuthService - carregatokens', () => {
                 ativo: true,
                 status: "ativo"
             }
-            // A função passada aqui, transforma o objeto javascript em um objeto mongoose
-            // Para que pesso ser convertido em objeto javascript novamente, afim de não
-            // Quebrar o código na parte: const userObjeto = userLogado.toObject();
+            
+            
+            
             service.repository.buscarPorEmailCadastrado.mockResolvedValue({
                 ...mockData, toObject: () => ({
                     _id: '123',
@@ -223,7 +223,7 @@ describe('AuthService - carregatokens', () => {
             })
             bcrypt.compare.mockResolvedValue(true)
             service.repository.buscarPorId.mockResolvedValue(mockData)
-            // service.repository.armazenarTokens.mockResolvedValue(mockData)
+            
             const resposta = await service.login(req.body)
             expect(service.repository.buscarPorEmailCadastrado).toHaveBeenCalledWith(req.body.email)
             expect(bcrypt.compare).toHaveBeenCalledWith(req.body.senha, mockData.senha)
@@ -373,9 +373,9 @@ describe('AuthService - carregatokens', () => {
                 ativo: true,
                 status: "ativo"
             }
-            // A função passada aqui, transforma o objeto javascript em um objeto mongoose
-            // Para que pesso ser convertido em objeto javascript novamente, afim de não
-            // Quebrar o código na parte: const userObjeto = userLogado.toObject();
+            
+            
+            
             service.repository.buscarPorEmailCadastrado.mockResolvedValue({
                 ...mockData, toObject: () => ({
                     _id: '123',
@@ -411,9 +411,9 @@ describe('AuthService - carregatokens', () => {
                 ativo: true,
                 status: "ativo"
             }
-            // A função passada aqui, transforma o objeto javascript em um objeto mongoose
-            // Para que pesso ser convertido em objeto javascript novamente, afim de não
-            // Quebrar o código na parte: const userObjeto = userLogado.toObject();
+            
+            
+            
             service.repository.buscarPorEmailCadastrado.mockResolvedValue({
                 ...mockData, toObject: () => ({
                     _id: '123',
@@ -555,7 +555,7 @@ describe('AuthService - carregatokens', () => {
             }
             expect(service.repository.buscarPorEmailCadastrado).toHaveBeenCalledWith(req.body.email)
         });
-        // Usuarios com status inativo não podem solicitar recuperação de senha
+        
         it('deve falhar ao pedir recuperação de senha, usário não tem o status ativo', async () => {
             req.body = { email: 'usuario@gmail.com' }
             const mockData = {
@@ -593,7 +593,7 @@ describe('AuthService - carregatokens', () => {
             service.repository.buscarPorEmailCadastrado.mockResolvedValue(mockData);
             service.repository.buscarPorCodigoRecuperacao
                 .mockResolvedValueOnce({ id: 'existe' }) // código repetido
-                .mockResolvedValueOnce(null);            // código válido
+                .mockResolvedValueOnce(null);            
 
             service.TokenUtil.generatePasswordRecoveryToken.mockResolvedValue('token-recuperacao')
             service.repository.atualizar.mockResolvedValue(mockData)
@@ -707,7 +707,7 @@ describe('AuthService - carregatokens', () => {
 
             service.TokenUtil.decodePasswordRecoveryToken.mockResolvedValue(usuarioId);
             service.repository.buscarPorTokenUnico.mockResolvedValue(mockUsuario);
-            service.repository.atualizarSenha.mockResolvedValue(null); // Simula erro no banco
+            service.repository.atualizarSenha.mockResolvedValue(null); 
 
             await expect(service.atualizarSenhaToken(tokenRecuperacao, senhaBody)).rejects.toMatchObject({
                 statusCode: 500,
@@ -733,7 +733,7 @@ describe('AuthService - carregatokens', () => {
         });
         it('deve falhar se a senha for nula no body', async () => {
             const tokenRecuperacao = 'token-valido';
-            const senhaBody = { senha: null }; // Senha nula
+            const senhaBody = { senha: null }; 
 
             await expect(service.atualizarSenhaToken(tokenRecuperacao, senhaBody)).rejects.toMatchObject({
                 statusCode: 400,
@@ -806,7 +806,7 @@ describe('AuthService - carregatokens', () => {
         });
 
         it('deve falhar se token for string "undefined"', async () => {
-            const tokenRecuperacao = 'undefined'; // String "undefined"
+            const tokenRecuperacao = 'undefined'; 
             const senhaBody = { senha: 'NovaSenha@123' };
 
             await expect(service.atualizarSenhaToken(tokenRecuperacao, senhaBody)).rejects.toMatchObject({
@@ -818,7 +818,7 @@ describe('AuthService - carregatokens', () => {
 
         it('deve falhar se senhaBody for null', async () => {
             const tokenRecuperacao = 'token-valido';
-            const senhaBody = null; // senhaBody nulo
+            const senhaBody = null; 
 
             await expect(service.atualizarSenhaToken(tokenRecuperacao, senhaBody)).rejects.toMatchObject({
                 statusCode: 400,

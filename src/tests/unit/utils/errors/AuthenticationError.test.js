@@ -1,4 +1,4 @@
-// src/tests/unit/utils/errors/AuthenticationError.test.js
+
 
 import assert from 'assert';
 import AuthenticationError from '../../../../utils/errors/AuthenticationError.js';
@@ -53,13 +53,13 @@ describe('AuthenticationError', () => {
             const message = 'Token de autenticação inválido';
             const error = new AuthenticationError(message);
 
-            // Verifica se todas as propriedades estão definidas corretamente
+            
             assert.strictEqual(error.message, message);
             assert.strictEqual(error.name, 'AuthenticationError');
             assert.strictEqual(error.statusCode, 498);
             assert.strictEqual(error.isOperational, true);
             
-            // Verifica se é um erro operacional
+            
             assert.ok(error.isOperational);
         });
 

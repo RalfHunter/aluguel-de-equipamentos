@@ -1,32 +1,24 @@
 import Equipamento from "../models/Equipamento.js";
 import getGlobalFakeMapping from "./globalFakeMapping.js";
+import { categoriasValidasArray } from "../utils/validators/schemas/zod/EquipamentoSchema.js";
 
 async function SeedEquipamentos(usuarios) {
   await Equipamento.deleteMany();
 
   const fake = await getGlobalFakeMapping();
 
-  const categoriasValidas = [
-    "Furadeira",
-    "Serra Elétrica",
-    "Multímetro",
-    "Parafusadeira",
-    "Lixadeira",
-    "Compressor de Ar",
-    "Soldador",
-    "Betoneira",
-  ];
-
   const equipamentos = [];
 
   for (let i = 0; i < usuarios.length; i++) {
     const status = fake.equiStatus();
+
     equipamentos.push({
       equiNome: fake.equiNome(),
       equiDescricao: fake.equiDescricao(),
       equiValorDiaria: fake.equiValorDiaria(),
       equiQuantidadeDisponivel: fake.equiQuantidadeDisponivel(),
-      equiCategoria: categoriasValidas[Math.floor(Math.random() * categoriasValidas.length)],
+      equiCategoria: categoriasValidasArray[Math.floor(Math.random() * categoriasValidasArray.length)],
+
       equiStatus: status,
       equiUsuario: usuarios[i]._id,
       equiFotos: fake.equiFotos(),

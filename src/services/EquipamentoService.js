@@ -33,7 +33,7 @@ class EquipamentoService {
     // Usuário comum só pode ver se for dono
     if (equipamento.equiUsuario?.toString() !== usuarioId) {
       throw new CustomError({
-        statusCode: HttpStatusCodes.NOT_FOUND.code,
+        statusCode: HttpStatusCodes.FORBIDDEN.code,
         customMessage: 'Equipamento não encontrado.',
       });
     }
@@ -54,58 +54,46 @@ class EquipamentoService {
     return await this.repository.criar(dadosComStatus);
   }
 
-  async atualizar(id, dadosAtualizados) {
-    const equipamento = await this._buscarEquipamentoExistente(id);
-    //console.log('Status do equipamento no atualizar:', equipamento.equiStatus);
+async atualizar(id, dadosAtualizados) {
+  const equipamento = await this._buscarEquipamentoExistente(id);
+  
+  const status = (equipamento.equiStatus || '').toLowerCase().trim();
 
-    const status = (equipamento.equiStatus || '').toLowerCase().trim();
-
-    if (status === 'pendente') {
-      throw new CustomError({
-        statusCode: HttpStatusCodes.FORBIDDEN.code,
-        customMessage: 'Não é possível atualizar! Equipamento pendente, espere por uma aprovação.',
-      });
-    }
-
-    if (status === 'inativo') {
-      throw new CustomError({
-        statusCode: HttpStatusCodes.FORBIDDEN.code,
-        customMessage: 'Não é possível atualizar! Equipamento inativo.',
-      });
-    }
-
-    this._verificarAtualizacaoPermitida(equipamento, dadosAtualizados);
-
-    return await this.repository.atualizar(id, dadosAtualizados);
+  if (status === 'pendente') {
+    throw new CustomError({
+      statusCode: HttpStatusCodes.FORBIDDEN.code,
+      customMessage: 'Não é possível atualizar! Equipamento pendente, espere por uma aprovação.',
+    });
   }
 
-
-  _verificarAtualizacaoPermitida(equipamento, dadosAtualizados) {
-    const camposPermitidos = ['equiValorDiaria', 'equiQuantidadeDisponivel'];
-    const camposAtualizados = Object.keys(dadosAtualizados);
-
-    if (equipamento.equiStatus === 'pendente') {
-      throw new CustomError({
-        statusCode: HttpStatusCodes.FORBIDDEN.code,
-        customMessage: 'Não é possível atualizar! Equipamento pendente, espere por uma aprovação.',
-      });
-    }
-
-    if (equipamento.equiStatus === 'inativo') {
-      throw new CustomError({
-        statusCode: HttpStatusCodes.FORBIDDEN.code,
-        customMessage: 'Não é possível atualizar! Equipamento inativo.',
-      });
-    }
-
-    const camposInvalidos = camposAtualizados.filter((campo) => !camposPermitidos.includes(campo));
-    if (camposInvalidos.length > 0) {
-      throw new CustomError({
-        statusCode: HttpStatusCodes.BAD_REQUEST.code,
-        customMessage: `Não é permitido alterar os seguintes campos: ${camposInvalidos.join(', ')}`,
-      });
-    }
+  if (status === 'inativo') {
+    throw new CustomError({
+      statusCode: HttpStatusCodes.FORBIDDEN.code,
+      customMessage: 'Não é possível atualizar! Equipamento inativo.',
+    });
   }
+
+  this._verificarAtualizacaoPermitida(equipamento, dadosAtualizados);
+
+  return await this.repository.atualizar(id, dadosAtualizados);
+}
+
+_verificarAtualizacaoPermitida(equipamento, dadosAtualizados) {
+  const camposPermitidos = ['equiValorDiaria', 'equiQuantidadeDisponivel'];
+  const camposAtualizados = Object.keys(dadosAtualizados);
+
+  // REMOVER estas validações duplicadas:
+  // if (equipamento.equiStatus === 'pendente') { ... }
+  // if (equipamento.equiStatus === 'inativo') { ... }
+
+  const camposInvalidos = camposAtualizados.filter((campo) => !camposPermitidos.includes(campo));
+  if (camposInvalidos.length > 0) {
+    throw new CustomError({
+      statusCode: HttpStatusCodes.BAD_REQUEST.code,
+      customMessage: `Não é permitido alterar os seguintes campos: ${camposInvalidos.join(', ')}`,
+    });
+  }
+}
 
   async aprovar(id, usuarioId) {
     const equipamento = await this._buscarEquipamentoExistente(id);
@@ -311,26 +299,6 @@ class EquipamentoService {
     return equipamento;
   }
 
-  _verificarAtualizacaoPermitida(equipamento, dadosAtualizados) {
-    const camposPermitidos = ['equiValorDiaria', 'equiQuantidadeDisponivel'];
-    const camposAtualizados = Object.keys(dadosAtualizados);
-
-    if (equipamento.equiStatus === 'pendente') {
-      throw new CustomError({
-        statusCode: HttpStatusCodes.FORBIDDEN.code,
-        customMessage: 'Não é possível atualizar! Equipamento pendente, espere por uma aprovação.',
-      });
-    }
-
-    const camposInvalidos = camposAtualizados.filter((campo) => !camposPermitidos.includes(campo));
-    if (camposInvalidos.length > 0) {
-      throw new CustomError({
-        statusCode: HttpStatusCodes.BAD_REQUEST.code,
-        customMessage: `Não é permitido alterar os seguintes campos: ${camposInvalidos.join(', ')}`,
-      });
-    }
-  }
-
   _validarCamposObrigatorios(dados) {
     if (!dados.equiNome || !dados.equiCategoria) {
       throw new CustomError({
@@ -348,6 +316,15 @@ class EquipamentoService {
       });
     }
   }
+
+  async deletarEquipamento(id) {
+    const equipamento = await this._buscarEquipamentoExistente(id);
+    
+    const resultado = await this.repository.excluir(id);
+    
+    return equipamento;
+  }
+
 }
 
 export default EquipamentoService;

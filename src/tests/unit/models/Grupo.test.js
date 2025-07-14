@@ -5,7 +5,7 @@ import Grupo from '../../../models/Grupo.js';
 
 let mongoServer;
 
-// Configuração antes de todos os testes
+
 beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
     const uri = mongoServer.getUri();
@@ -16,7 +16,7 @@ beforeAll(async () => {
     await mongoose.model('grupos').createIndexes();
 });
 
-// Limpeza após todos os testes
+
 afterAll(async () => {
     await mongoose.disconnect();
     await mongoServer.stop();
@@ -86,7 +86,7 @@ describe('Modelo de Grupo', () => {
         expect(savedGrupo.nome).toBe(grupoData.nome);
         expect(savedGrupo.descricao).toBe(grupoData.descricao);
         expect(savedGrupo.nivelPermissao).toBe(grupoData.nivelPermissao);
-        expect(savedGrupo.ativo).toBe(true); // valor padrão
+        expect(savedGrupo.ativo).toBe(true); 
         expect(savedGrupo.permissoes).toHaveLength(0);
     });
 

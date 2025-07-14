@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, jest } from "@jest/globals";
 import GrupoController from "../../../controllers/GrupoController.js";
 import GrupoService from "../../../services/GrupoService.js";
 
-// Mock dependencies
+
 jest.mock('../../../services/GrupoService.js');
 jest.mock('../../../utils/helpers/index.js', () => ({
     CommonResponse: {
@@ -48,7 +48,7 @@ describe('GrupoController', () => {
         };
         Grupo.customError = jest.fn();
 
-        // mock para mensagens no geral
+        
         global.messages = {
             error: {
                 internalServerError: jest.fn().mockReturnValue('Internal server error')
@@ -209,7 +209,7 @@ describe('GrupoController', () => {
         });
 
         it('deve lançar erro se campos obrigatórios estiverem ausentes', async () => {
-            req.body = { nome: 'Teste' }; // Faltando outros campos obrigatórios
+            req.body = { nome: 'Teste' }; 
             const error = new Error('Campo obrigatório ausente');
             error.name = 'ZodError';
             GrupoSchema.parse.mockImplementation(() => {
@@ -256,7 +256,7 @@ describe('GrupoController', () => {
         it('deve lançar erro se dados de atualização forem inválidos', async () => {
             const id = 'abc123';
             req.params.id = id;
-            req.body = { nome: 123 }; // Tipo inválido
+            req.body = { nome: 123 }; 
 
             GrupoIdSchema.parse.mockReturnValue(id);
             const error = new Error('Dados inválidos');

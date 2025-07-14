@@ -1,6 +1,6 @@
 import uploadUsuario, { compressUserImage } from '../../../config/multerUserConfig.js';
 
-// Mock do módulo fs para testar cenários de arquivo existente
+
 jest.mock('fs', () => ({
   existsSync: jest.fn(),
   unlinkSync: jest.fn(),
@@ -11,9 +11,9 @@ import fs from 'fs';
 
 describe('multerUserConfig integrado', () => {
   beforeEach(() => {
-    // Resetar mocks antes de cada teste
+
     jest.clearAllMocks();
-    // Por padrão, simular que o diretório não precisa ser criado
+
     fs.existsSync.mockReturnValue(false);
   });
 
@@ -27,7 +27,7 @@ describe('multerUserConfig integrado', () => {
   });
 
   it('deve ter configurações de multer válidas', () => {
-    // Verificar se tem as propriedades básicas esperadas de um multer upload
+
     expect(uploadUsuario).toHaveProperty('storage');
     expect(uploadUsuario).toHaveProperty('limits');
     expect(uploadUsuario).toHaveProperty('fileFilter');
@@ -35,7 +35,7 @@ describe('multerUserConfig integrado', () => {
 
   it('deve ter limite de arquivo configurado', () => {
     expect(uploadUsuario.limits).toBeDefined();
-    expect(uploadUsuario.limits.fileSize).toBe(5 * 1024 * 1024); // 5MB
+    expect(uploadUsuario.limits.fileSize).toBe(5 * 1024 * 1024); 
   });
 
   it('deve ter fileFilter como função', () => {
@@ -59,10 +59,10 @@ describe('multerUserConfig integrado', () => {
     
     const mockCallback = jest.fn();
     
-    // Chamar o fileFilter
+    
     uploadUsuario.fileFilter(mockReq, mockFile, mockCallback);
     
-    // Verificar se aceitou o arquivo
+    
     expect(mockCallback).toHaveBeenCalledWith(null, true);
   });
 
@@ -78,10 +78,10 @@ describe('multerUserConfig integrado', () => {
     
     const mockCallback = jest.fn();
     
-    // Chamar o fileFilter
+   
     uploadUsuario.fileFilter(mockReq, mockFile, mockCallback);
     
-    // Verificar se rejeitou o arquivo
+
     expect(mockCallback).toHaveBeenCalledWith(
       expect.objectContaining({
         message: "Extensão de imagem inválida. Apenas JPG, JPEG e PNG são permitidos."
@@ -92,7 +92,7 @@ describe('multerUserConfig integrado', () => {
 
   it('deve rejeitar quando não há ID nos parâmetros no fileFilter', () => {
     const mockReq = {
-      params: {} // Sem ID
+      params: {} 
     };
     
     const mockFile = {
@@ -102,10 +102,10 @@ describe('multerUserConfig integrado', () => {
     
     const mockCallback = jest.fn();
     
-    // Chamar o fileFilter
+
     uploadUsuario.fileFilter(mockReq, mockFile, mockCallback);
     
-    // Verificar se rejeitou por falta de ID
+ 
     expect(mockCallback).toHaveBeenCalledWith(
       expect.objectContaining({
         message: "ID do usuário não encontrado nos parâmetros."
@@ -120,16 +120,16 @@ describe('multerUserConfig integrado', () => {
     };
     
     const mockFile = {
-      originalname: 'arquivo.jpg', // Extensão válida
-      mimetype: 'text/plain' // Mas MIME type inválido
+      originalname: 'arquivo.jpg', 
+      mimetype: 'text/plain' 
     };
     
     const mockCallback = jest.fn();
     
-    // Chamar o fileFilter
+    
     uploadUsuario.fileFilter(mockReq, mockFile, mockCallback);
     
-    // Verificar se rejeitou por tipo MIME inválido
+    
     expect(mockCallback).toHaveBeenCalledWith(
       expect.objectContaining({
         message: "Tipo de arquivo inválido. Apenas imagens são permitidas."
@@ -149,16 +149,16 @@ describe('multerUserConfig integrado', () => {
     
     const mockCallback = jest.fn();
     
-    // Chamar a função filename do storage
+    
     uploadUsuario.storage.getFilename(mockReq, mockFile, mockCallback);
     
-    // Verificar se gerou o nome correto
+    
     expect(mockCallback).toHaveBeenCalledWith(null, '456.jpeg');
   });
 
   it('deve rejeitar quando não há ID nos parâmetros no storage filename', () => {
     const mockReq = {
-      params: {} // Sem ID
+      params: {} 
     };
     
     const mockFile = {
@@ -167,10 +167,10 @@ describe('multerUserConfig integrado', () => {
     
     const mockCallback = jest.fn();
     
-    // Chamar a função filename do storage
+    
     uploadUsuario.storage.getFilename(mockReq, mockFile, mockCallback);
     
-    // Verificar se rejeitou por falta de ID
+    
     expect(mockCallback).toHaveBeenCalledWith(
       expect.objectContaining({
         message: "ID do usuário não encontrado nos parâmetros."
@@ -184,17 +184,17 @@ describe('multerUserConfig integrado', () => {
     const mockFile = {};
     const mockCallback = jest.fn();
     
-    // Chamar a função destination do storage
+    
     uploadUsuario.storage.getDestination(mockReq, mockFile, mockCallback);
     
-    // Verificar se definiu o diretório correto
+    
     expect(mockCallback).toHaveBeenCalledWith(null, 'uploads/usuarios');
   });
 
   it('deve remover foto existente quando há arquivo anterior no storage', () => {
-    // Mock para simular que existe um arquivo .jpg
+    
     fs.existsSync.mockImplementation((caminho) => {
-      return caminho.includes('789.jpg'); // Simular que existe um arquivo com esse nome
+      return caminho.includes('789.jpg'); 
     });
 
     const mockReq = {
@@ -207,41 +207,41 @@ describe('multerUserConfig integrado', () => {
     
     const mockCallback = jest.fn();
     
-    // Chamar a função filename do storage
+    
     uploadUsuario.storage.getFilename(mockReq, mockFile, mockCallback);
     
-    // Verificar se foi chamado para remover o arquivo existente
+    
     expect(fs.unlinkSync).toHaveBeenCalled();
     
-    // Verificar se gerou o nome correto
+    
     expect(mockCallback).toHaveBeenCalledWith(null, '789.jpg');
   });
 
   it('deve criar o diretório se não existir durante a inicialização', () => {
-    // Mock específico para simular que o diretório não existe inicialmente
+    
     fs.existsSync.mockImplementation((caminho) => {
       if (caminho === 'uploads/usuarios') {
-        return false; // Simular que o diretório não existe
+        return false; 
       }
-      return false; // Para outros caminhos também retornar false
+      return false; 
     });
 
-    // Resetar o mock do mkdirSync para este teste
+    
     fs.mkdirSync.mockClear();
     
-    // Re-importar o módulo dinamicamente para forçar a execução da inicialização
+    
     jest.isolateModules(() => {
-      // Dentro de isolateModules, o módulo será re-executado com os mocks atuais
+      
       require('../../../config/multerUserConfig.js');
       
-      // Verificar se tentou criar o diretório
+      
       expect(fs.mkdirSync).toHaveBeenCalledWith('uploads/usuarios', { recursive: true });
     });
   });
 
   it('deve lidar com erro na função filename do storage', () => {
     const mockReq = {
-      params: { id: null } // Forçar erro
+      params: { id: null } 
     };
     
     const mockFile = {
@@ -250,10 +250,10 @@ describe('multerUserConfig integrado', () => {
     
     const mockCallback = jest.fn();
     
-    // Chamar a função filename do storage
+    
     uploadUsuario.storage.getFilename(mockReq, mockFile, mockCallback);
     
-    // Verificar se foi chamado com erro (pelo ID null)
+    
     expect(mockCallback).toHaveBeenCalledWith(
       expect.objectContaining({
         message: 'ID do usuário não encontrado nos parâmetros.'
@@ -263,10 +263,10 @@ describe('multerUserConfig integrado', () => {
   });
 
   it('deve lidar com erro no fileFilter', () => {
-    // Criar um req com params que vai causar erro no processamento
+    
     const mockReq = {
       params: { id: '123' },
-      // Simular um erro forçando uma propriedade undefined
+      
       get path() {
         throw new Error('Erro no fileFilter');
       }
@@ -279,14 +279,14 @@ describe('multerUserConfig integrado', () => {
     
     const mockCallback = jest.fn();
     
-    // Chamar o fileFilter de uma forma que pode gerar erro
+    
     try {
       uploadUsuario.fileFilter(mockReq, mockFile, mockCallback);
     } catch (error) {
-      // Se houver erro síncrono, é esperado
+      
     }
     
-    // Verificar se foi chamado com erro (pode ser chamado de forma assíncrona)
+    
     expect(mockCallback).toHaveBeenCalled();
   });
 });
@@ -316,15 +316,15 @@ describe('compressUserImage', () => {
     const mockRes = {};
     const mockNext = jest.fn();
 
-    // Mock fs.statSync para retornar tamanho pequeno
+    
     const originalStatSync = fs.statSync;
-    fs.statSync = jest.fn().mockReturnValue({ size: 1024 * 1024 }); // 1MB
+    fs.statSync = jest.fn().mockReturnValue({ size: 1024 * 1024 }); 
 
     await compressUserImage(mockReq, mockRes, mockNext);
 
     expect(mockNext).toHaveBeenCalled();
     
-    // Restaurar fs.statSync
+    
     fs.statSync = originalStatSync;
   });
 });

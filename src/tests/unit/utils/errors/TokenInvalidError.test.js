@@ -1,4 +1,4 @@
-// src/tests/unit/utils/errors/TokenInvalidError.test.js
+
 
 import assert from 'assert';
 import TokenInvalidError from '../../../../utils/errors/TokenInvalidError.js';

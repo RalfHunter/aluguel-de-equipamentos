@@ -53,7 +53,6 @@ const grupoAdmin = {
     },
     {
         rota: "equipamentos",
-        dominio: "localhost",
         ativo: true,
         buscar: true,
         enviar: true,
@@ -63,7 +62,6 @@ const grupoAdmin = {
     },
     {
         rota: "equipamentos-id-status",
-        dominio: "localhost",
         ativo: true,
         buscar: false,
         enviar: false,
@@ -73,7 +71,6 @@ const grupoAdmin = {
     },
     {
         rota: "equipamentos-id-aprovar",
-        dominio: "localhost",
         ativo: true,
         buscar: false,
         enviar: false,
@@ -83,7 +80,6 @@ const grupoAdmin = {
     },
     {
         rota: "equipamentos-id-reprovar",
-        dominio: "localhost",
         ativo: true,
         buscar: false,
         enviar: false,
@@ -92,10 +88,9 @@ const grupoAdmin = {
         excluir: false
     },
     {
-        rota: "equipamentos-id-foto",
-        dominio: "localhost",
+        rota: "equipamentos-id-foto-id",
         ativo: true,
-        buscar: false,
+        buscar: true,
         enviar: true,
         substituir: false,
         modificar: false,
@@ -110,7 +105,6 @@ const grupoModerador = {
     nivelPermissao: 50,
     permissoes: [{
         rota: "usuarios",
-        dominio: "localhost",
         ativo: true,
         buscar: true,
         enviar: true,
@@ -140,13 +134,22 @@ const grupoModerador = {
         rota: "equipamentos",
         ativo: true,
         buscar: true,
-        enviar: false,
+        enviar: true,
         substituir: false,
-        modificar: false,
+        modificar: true,
         excluir: false
     },
     {
         rota: "equipamentos-id-aprovar",
+        ativo: true,
+        buscar: false,
+        enviar: false,
+        substituir: false,
+        modificar: true,
+        excluir: false
+    },
+    {
+        rota: "equipamentos-id-status",
         ativo: true,
         buscar: false,
         enviar: false,
@@ -161,6 +164,15 @@ const grupoModerador = {
         enviar: false,
         substituir: false,
         modificar: true,
+        excluir: false
+    },
+    {
+        rota: "equipamentos-id-foto-id",
+        ativo: true,
+        buscar: true,
+        enviar: true,
+        substituir: false,
+        modificar: false,
         excluir: false
     }
     ]
@@ -215,6 +227,15 @@ const grupoUsuario = {
         enviar: false,
         substituir: false,
         modificar: true,
+        excluir: false
+    },
+    {
+        rota: "equipamentos-id-foto-id",
+        ativo: true,
+        buscar: true,
+        enviar: true,
+        substituir: false,
+        modificar: false,
         excluir: false
     }
     ]
