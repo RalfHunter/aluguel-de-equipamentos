@@ -9,16 +9,16 @@ class GrupoService {
     }
 
     async listar(req) {
-        console.log('Estou no listar em GrupoService');
+        // console.log('Estou no listar em GrupoService');
         const data = await this.repository.listar(req);
-        console.log('Estou retornando os dados em GrupoService');
+        // console.log('Estou retornando os dados em GrupoService');
         return data;
 
     }
 
     async criar(parsedData) {
         // Verificar se já existe um grupo com o mesmo nome
-        console.log('Estou no criar em GrupoService');
+        // console.log('Estou no criar em GrupoService');
 
         // Realiza validações compartilhadas
         await this.validateGroupName(parsedData.nome);
@@ -45,7 +45,7 @@ class GrupoService {
     }
 
     async atualizar(id, parsedData) {
-        console.log('Estou no atualizar em GrupoService');
+        // console.log('Estou no atualizar em GrupoService');
         
         // Garante que o grupo exista
         await this.ensureGroupExists(id);
@@ -63,7 +63,7 @@ class GrupoService {
 
     async deletar(req, id) {
         // Verificar se o grupo existe
-        console.log('Estou no deletar em GrupoService');
+        // console.log('Estou no deletar em GrupoService');
 
         // Verificar se o grupo existe
         await this.ensureGroupExists(id);

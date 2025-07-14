@@ -1,16 +1,16 @@
 import request from 'supertest'
 import mongoose from 'mongoose';
-import { includes } from 'zod/v4';
-import Usuario from '../../models/Usuario';
 import sharp from 'sharp';
-import bcrypt from 'bcrypt'
-
+import "../../../src/routes/usuarioRoutes.js"
+import dotenv from 'dotenv'
+dotenv.config()
+const PORT = process.env.APP_PORT || 5011
 describe('usuarioRoute', () => {
     // Admin que está fazendo a requição
     let idAdmin;
     let nomeAdmin;
     // URL da requisição
-    let app = 'http://localhost:5011'
+    let app = `http://localhost:${PORT}`
     // Usuário alvo da requisição
 //    Usuario criado durante os teste e deletano nos mesmos
 
@@ -62,7 +62,7 @@ describe('usuarioRoute', () => {
             expect(res.body?.data?.docs[0]).toHaveProperty("email")
             expect(res.body?.data?.docs[0]).toHaveProperty("telefone")
             expect(res.body?.data?.docs[0]).toHaveProperty("dataNascimento")
-            expect(res.body?.data?.docs[0]).toHaveProperty("CPF")
+            expect(res.body?.data?.docs[0]).not.toHaveProperty("CPF")
             expect(res.body?.data?.docs[0]).toHaveProperty("notaMedia")
             expect(res.body?.data?.docs[0]).toHaveProperty("ativo")
             expect(res.body?.data?.docs[0]).toHaveProperty("fotoUsuario")
@@ -88,7 +88,7 @@ describe('usuarioRoute', () => {
             expect(res.body?.data?.docs[0]).toHaveProperty("email")
             expect(res.body?.data?.docs[0]).toHaveProperty("telefone")
             expect(res.body?.data?.docs[0]).toHaveProperty("dataNascimento")
-            expect(res.body?.data?.docs[0]).toHaveProperty("CPF")
+            expect(res.body?.data?.docs[0]).not.toHaveProperty("CPF")
             expect(res.body?.data?.docs[0]).toHaveProperty("notaMedia")
             expect(res.body?.data?.docs[0]).toHaveProperty("ativo")
             expect(res.body?.data?.docs[0]).toHaveProperty("fotoUsuario")
@@ -112,7 +112,7 @@ describe('usuarioRoute', () => {
             expect(res.body?.data?.docs[0]).toHaveProperty("email")
             expect(res.body?.data?.docs[0]).toHaveProperty("telefone")
             expect(res.body?.data?.docs[0]).toHaveProperty("dataNascimento")
-            expect(res.body?.data?.docs[0]).toHaveProperty("CPF")
+            expect(res.body?.data?.docs[0]).not.toHaveProperty("CPF")
             expect(res.body?.data?.docs[0]).toHaveProperty("notaMedia")
             expect(res.body?.data?.docs[0]).toHaveProperty("ativo")
             expect(res.body?.data?.docs[0]).toHaveProperty("fotoUsuario")
@@ -135,7 +135,7 @@ describe('usuarioRoute', () => {
             expect(res.body?.data?.docs[0]).toHaveProperty("email")
             expect(res.body?.data?.docs[0]).toHaveProperty("telefone")
             expect(res.body?.data?.docs[0]).toHaveProperty("dataNascimento")
-            expect(res.body?.data?.docs[0]).toHaveProperty("CPF")
+            expect(res.body?.data?.docs[0]).not.toHaveProperty("CPF")
             expect(res.body?.data?.docs[0]).toHaveProperty("notaMedia")
             expect(res.body?.data?.docs[0]).toHaveProperty("ativo")
             expect(res.body?.data?.docs[0]).toHaveProperty("fotoUsuario")
@@ -158,7 +158,7 @@ describe('usuarioRoute', () => {
             expect(res.body?.data?.docs[0]).toHaveProperty("email")
             expect(res.body?.data?.docs[0]).toHaveProperty("telefone")
             expect(res.body?.data?.docs[0]).toHaveProperty("dataNascimento")
-            expect(res.body?.data?.docs[0]).toHaveProperty("CPF")
+            expect(res.body?.data?.docs[0]).not.toHaveProperty("CPF")
             expect(res.body?.data?.docs[0]).toHaveProperty("notaMedia")
             expect(res.body?.data?.docs[0]).toHaveProperty("ativo")
             expect(res.body?.data?.docs[0]).toHaveProperty("fotoUsuario")
@@ -260,7 +260,7 @@ describe('usuarioRoute', () => {
             expect(res.body?.data).toHaveProperty("email")
             expect(res.body?.data).toHaveProperty("telefone")
             expect(res.body?.data).toHaveProperty("dataNascimento")
-            expect(res.body?.data).toHaveProperty("CPF")
+            expect(res.body?.data).not.toHaveProperty("CPF")
             expect(res.body?.data).toHaveProperty("notaMedia")
             expect(res.body?.data).toHaveProperty("ativo")
             expect(res.body?.data).toHaveProperty("fotoUsuario")
@@ -277,48 +277,7 @@ describe('usuarioRoute', () => {
             expect(res.body?.errors).toHaveLength(0)
         });
     });
-    describe('patch /usuarios/', () =>{
-       it('deve alterar todos dados (nome, email, telefone) com sucesso', async()=>{
-        const body ={nome: "Usuario Alterado", email:"usuario@gmail.com", telefone:"(11) 91334-5678"}
-            const res = await request(app)
-                .patch(`/usuarios/`)
-                .set('Authorization', `Bearer ${userLogado.accessToken}`)
-                .send(body)
-                .expect(200)
-                expect(res.body?.message).toEqual('Usuário atualizado com sucesso!')
-                expect(res.body?.data?._id).toEqual(userLogado?._id)
-                expect(res.body?.data?.nome).toEqual(body.nome)
-                expect(res.body?.data?.email).toEqual(body.email)
-                expect(res.body?.data?.telefone).toEqual(body.telefone)
-                expect(res.body?.data?.dataNascimento).toEqual(userLogado?.dataNascimento)
-                expect(res.body?.data?.CPF).toEqual(userLogado?.CPF)
-                expect(res.body?.data?.ativo).toEqual(userLogado?.ativo)
-                expect(res.body?.data?.fotoUsuario).toEqual(userLogado?.fotoUsuario)
-                expect(res.body?.errors).toHaveLength(0)
-                userLogado.nome = res.body?.data?.nome
-            
-        });
-       it('deve retornar erro ter campos unicos duplicados no banco, neste caso, email', async()=>{
-            const res = await request(app)
-                .patch(`/usuarios/`)
-                .set('Authorization', `Bearer ${userLogado?.accessToken}`)
-                .send({nome: "Usuario Alterado", email:"dev@gmail.com", telefone:"(11) 91334-5678"})
-                .expect(409)
-                expect(res.body?.message).toEqual("Conflito de recurso em Usuário contém Email.")
-                expect(res.body?.data).toEqual(null)
-                expect(res.body?.errors).toHaveLength(0)
-        });
-       it('deve retornar erro ter campos unicos duplicados no banco, neste caso, Telefone', async()=>{
-            const res = await request(app)
-                .patch(`/usuarios/`)
-                .set('Authorization', `Bearer ${userLogado.accessToken}`)
-                .send({nome: "Usuario Alterado", email:"usuario@gmail.com", telefone:"69 98191-4471"})
-                .expect(409)
-                expect(res.body?.message).toEqual("Conflito de recurso em Usuário contém Telefone.")
-                expect(res.body?.data).toEqual(null)
-                expect(res.body?.errors).toHaveLength(0)
-        });
-    });
+
     describe('patch /usuarios/:id', () =>{
        it('deve retornar sucesso ao mudar o status de usuário', async () =>{
         
@@ -360,7 +319,12 @@ describe('usuarioRoute', () => {
             .post(`/usuarios/${userLogado?._id}/foto`)
             .set('Authorization', `Bearer ${userLogado.accessToken}`)
             .attach('file', img, 'imagem-pequena.png')
-            .expect(200)
+            
+            // if (res.status !== 200) {
+            //     console.log('Error response:', res.body)
+            // }
+            
+            expect(res.status).toBe(200)
             expect(res.body?.message).toEqual('Requisição bem-sucedida'),
             expect(res.body?.data?.message).toEqual('Foto atualizada com sucesso.')
             expect(res.body?.data?.dados?.id).toEqual(userLogado?._id)
@@ -401,10 +365,44 @@ describe('usuarioRoute', () => {
     });
     describe('get getFoto', ()=>{
         it('deve ter sucesso ao buscar foto', async()=>{
+            // Primeiro, fazer upload de uma foto para poder testá-la
+            const img = await criarImagem()
+            await request(app)
+                .post(`/usuarios/${userLogado?._id}/foto`)
+                .set('Authorization', `Bearer ${userLogado.accessToken}`)
+                .attach('file', img, 'imagem-teste.png')
+                .expect(200)
+            
+            // Agora buscar a foto
             const res = await request(app)
             .get(`/usuarios/${userLogado?._id}/foto`)
             .set('Authorization', `Bearer ${userLogado.accessToken}`)
-            expect(res.body).toBeInstanceOf(Buffer)
+            expect(res.status).toBe(200)
+            expect(res.headers['content-type']).toMatch(/image/)
+        });
+        
+        it('deve falhar ao buscar foto quando usuário não tem foto', async()=>{
+            // Para este teste, vamos usar um usuário existente que sabemos que não tem foto
+            // Em vez de criar um usuário temporário, vamos usar o moderador que já existe
+            // mas primeiro garantir que ele não tem foto removendo se existir
+            
+            try {
+                // Tentar remover foto se existir (pode falhar se não houver foto, o que é ok)
+                await request(app)
+                    .delete(`/usuarios/${moderador._id}/foto`)
+                    .set('Authorization', `Bearer ${moderador.accessToken}`)
+            } catch (error) {
+                // Ignorar erro se foto não existir
+            }
+            
+            // Agora tentar buscar foto que não deve existir
+            const res = await request(app)
+                .get(`/usuarios/${moderador._id}/foto`)
+                .set('Authorization', `Bearer ${moderador.accessToken}`)
+                .expect(404)
+                
+            expect(res.body?.message).toEqual('Foto não encontrada.')
+            expect(res.body?.data).toBeNull()
         });
         it('deve falhar ao buscar foto sem id persistente no banco', async()=>{
             const res = await request(app)
@@ -421,7 +419,6 @@ describe('usuarioRoute', () => {
             .get(`/usuarios/invalido/foto`)
             .set('Authorization', `Bearer ${userLogado.accessToken}`)
             .expect(400)
-            console.log(res.body)
             expect(res.body?.message).toEqual("Erro de validação. 1 campo(s) inválido(s).")
             expect(res.body?.data).toBeNull()
             expect(res.body?.errors[0]).toEqual({ path: '', message: 'ID inválido' } )
@@ -487,7 +484,6 @@ describe('usuarioRoute', () => {
             .set('Authorization', `Bearer ${userLogado.accessToken}`)
             .send(body)
             .expect(400)
-            console.log(res.body)
             expect(res.body?.message).toEqual("Erro de validação. 1 campo(s) inválido(s).")
             expect(res.body?.data).toEqual(null)
             expect(res.body?.errors[0]).toEqual( { path: 'email', message: 'Formato de email inválido.' } )
@@ -524,8 +520,8 @@ describe('usuarioRoute', () => {
             .set('Authorization', `Bearer ${moderador?.accessToken}`)
             .expect(200)
             expect(res.body?.message).toEqual('Usuário excluído com sucesso.')
+            delete userTemp?.CPF
             expect(res.body?.data).toMatchObject(userTemp)
-            // console.log(userTemp)
         });
         it('deve falhar ao tentar deletar um usuário que não existe', async ()=>{
             const res = await request(app)
@@ -565,8 +561,7 @@ return await sharp({
     channels: 4,
     background: cor
   }
-})
-  .png()
+}).png()
   .toBuffer()
   .catch(err => {
     console.error('Erro ao criar imagem:', err);

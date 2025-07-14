@@ -1,14 +1,8 @@
 import fs from "fs"
 import Usuario from "../models/Usuario.js"
-// import getGlobalFakeMapping from "../globalFakeMapping"
 import bcrypt from "bcryptjs";
-import { faker } from "@faker-js/faker";
 import getGlobalFakeMapping from "./globalFakeMapping.js";
 import Grupo from "../models/Grupo.js";
-
-
-// await DbConect.conectar();
-
 
 
 export async function gerarSenhaHash(senhaPura){

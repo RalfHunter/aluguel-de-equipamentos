@@ -1,4 +1,4 @@
-import reservaRoutes from "../../routes/reservaRoutes.js";
+import "../../../src/routes/reservaRoutes.js"
 import request from "supertest";
 import mongoose from "mongoose";
 

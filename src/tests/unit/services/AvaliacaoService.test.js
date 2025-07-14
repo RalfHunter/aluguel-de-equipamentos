@@ -247,48 +247,47 @@ describe('AvaliacaoService', () => {
 
     describe('remover', () => {
         const avaliacaoId = new mongoose.Types.ObjectId().toString();
-        const usuarioId = new mongoose.Types.ObjectId().toString();
+    const usuarioId = new mongoose.Types.ObjectId().toString();
 
-        it('deve lançar erro se usuarioId for inválido', async () => {
-            mongoose.Types.ObjectId.isValid.mockReturnValue(false);
+    it('deve lançar erro se usuarioId for inválido', async () => {
+        mongoose.Types.ObjectId.isValid.mockReturnValue(false);
 
-            await expect(avaliacaoService.remover(avaliacaoId, 'invalid-id')).rejects.toThrow(
-                new CustomError({
-                    statusCode: 400,
-                    errorType: 'invalidData',
-                    field: 'IDs',
-                    customMessage: 'ID inválido.',
-                })
-            );
-        });
+        await expect(avaliacaoService.remover(avaliacaoId, 'invalid-id')).rejects.toThrow(
+            new CustomError({
+                statusCode: 400,
+                errorType: 'invalidData',
+                field: 'IDs',
+                customMessage: 'ID inválido.',
+            })
+        );
+    });
 
-        it('deve lançar erro se usuário não for encontrado', async () => {
-            Usuario.findById.mockResolvedValue(null);
+    it('deve lançar erro se usuário não for encontrado', async () => {
+        mongoose.Types.ObjectId.isValid.mockReturnValue(true);
+        Usuario.findById.mockResolvedValue(null);
 
-            await expect(avaliacaoService.remover(avaliacaoId, usuarioId)).rejects.toThrow(
-                new CustomError({
-                    statusCode: 403,
-                    errorType: 'unauthorized',
-                    field: 'Usuario',
-                    customMessage: 'Apenas administradores podem remover avaliações.',
-                })
-            );
-        });
+        await expect(avaliacaoService.remover(avaliacaoId, usuarioId)).rejects.toThrow(
+            new CustomError({
+                statusCode: 403,
+                errorType: 'unauthorized',
+                field: 'Usuario',
+                customMessage: 'Apenas administradores podem remover avaliações.',
+            })
+        );
+    });
 
-        it('deve remover avaliação se usuário for encontrado', async () => {
-            const avaliacaoId = new mongoose.Types.ObjectId().toString();
-            const usuarioId = new mongoose.Types.ObjectId().toString();
-        
-            Usuario.findById.mockResolvedValue({ _id: usuarioId, nome: 'Admin' });
-        
-            const mockRemocao = { acknowledged: true, deletedCount: 1 };
-            repositoryMock.remover.mockResolvedValue(mockRemocao);
-        
-            const result = await avaliacaoService.remover(avaliacaoId, usuarioId);
-        
-            expect(Usuario.findById).toHaveBeenCalledWith(usuarioId);
-            expect(repositoryMock.remover).toHaveBeenCalledWith(avaliacaoId, usuarioId);
-            expect(result).toEqual(mockRemocao);
-        });
+    it('deve remover avaliação se usuário for encontrado', async () => {
+        mongoose.Types.ObjectId.isValid.mockReturnValue(true);
+        Usuario.findById.mockResolvedValue({ _id: usuarioId });
+
+        const mockRemocao = { acknowledged: true, deletedCount: 1 };
+        repositoryMock.remover.mockResolvedValue(mockRemocao);
+
+        const result = await avaliacaoService.remover(avaliacaoId, usuarioId);
+
+        expect(Usuario.findById).toHaveBeenCalledWith(usuarioId);
+        expect(repositoryMock.remover).toHaveBeenCalledWith(avaliacaoId, usuarioId);
+        expect(result).toEqual(mockRemocao);
+    });
     });
 });

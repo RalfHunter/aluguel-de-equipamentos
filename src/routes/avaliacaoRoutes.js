@@ -7,12 +7,12 @@ import AuthPermission from "../middlewares/AuthPermission.js"
 
 const router = express.Router();
 
-const avaliacaoController = new AvaliacaoController(); 
+const avaliacaoController = new AvaliacaoController();
 
 router
-.get("/avaliacoes", AuthMiddleware, asyncWrapper(avaliacaoController.listar.bind(avaliacaoController)))
-.post("/avaliacoes", AuthMiddleware, asyncWrapper(avaliacaoController.criar.bind(avaliacaoController)))
-.patch("/avaliacoes/:id", AuthMiddleware, asyncWrapper(avaliacaoController.atualizar.bind(avaliacaoController)))
-.delete("/avaliacoes/:id", AuthMiddleware, AuthPermission, asyncWrapper(avaliacaoController.remover.bind(avaliacaoController)))
+    .get("/avaliacoes", AuthMiddleware, asyncWrapper(avaliacaoController.listar.bind(avaliacaoController)))
+    .post("/avaliacoes", AuthMiddleware, asyncWrapper(avaliacaoController.criar.bind(avaliacaoController)))
+    .patch("/avaliacoes/:id", AuthMiddleware, asyncWrapper(avaliacaoController.atualizar.bind(avaliacaoController)))
+    .delete("/avaliacoes/:id", AuthMiddleware, AuthPermission, asyncWrapper(avaliacaoController.remover.bind(avaliacaoController)))
 
 export default router;
