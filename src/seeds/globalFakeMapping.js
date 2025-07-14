@@ -69,8 +69,8 @@ const fakeMappings = {
   },
 
   Reserva: {
-    dataInicial: () => fakebr.date(),
-    dataFinal: () => fakebr.date(),
+    dataInicial: () => fakebr.date.past(),
+    dataFinal: () => fakebr.date.future(),
     dataFinalAtrasada: () => fakebr.date.future(),
     quantidadeEquipamento: () => fakebr.random.number({ min: 1, max: 10 }),
     valorEquipamento: () => fakebr.random.number({ min: 100, max: 1000 }),
