@@ -7,7 +7,7 @@ import mongoose from 'mongoose';
 import request from "supertest";
 import { CustomError } from '../../../utils/helpers/index.js';
 
-const PORT = process.env.APP_PORT || 3000;
+const PORT = process.env.APP_PORT || 5011;
 let app = `http://localhost:${PORT}`
 
 jest.mock('../../../repositories/ReservaRepository.js', () => {
@@ -68,7 +68,6 @@ describe('ReservaService', () => {
 
       token = loginRes.body?.data?.user?.accessToken;
       usuarioId = loginRes.body?.data?.user?._id;
-      console.log('USUARIO', usuarioId);
       expect(token).toBeTruthy();
       expect(usuarioId).toBeTruthy();
 
@@ -76,7 +75,6 @@ describe('ReservaService', () => {
         .get('/equipamentos')
         .set('Authorization', `Bearer ${token}`);
       equipamentoId = equipamentoRes.body?.data?.docs[0]?._id;
-      console.log('EQUIPAMENTO', equipamentoId);
       expect(equipamentoId).toBeTruthy();
 
       const reservaRes = await request(app)
@@ -84,7 +82,6 @@ describe('ReservaService', () => {
         .set('Authorization', `Bearer ${token}`);
       reservaId = reservaRes.body?.data?.dados?.docs[0]?._id;
       expect(reservaId).toBeTruthy();
-      console.log('RESERVA', reservaId);
     } catch (error) {
       console.error('Erro ao configurar beforeAll:', error);
       throw new Error('Falha ao obter IDs para os testes');

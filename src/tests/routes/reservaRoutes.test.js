@@ -2,7 +2,7 @@ import "../../../src/routes/reservaRoutes.js"
 import request from "supertest";
 import mongoose from "mongoose";
 
-const PORT = process.env.APP_PORT || 3000;
+const PORT = process.env.APP_PORT || 5011;
 let app = `http://localhost:${PORT}`
 
 describe("Reservas", () => {
